@@ -1,0 +1,35 @@
+keystone-chartjs-wrappers
+Copyright (c) 2025 Geirr Winnem
+
+This product includes software developed by Geirr Winnem
+(https://github.com/gwinnem).
+
+---
+
+This product bundles the following open-source dependencies at runtime.
+Each dependency's own license applies to that dependency's own code.
+For the full license text of each, see its own package in node_modules
+or its own published repository.
+
+## Direct runtime dependencies (packages/core)
+
+| Package | License |
+|---|---|
+| chart.js | MIT |
+| chartjs-chart-financial | MIT |
+| @sgratzl/chartjs-chart-boxplot | MIT |
+| chartjs-chart-matrix | MIT |
+| chartjs-chart-sankey | MIT |
+| chartjs-chart-treemap | MIT |
+| chartjs-plugin-zoom | MIT |
+| chartjs-plugin-annotation | MIT |
+| chartjs-plugin-datalabels | MIT |
+
+## Peer dependencies (supplied by consumer)
+
+| Package | License |
+|---|---|
+| vue (packages/vue) | MIT |
+| react, react-dom (packages/react) | MIT |
+| @angular/core, @angular/common (packages/angular) | MIT |
+| chart.js (all framework packages) | MIT |

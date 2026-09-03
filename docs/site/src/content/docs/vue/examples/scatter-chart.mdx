@@ -1,0 +1,14 @@
+---
+title: Scatter chart
+description: A built-in Chart.js kind using {x, y} data points, no labels array.
+---
+import ScatterChart from '../../../../components/examples/scatter-chart.vue';
+import ScatterChartSource from '../../../../components/examples/scatter-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`scatter` datasets use `{ x, y }` data points directly — no `labels`
+array at all, unlike `bar`/`line`/`doughnut`.
+
+<ExampleTryIt code={ScatterChartSource} filename="scatter-chart.vue">
+  <ScatterChart client:visible />
+</ExampleTryIt>

@@ -1,0 +1,16 @@
+# Presence of this file establishes docs/site as its own pnpm workspace
+# root, stopping pnpm's upward search here instead of continuing to
+# ../../pnpm-workspace.yaml (the monorepo root's, which only lists
+# "packages/*" and does not include docs/site). Without this file,
+# `pnpm install` run from inside docs/site resolves to that parent
+# workspace instead, sees docs/site isn't matched by any of its
+# patterns, and silently installs nothing here — the exact bug this
+# file exists to prevent. Same fix already in use in
+# keystone-dashboard-layout/astro-docs/pnpm-workspace.yaml.
+#
+# No `packages:` field needed — this is a single-package "workspace"
+# containing only docs/site itself, not a monorepo of its own.
+
+allowBuilds:
+  esbuild: true
+  sharp: true

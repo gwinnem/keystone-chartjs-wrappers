@@ -1,0 +1,14 @@
+---
+title: Doughnut chart
+description: A built-in Chart.js kind — proportional data with a hollow center.
+---
+import DoughnutChart from '../../../../components/examples/doughnut-chart.vue';
+import DoughnutChartSource from '../../../../components/examples/doughnut-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`doughnut` is `pie`'s hollow-center sibling — same data shape, same
+registration, different default `cutout`.
+
+<ExampleTryIt code={DoughnutChartSource} filename="doughnut-chart.vue">
+  <DoughnutChart client:visible />
+</ExampleTryIt>

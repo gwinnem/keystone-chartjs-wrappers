@@ -1,0 +1,14 @@
+---
+title: Radar chart
+description: A built-in Chart.js kind — multi-axis comparison across several datasets.
+---
+import RadarChart from '../../../../components/examples/radar-chart.vue';
+import RadarChartSource from '../../../../components/examples/radar-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`radar` plots one point per axis, per dataset — useful for comparing
+several items across the same set of criteria at once.
+
+<ExampleTryIt code={RadarChartSource} filename="radar-chart.vue">
+  <RadarChart client:visible />
+</ExampleTryIt>

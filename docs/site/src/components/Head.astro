@@ -1,0 +1,30 @@
+---
+// Overrides Starlight's default Head to inject one page-specific CSS
+// tweak: /vue/features gets a wider content column, at your explicit
+// request — its own Feature/Status table wraps awkwardly at Starlight's
+// default reading width. `--sl-content-width` (this project's real,
+// installed default: 45rem — confirmed directly from
+// node_modules/@astrojs/starlight/style/props.css, not assumed) is
+// Starlight's own variable controlling exactly this; overridden here to
+// `45rem + 150px`, scoped to this one route via Astro.url.pathname
+// rather than changed site-wide.
+//
+// Reads `Astro.props`, not `Astro.locals.starlightRoute` — same reason
+// as this project's other overrides (Sidebar.astro): the actual
+// installed @astrojs/starlight version here is 0.30.6 (confirmed via
+// its own default Head.astro source in node_modules, matching KDL's own
+// real Head.astro override, which documents the identical version-gap
+// rationale in full).
+import Default from '@astrojs/starlight/components/Head.astro';
+
+const isVueFeaturesPage = Astro.url.pathname === `/vue/features`;
+---
+
+<Default {...Astro.props}><slot /></Default>
+{isVueFeaturesPage && (
+  <style is:global>
+    :root {
+      --sl-content-width: calc(45rem + 150px);
+    }
+  </style>
+)}

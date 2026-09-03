@@ -1,0 +1,22 @@
+---
+title: Horizontal bar chart
+description: A bar chart with indexAxis set to 'y' — categories on the y axis, values running left-to-right.
+---
+import HorizontalBarChart from '../../../../components/examples/horizontal-bar-chart.vue';
+import HorizontalBarChartSource from '../../../../components/examples/horizontal-bar-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+A horizontal bar chart isn't a separate chart kind — it's Chart.js's own
+regular `bar` controller with one option set: `indexAxis: 'y'`. Category
+labels run down the y axis instead of across the x axis, and values run
+left-to-right instead of bottom-to-top.
+
+<ExampleTryIt code={HorizontalBarChartSource} filename="horizontal-bar-chart.vue">
+  <HorizontalBarChart client:visible />
+</ExampleTryIt>
+
+:::tip[Still just `type="bar"`]
+`<Chart type="bar">` is unchanged — `indexAxis` lives entirely inside
+`options`, which reaches Chart.js untouched. No extra prop, no separate
+component.
+:::

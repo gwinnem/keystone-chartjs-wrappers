@@ -1,0 +1,42 @@
+---
+title: Gradient plugin
+description: A local, ported implementation of chartjs-plugin-gradient, supplied via the gradient prop, with real per-dataset gradient config.
+---
+import GradientPlugin from '../../../../components/examples/gradient-plugin.vue';
+import GradientPluginSource from '../../../../components/examples/gradient-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `gradient` prop draws per-dataset color gradients. Like
+[image label](/vue/examples/image-label-plugin), it isn't a dependency
+on a third-party package at all — its logic is ported directly into
+`keystone-chartjs-core` (`src/gradientPlugin.ts`). Unlike
+`zoom`/`annotation`/`dataLabels`, it's boolean only: the plugin's own
+real config lives on each **dataset** instead of
+`options.plugins.gradient`, so this prop only needs to supply the
+plugin, not carry any config of its own.
+
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site — unlike the
+[zoom](/vue/examples/zoom-plugin), [timestack](/vue/examples/timestack-scale),
+and [hierarchical](/vue/examples/hierarchical-scale) examples, which
+still hit a docs-site build-pipeline gap around dynamic imports.
+
+<ExampleTryIt code={GradientPluginSource} filename="gradient-plugin.vue" live={true}>
+  <GradientPlugin client:visible />
+</ExampleTryIt>
+
+:::tip[Gradient config lives on the dataset, not in options]
+```js
+datasets: [{
+  data: [...],
+  gradient: {
+    backgroundColor: { axis: 'y', colors: { 0: 'red', 50: 'yellow', 100: 'green' } },
+  },
+}]
+```
+`axis: 'y'` varies the color by vertical position on the chart — bars of
+different heights show different portions of the range. See
+[Colors, fonts & padding](/vue/guide/concepts/styling) for how this
+compares to the built-in `Colors` plugin, and
+[Plugins](/vue/api/plugins) for the full prop reference.
+:::

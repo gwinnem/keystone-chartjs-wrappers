@@ -1,0 +1,54 @@
+---
+title: Examples
+description: Live, interactive examples of keystone-chartjs-vue in use.
+---
+
+A representative first slice, not yet the full 15-kind-plus-3-plugin
+set — more examples follow the same pattern incrementally.
+
+## Built-in chart types
+
+All 8 built-in kinds are registered eagerly at module load (via
+`Chart.register(...registerables)`), so every example below is live and
+interactive.
+
+- **[Bar chart](/vue/examples/bar-chart/)** — the simplest possible setup, with an in-place data update.
+- **[Horizontal bar chart](/vue/examples/horizontal-bar-chart/)** — the same `bar` kind with `indexAxis: 'y'`, not a separate chart type.
+- **[Line chart](/vue/examples/line-chart/)** — a week of signups.
+- **[Bubble chart](/vue/examples/bubble-chart/)** — `{x, y, r}` data points, radius independent of the axes.
+- **[Scatter chart](/vue/examples/scatter-chart/)** — `{x, y}` data points, no `labels` array.
+- **[Doughnut chart](/vue/examples/doughnut-chart/)** — proportional data with a hollow center.
+- **[Pie chart](/vue/examples/pie-chart/)** — proportional data as full wedges.
+- **[Polar area chart](/vue/examples/polar-area-chart/)** — proportional data on a radial scale.
+- **[Radar chart](/vue/examples/radar-chart/)** — multi-axis comparison across several datasets.
+
+## Mixed charts
+
+Every built-in kind is registered eagerly, so this example is live and
+interactive too — no extension package involved.
+
+- **[Mixed chart](/vue/examples/mixed-chart/)** — a bar chart with one dataset overridden to `type: 'line'`, drawn overlaid on the same axes.
+
+## Axes
+
+Every example here uses only built-in scale types, so it's live and
+interactive too.
+
+- **[Multiple axes](/vue/examples/multi-axis/)** — two datasets with different units, each mapped to its own `y` scale via `yAxisID`.
+
+## Interaction
+
+- **[Chart events](/vue/examples/chart-events/)** — Chart.js's own native `options.onClick`, reacting to which bar was clicked. No extra prop or Vue event needed.
+
+## Ecosystem extensions
+
+- **[Sankey chart](/vue/examples/sankey/)** — a lazily-registered extension kind, not a Chart.js built-in. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+
+## Plugins
+
+- **[Colors plugin](/vue/examples/colors-plugin/)** — Chart.js's own built-in `Colors` plugin, registered and enabled by default. Live and interactive — no extension package involved.
+- **[Zoom plugin](/vue/examples/zoom-plugin/)** — `chartjs-plugin-zoom` with a real wheel/pinch/pan config. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+- **[Gradient plugin](/vue/examples/gradient-plugin/)** — `chartjs-plugin-gradient` with a real per-dataset gradient config. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+- **[Timestack scale](/vue/examples/timestack-scale/)** — `chartjs-scale-timestack`, an alternative time axis formatting time in two stacked, human-friendly rows. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+- **[Hierarchical scale](/vue/examples/hierarchical-scale/)** — `chartjs-plugin-hierarchical`, a collapsible tree-like categorical axis. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+- **[Image label plugin](/vue/examples/image-label-plugin/)** — `chartjs-plugin-image-label`, adding image labels to doughnut chart slices via Chart.js's own inline `plugins` array. Real source shown; not yet live-embedded on this docs site (see that page's own note).

@@ -1,0 +1,10 @@
+packages:
+  - "packages/*"
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  puppeteer: true
+
+# Astro docs site lives in docs/site and is intentionally standalone
+# (see docs/site/package.json), matching keystone-dashboard-layout's
+# astro-docs convention — installed/run independently of this workspace.

@@ -1,0 +1,14 @@
+---
+title: Polar area chart
+description: A built-in Chart.js kind — proportional data on a radial scale.
+---
+import PolarAreaChart from '../../../../components/examples/polar-area-chart.vue';
+import PolarAreaChartSource from '../../../../components/examples/polar-area-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`polarArea` plots values as equal-angle wedges whose *radius* (not
+share of a circle) encodes magnitude — distinct from `pie`/`doughnut`.
+
+<ExampleTryIt code={PolarAreaChartSource} filename="polar-area-chart.vue">
+  <PolarAreaChart client:visible />
+</ExampleTryIt>

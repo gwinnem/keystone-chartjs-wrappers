@@ -1,0 +1,27 @@
+---
+title: Colors plugin
+description: Automatic dataset coloring via Chart.js's own built-in Colors plugin — no configuration needed.
+---
+import ColorsPlugin from '../../../../components/examples/colors-plugin.vue';
+import ColorsPluginSource from '../../../../components/examples/colors-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+None of the datasets below set their own `backgroundColor`/`borderColor` —
+Chart.js's own built-in `Colors` plugin assigns them automatically, cycling
+through 7 built-in brand colors. This library already registers the plugin
+eagerly (it's part of Chart.js's own `registerables`), and the plugin's own
+real defaults enable it out of the box — no `options.plugins.colors`
+config, no opt-in prop, needed at all.
+
+<ExampleTryIt code={ColorsPluginSource} filename="colors-plugin.vue">
+  <ColorsPlugin client:visible />
+</ExampleTryIt>
+
+:::tip[This is Chart.js's own plugin, not one of this library's 3 official opt-ins]
+`zoom`/`annotation`/`dataLabels` are separate ecosystem packages this
+library registers lazily via dedicated props. `Colors` ships as part of
+Chart.js's own core package instead, confirmed registered and enabled by
+default — see [Colors, fonts & padding](/vue/guide/concepts/styling) for
+the full guide, including how to disable it or force it to override
+colors a dataset already specifies.
+:::

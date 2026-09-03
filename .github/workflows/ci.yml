@@ -1,0 +1,72 @@
+name: CI
+
+# Phase 0 skeleton — deliberately minimal, matching what actually exists
+# today (install → typecheck → lint → test → build). No e2e, bundle-size,
+# license-audit, or docs-site-build steps yet: those depend on real
+# implementations and test suites this repo doesn't have until later
+# phases (see docs/IMPLEMENTATION_PLAN.md). Modeled on
+# keystone-dashboard-layout's own .github/workflows/ci.yml, scaled back to
+# match this project's actual current state rather than copying steps for
+# scripts/suites that don't exist here.
+#
+# Turbo-orchestrated (pnpm run typecheck/lint/test/build all call
+# `turbo run <task>`), so this automatically covers all four packages —
+# turbo skips any package whose package.json doesn't define a given
+# script, which is exactly the "each package defines a slightly different
+# task set" situation here (packages/core has no lint:fix distinct from
+# lint, no dev script, etc.).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Root package.json's own engines field is ">=22.0.0".
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (all packages)
+        run: pnpm typecheck
+
+      - name: Lint (all packages)
+        run: pnpm lint
+
+      - name: Unit + component tests (with coverage)
+        run: pnpm test:coverage
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Install documentation site dependencies
+        # docs/site is a separate, standalone project (its own
+        # package.json/pnpm-workspace.yaml, deliberately outside this
+        # root workspace — see docs/site/pnpm-workspace.yaml's own header
+        # comment for why) — install its own dependencies explicitly
+        # rather than assuming the root `pnpm install` above covered it,
+        # since it doesn't.
+        working-directory: docs/site
+        run: pnpm install
+
+      - name: Build documentation site
+        working-directory: docs/site
+        run: pnpm build

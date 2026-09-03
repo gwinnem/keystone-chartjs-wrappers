@@ -1,0 +1,31 @@
+---
+title: Sankey chart
+description: An ecosystem extension kind — chartjs-chart-sankey, registered lazily on first use.
+---
+import SankeySource from '../../../../components/examples/sankey.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`sankey` is one of the 5 ecosystem extensions, not a Chart.js built-in —
+the real `chartjs-chart-sankey` package is dynamically imported and
+registered the first time any `<Chart type="sankey">` mounts, not
+eagerly bundled for every consumer regardless of whether they use it.
+
+:::caution[Not yet live-embedded on this docs site]
+This example isn't hydrated on this page yet — this docs site resolves
+`keystone-chartjs-core` from this monorepo's own workspace source, not a
+published package, and the dynamic import that lazily registers
+extension kinds like `sankey` doesn't currently resolve correctly across
+that boundary in Vite's dev server. The code below is real and correct —
+confirmed working end-to-end in this package's own Playwright e2e suite
+(`packages/vue/tests/e2e/sankey.spec.ts`) — this is a docs-site
+build-pipeline gap, not a bug in `keystone-chartjs-vue` itself. Expected
+to resolve once this package is built/published for real (Phase 7).
+:::
+
+<ExampleTryIt code={SankeySource} filename="sankey.vue" live={false} />
+
+:::tip[Data shape is `{ from, to, flow }`]
+This is `chartjs-chart-sankey`'s own real data-point shape, not something
+`keystone-chartjs-vue` reinterprets — see [Chart kinds](/vue/api/chart-kinds/)
+for the full list of extension kinds and which package backs each one.
+:::

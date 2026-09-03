@@ -1,0 +1,21 @@
+---
+title: Mixed chart
+description: A single chart combining two dataset types — bars and an overlaid line, on the same axes.
+---
+import MixedChart from '../../../../components/examples/mixed-chart.vue';
+import MixedChartSource from '../../../../components/examples/mixed-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+Chart.js supports **mixed charts** — combining more than one chart type in a
+single chart, by giving individual datasets their own `type`, overriding the
+chart's own top-level `type`. This example sets `type="bar"` on the `<Chart>`
+itself, then gives one dataset its own `type: 'line'` — Chart.js draws it as
+a line overlaid on the same axes as the bars.
+
+<ExampleTryIt code={MixedChartSource} filename="mixed-chart.vue">
+  <MixedChart client:visible />
+</ExampleTryIt>
+
+See [Mixed charts](/vue/guide/concepts/mixed-charts) for the full concept
+guide — how per-dataset type overrides work, how registration happens
+automatically for each kind used, and how updates are diffed.

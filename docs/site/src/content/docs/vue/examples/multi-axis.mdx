@@ -1,0 +1,20 @@
+---
+title: Multiple axes
+description: Two datasets on two independent Y axes, sharing the same chart — different units, mapped via yAxisID.
+---
+import MultiAxis from '../../../../components/examples/multi-axis.vue';
+import MultiAxisSource from '../../../../components/examples/multi-axis.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+Chart.js supports multiple X and Y axes on a single chart — useful whenever
+two datasets share a chart but represent different units. This example
+plots temperature and visitor count on the same six months, each on its own
+`y` scale: `options.scales` defines `y` (left) and `y1` (right), and each
+dataset maps to one via its own `yAxisID`.
+
+<ExampleTryIt code={MultiAxisSource} filename="multi-axis.vue">
+  <MultiAxis client:visible />
+</ExampleTryIt>
+
+See [Axes & scales](/vue/guide/concepts/axes-and-scales) for the full
+concept guide — scale types, positioning, range options, and stacking.

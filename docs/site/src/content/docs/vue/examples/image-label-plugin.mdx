@@ -1,0 +1,41 @@
+---
+title: Image label plugin
+description: A local, ported implementation of chartjs-plugin-image-label, supplied via the imageLabel prop, adding image labels to doughnut chart slices.
+---
+import ImageLabelPlugin from '../../../../components/examples/image-label-plugin.vue';
+import ImageLabelPluginSource from '../../../../components/examples/image-label-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `imageLabel` prop draws image labels on doughnut/pie chart arcs.
+Unlike every other plugin on this site, it isn't a dependency on a
+third-party package at all — its logic is ported directly into
+`keystone-chartjs-core` (`src/imageLabelPlugin.ts`), fixing two real
+bugs found in the original package along the way: it now draws labels
+for every dataset (not just the first), and positions each image using
+Chart.js's own already-computed arc geometry instead of recomputing
+slice angles from raw values.
+
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site — unlike the
+[zoom](/vue/examples/zoom-plugin), [gradient](/vue/examples/gradient-plugin),
+[timestack](/vue/examples/timestack-scale), and
+[hierarchical](/vue/examples/hierarchical-scale) examples, which still
+hit a docs-site build-pipeline gap around dynamic imports.
+
+It's supplied per-chart-instance, via Chart.js's own real inline
+`plugins` array (the same mechanism the [`plugins` prop](/vue/components/props)
+already exposes for custom/community plugins) — this prop's own
+resolved plugin object is appended to whatever `plugins` array is
+already in effect, additively rather than replacing it.
+
+<ExampleTryIt code={ImageLabelPluginSource} filename="image-label-plugin.vue" live={true}>
+  <ImageLabelPlugin client:visible />
+</ExampleTryIt>
+
+:::tip[No plain-boolean form, unlike zoom/dataLabels]
+`imagesList` is required — there's no sensible empty default, the same
+reasoning as `annotation`'s own `annotations` field. Each entry needs an
+`imageUrl`/`imageWidth`/`imageHeight`; `verticalAlign`/`horizontalAlign`/
+`offset` control label placement within each slice. See
+[Plugins](/vue/api/plugins) for the full prop reference.
+:::

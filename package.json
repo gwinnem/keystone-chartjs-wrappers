@@ -1,0 +1,75 @@
+{
+  "name": "keystone-chartjs-wrappers",
+  "version": "1.0.0",
+  "homepage": "https://kcw.winnem.tech",
+  "private": true,
+  "description": "Idiomatic Chart.js wrapper components for Vue, React, and Angular, sharing a framework-agnostic core.",
+  "keywords": [
+    "chartjs",
+    "chart.js",
+    "chart",
+    "charts",
+    "data-visualization",
+    "visualization",
+    "vue",
+    "react",
+    "angular",
+    "vue3",
+    "typescript",
+    "bar-chart",
+    "line-chart",
+    "pie-chart",
+    "doughnut-chart",
+    "radar-chart",
+    "scatter-chart",
+    "bubble-chart",
+    "candlestick",
+    "treemap",
+    "sankey",
+    "boxplot",
+    "matrix-chart",
+    "zoom",
+    "annotation",
+    "monorepo"
+  ],
+  "license": "MIT",
+  "packageManager": "pnpm@10.32.0",
+  "author": "Geirr Winnem <geirr@winnem.tech>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gwinnem/keystone-chartjs-wrappers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gwinnem/keystone-chartjs-wrappers/issues"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "test:ui": "turbo run test:ui",
+    "test:e2e": "turbo run test:e2e",
+    "test:mutation": "turbo run test:mutation",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"packages/**/src/**/*\"",
+    "docs:dev": "pnpm --filter keystone-chartjs-docs dev",
+    "docs:build": "pnpm --filter keystone-chartjs-docs build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/parser": "^8.64.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-prettier": "^5.2.6",
+    "globals": "^17.7.0",
+    "prettier": "^3.5.3",
+    "turbo": "^2.3.0",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

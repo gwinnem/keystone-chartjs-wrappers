@@ -1,0 +1,102 @@
+{
+  "name": "keystone-chartjs-vue",
+  "version": "1.0.0",
+  "homepage": "https://kcw.winnem.tech",
+  "private": false,
+  "description": "A single, generic <Chart> component for Vue 3 wrapping Chart.js — every built-in chart type plus the financial, boxplot, matrix, sankey, and treemap extensions, selected via a `type` prop.",
+  "keywords": [
+    "vue",
+    "vue3",
+    "composition-api",
+    "chartjs",
+    "chart.js",
+    "chart",
+    "charts",
+    "data-visualization",
+    "visualization",
+    "typescript",
+    "bar-chart",
+    "line-chart",
+    "horizontal-bar",
+    "pie-chart",
+    "doughnut-chart",
+    "radar-chart",
+    "polar-area",
+    "scatter-chart",
+    "bubble-chart",
+    "mixed-chart",
+    "candlestick",
+    "ohlc",
+    "boxplot",
+    "violin",
+    "treemap",
+    "sankey",
+    "matrix-chart",
+    "zoom",
+    "annotation",
+    "datalabels",
+    "resize",
+    "reactive"
+  ],
+  "author": "Geirr Winnem",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gwinnem/keystone-chartjs-wrappers.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/gwinnem/keystone-chartjs-wrappers/issues"
+  },
+  "type": "module",
+  "main": "./dist/keystone-chartjs-vue.umd.cjs",
+  "module": "./dist/es/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/es/index.js",
+      "require": "./dist/keystone-chartjs-vue.umd.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -p tsconfig.build.json --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:component": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:ui": "vitest --ui --coverage",
+    "test:mutation": "stryker run",
+    "lint": "eslint . --ext .ts,.vue",
+    "lint:fix": "eslint . --ext .ts,.vue --fix"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "chart.js": "^4.5.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "vue-eslint-parser": "^9.4.3",
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/ui": "^2.0.0",
+    "@vue/test-utils": "^2.4.6",
+    "chart.js": "^4.5.1",
+    "jsdom": "^24.1.0",
+    "keystone-chartjs-core": "workspace:*",
+    "typescript": "^6.0.3",
+    "vite": "^5.3.0",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^2.0.0",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.0.0"
+  }
+}

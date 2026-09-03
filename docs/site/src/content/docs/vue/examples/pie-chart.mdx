@@ -1,0 +1,14 @@
+---
+title: Pie chart
+description: A built-in Chart.js kind — proportional data as full wedges.
+---
+import PieChart from '../../../../components/examples/pie-chart.vue';
+import PieChartSource from '../../../../components/examples/pie-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`pie` and `doughnut` share the same data shape and registration path —
+only the default `cutout` differs between them.
+
+<ExampleTryIt code={PieChartSource} filename="pie-chart.vue">
+  <PieChart client:visible />
+</ExampleTryIt>

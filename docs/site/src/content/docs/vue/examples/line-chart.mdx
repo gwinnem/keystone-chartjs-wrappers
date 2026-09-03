@@ -1,0 +1,15 @@
+---
+title: Line chart
+description: A built-in Chart.js kind — no dynamic import needed, registered eagerly.
+---
+import LineChart from '../../../../components/examples/line-chart.vue';
+import LineChartSource from '../../../../components/examples/line-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`line` is one of Chart.js's 8 built-in types — registered eagerly via
+`Chart.register(...registerables)` at module load, not lazily like the
+5 ecosystem extension kinds.
+
+<ExampleTryIt code={LineChartSource} filename="line-chart.vue">
+  <LineChart client:visible />
+</ExampleTryIt>

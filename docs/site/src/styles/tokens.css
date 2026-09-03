@@ -1,0 +1,33 @@
+/*
+  Design tokens — the --kg-* brand palette, exactly matching
+  keystone-dashboard-layout's own tokens.css (confirmed directly from
+  that project's real source, not assumed). KDL's tokens.css defines
+  only this palette and nothing else — no --sl-* overrides. An earlier
+  version of this file added speculative --sl-color-* and --sl-font
+  mappings that KDL doesn't actually have; removed to match the real
+  reference. Starlight's own default theme (colors, fonts, sizes) is
+  left unmodified on doc pages as a result — --kg-* is reserved for
+  one-off brand elements (the logo mark, the plain landing page) rather
+  than reskinning Starlight's own design-token system.
+*/
+:root {
+  --kg-ink: #14171a;
+  --kg-ink-2: #1d2126;
+  --kg-ink-3: #262b31;
+  --kg-paper: #f1f0eb;
+  --kg-paper-2: #ffffff;
+  --kg-paper-3: #e7e6df;
+  --kg-blueprint: #4fb8c9;
+  --kg-blueprint-deep: #2e7a88;
+  --kg-amber: #f2a93b;
+  --kg-amber-deep: #9c6208;
+  --kg-line-dark: rgba(255, 255, 255, 0.1);
+  --kg-line-light: rgba(20, 23, 26, 0.12);
+  --kg-text-hi-dark: #f5f4ef;
+  --kg-text-lo-dark: #9ca6aa;
+  --kg-text-hi-light: #14171a;
+  --kg-text-lo-light: #5b6266;
+  --kg-font-display: 'IBM Plex Sans', sans-serif;
+  --kg-font-body: 'IBM Plex Sans', sans-serif;
+  --kg-font-mono: 'IBM Plex Mono', monospace;
+}

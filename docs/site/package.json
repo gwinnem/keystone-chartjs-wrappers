@@ -1,0 +1,28 @@
+{
+  "name": "keystone-chartjs-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Astro + Starlight documentation site for keystone-chartjs-wrappers (Vue/React/Angular). Not part of the pnpm workspace — install/run independently from this directory, matching keystone-dashboard-layout's astro-docs convention.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.30.0",
+    "@astrojs/vue": "^5.0.0",
+    "astro": "^5.0.0",
+    "vue": "^3.5.0",
+    "chart.js": "^4.5.1",
+    "chartjs-chart-sankey": "^0.15.0",
+    "chartjs-plugin-zoom": "^2.2.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "typescript": "^6.0.3"
+  }
+}

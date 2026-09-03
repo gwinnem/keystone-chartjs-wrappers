@@ -1,0 +1,179 @@
+---
+// Overrides Starlight's default Sidebar for VitePress-style,
+// route-dependent sidebars: browsing under /core/* shows only the Core
+// group, /vue/guide/* shows only Vue's Guide subtree, and so on —
+// instead of one long sidebar with every top-level section (Vue, Core)
+// expanded at once. Adapted directly from keystone-dashboard-layout's
+// own real override (astro-docs/src/components/overrides/Sidebar.astro,
+// read from that project's actual source, not guessed), which solves
+// the identical problem for its own Vue/React/Angular/Core groups.
+//
+// Grounded in the ACTUAL installed @astrojs/starlight version here
+// (package.json: "^0.30.0", same 0.30.x range as KDL's own confirmed
+// 0.30.6): this version's own Sidebar.astro reads `sidebar` off
+// `Astro.props` (the pre-0.32 route-data mechanism) — Starlight's
+// current official "Multiple sidebars" example uses the newer
+// `Astro.locals.starlightRoute.sidebar` API from 0.32+, which would not
+// apply to this installed version.
+import type { Props } from '@astrojs/starlight/props';
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+
+type SidebarEntry = Props['sidebar'][number];
+
+// Maps a URL path prefix to the top-level framework/section group label
+// in astro.config.mjs's own `sidebar` array — checked first, before any
+// sub-section narrowing, so a section with no sub-groups of its own
+// (Core's own "API reference" is a single link, not a group) still
+// correctly isolates to just its own top-level group instead of falling
+// through to Vue's much larger tree.
+const FRAMEWORK_SIDEBARS: { prefix: string; groupLabel: string }[] = [
+  { prefix: `/vue`, groupLabel: `Vue` },
+  { prefix: `/core`, groupLabel: `Core` },
+];
+
+// Maps a URL path prefix to the top-level sidebar group label to isolate
+// *within* the already-framework-isolated tree. Vue has real sub-trees
+// worth narrowing to (Guide/Components/API/Examples); Core only has one
+// (Guide) — its own "API reference" entry is a single link, matching
+// KDL's own "Features" case: no subtree, so nothing further to narrow.
+const SECTION_SIDEBARS: { prefix: string; groupLabel: string }[] = [
+  { prefix: `/vue/guide`, groupLabel: `Guide` },
+  { prefix: `/vue/components`, groupLabel: `Components` },
+  { prefix: `/vue/api`, groupLabel: `API` },
+  { prefix: `/vue/examples`, groupLabel: `Examples` },
+  { prefix: `/vue/features`, groupLabel: `Features` },
+  { prefix: `/core/guide`, groupLabel: `Guide` },
+];
+
+// Pages that get a specific sidebar group despite not falling under a
+// deeper URL prefix of their own — matched by EXACT pathname, not
+// substring inclusion like SECTION_SIDEBARS above. A substring check on
+// a short path like `/vue/` would also incorrectly match every other
+// page nested under it (e.g. `/vue/features`, which itself contains
+// `/vue/` as a substring) — exact match avoids that collateral effect.
+const EXACT_SECTION_SIDEBARS: { path: string; groupLabel: string }[] = [
+  // Vue's own Overview page shows only Guide, by request — a deliberate
+  // choice for this project specifically, not something KDL's own real
+  // site does (its own Overview page shows the whole Vue tree expanded
+  // instead) — confirmed directly against that project's real
+  // localhost:4321/vue/, not assumed.
+  { path: `/vue/`, groupLabel: `Guide` },
+];
+
+// Recurses through the sidebar tree looking for a group with the given
+// label, at any depth. Keeps working unchanged if the sidebar's own
+// nesting shape changes, as long as the label itself doesn't.
+function findGroup(entries: SidebarEntry[], groupLabel: string): SidebarEntry[] | null {
+  for (const entry of entries) {
+    if (entry.type !== `group`) continue;
+    if (entry.label === groupLabel) return [entry];
+    const nested = findGroup(entry.entries, groupLabel);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+// Same recursive search as findGroup above, but for a single entry of
+// any type (a plain link, not just a group) — used to pull the
+// "Overview" link entry back out for prepending above a narrowed group,
+// since findGroup itself only ever matches `type === 'group'` entries
+// and Overview is a plain link.
+function findEntry(entries: SidebarEntry[], label: string): SidebarEntry | null {
+  for (const entry of entries) {
+    if (entry.label === label) return entry;
+    if (entry.type === `group`) {
+      const nested = findEntry(entry.entries, label);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+// Isolates a named section regardless of whether it's a real group
+// (Guide, Components, API, Examples — has its own sub-items) or a plain
+// single link (Features — no sub-items of its own). Tries findGroup
+// first since that's the common case; falls back to wrapping a single
+// findEntry match in an array so a link-only section like Features
+// narrows down to just itself instead of silently falling through to
+// the full, unfiltered tree the way it originally did.
+function findSection(entries: SidebarEntry[], label: string): SidebarEntry[] | null {
+  const group = findGroup(entries, label);
+  if (group) return group;
+  const entry = findEntry(entries, label);
+  return entry ? [entry] : null;
+}
+
+const { sidebar } = Astro.props;
+
+// Step 1: isolate to the current top-level group (Vue or Core) first —
+// this is what stops /core/* pages from also showing Vue's entire tree.
+// Falls back to the full sidebar only for a route matching neither (the
+// plain landing page isn't Starlight-rendered at all, so in practice
+// this fallback is more a safety net than something a real route hits).
+const matchedFramework = FRAMEWORK_SIDEBARS.find(({ prefix }) => Astro.url.pathname.includes(prefix));
+const frameworkSidebar = matchedFramework ? (findGroup(sidebar, matchedFramework.groupLabel) ?? sidebar) : sidebar;
+
+// Step 2: within that already-isolated tree, narrow further to the
+// specific Guide/Components/API/Examples sub-section if the route
+// matches one — an exact-pathname match (Vue's own Overview page) takes
+// priority over the prefix-based one, since the Overview page's own URL
+// would otherwise also satisfy a prefix check meant for pages nested
+// under it.
+const matchedExactSection = EXACT_SECTION_SIDEBARS.find(({ path }) => Astro.url.pathname === path);
+const matchedSection = SECTION_SIDEBARS.find(({ prefix }) => Astro.url.pathname.includes(prefix));
+const matchedSectionLabel = matchedExactSection?.groupLabel ?? matchedSection?.groupLabel;
+const narrowedGroup = matchedSectionLabel ? (findSection(frameworkSidebar, matchedSectionLabel) ?? frameworkSidebar) : frameworkSidebar;
+
+// Small framework badge (logo + label) shown above the sidebar whenever
+// browsing under Vue — narrowing the sidebar down to a single section
+// (above) drops the top-level "Vue" group label that would otherwise
+// identify which framework's docs these are, so this restores that
+// context. Vue-only for now, added at your specific request; not yet
+// extended to Core (which has the same now-label-less narrowing
+// applied to it, just not asked about).
+const isVue = matchedFramework?.groupLabel === `Vue`;
+
+// "Overview" link, shown above the narrowed section on every Vue page
+// (not just the exact Overview page itself, and not conditioned on
+// `matchedExactSection` the way it originally was) — narrowing to a
+// single section on ANY Vue page would otherwise drop the only way back
+// to the Overview page from the sidebar, since Overview isn't part of
+// any of the narrowed groups themselves. Same Vue-only scope as the
+// badge above, kept consistent with it at your request.
+const overviewLink = isVue ? findEntry(frameworkSidebar, `Overview`) : null;
+const displayedSidebar = overviewLink ? [overviewLink, ...narrowedGroup] : narrowedGroup;
+---
+
+{isVue && (
+  <div class="framework-badge">
+    <svg viewBox="0 0 24 24" fill="#42B883"><path d="M24,1.61H14.06L12,5.16,9.94,1.61H0L12,22.39ZM12,14.08,5.16,2.23H9.59L12,6.41l2.41-4.18h4.43Z"/></svg>
+    <span>Vue</span>
+  </div>
+)}
+<SidebarPersister {...Astro.props}>
+  <SidebarSublist sublist={displayedSidebar} />
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter {...Astro.props} />
+</div>
+
+<style>
+  .framework-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.25rem 0.5rem 0.75rem;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--sl-color-text);
+  }
+
+  .framework-badge svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+</style>

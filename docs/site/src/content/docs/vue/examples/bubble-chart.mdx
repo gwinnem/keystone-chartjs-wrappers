@@ -1,0 +1,14 @@
+---
+title: Bubble chart
+description: A built-in Chart.js kind using {x, y, r} data points.
+---
+import BubbleChart from '../../../../components/examples/bubble-chart.vue';
+import BubbleChartSource from '../../../../components/examples/bubble-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`bubble` datasets use `{ x, y, r }` data points — `r` sets each bubble's
+own radius, independent of the x/y axes.
+
+<ExampleTryIt code={BubbleChartSource} filename="bubble-chart.vue">
+  <BubbleChart client:visible />
+</ExampleTryIt>

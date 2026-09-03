@@ -1,0 +1,25 @@
+---
+title: Bar chart
+description: The simplest possible setup — a Chart bound to a data ref, with a button that replaces it wholesale.
+---
+import BarChart from '../../../../components/examples/bar-chart.vue';
+import BarChartSource from '../../../../components/examples/bar-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The simplest possible setup: a `<Chart type="bar">` bound to a `data` ref.
+Clicking the button replaces `data` with a whole new object — the same
+top-level `type`, so this updates the existing chart in place rather than
+destroying and recreating it.
+
+<ExampleTryIt code={BarChartSource} filename="bar-chart.vue">
+  <BarChart client:visible />
+</ExampleTryIt>
+
+:::tip[Replace the object, don't mutate it in place]
+Passing a brand-new `data` object (as this example's own `randomize()`
+does) is what the internal `watch()` reliably detects. A nested, in-place
+mutation of an *already-reactive* object (wrapped in Vue's own
+`reactive()`) also works — see this component's own test suite for that
+exact case — but a plain object mutated in place, without either of
+those, won't reliably trigger an update.
+:::

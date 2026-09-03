@@ -1,0 +1,43 @@
+---
+title: Timestack scale
+description: chartjs-scale-timestack, registered via the timestack prop, formatting time in two stacked, human-friendly rows.
+---
+import TimestackScaleSource from '../../../../components/examples/timestack-scale.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `timestack` prop opts into the real `chartjs-scale-timestack`
+package, registered on first use — like `gradient`, it's boolean only:
+there's no `Chart.register(...)`-able export at all (the package
+registers its own scale as a side effect of being imported) and no
+plugin-level config of its own either. Use it by setting
+`options.scales.<id>.type = 'timestack'`, which already reaches Chart.js
+untouched via the existing `options` prop.
+
+:::caution[Not yet live-embedded on this docs site]
+This example isn't hydrated on this page yet — same known gap as the
+[Zoom plugin](/vue/examples/zoom-plugin) and
+[Gradient plugin](/vue/examples/gradient-plugin) examples: this docs
+site resolves `keystone-chartjs-core` from this monorepo's own workspace
+source, not a published package, and the dynamic import that lazily
+registers plugins/scales like `chartjs-scale-timestack` doesn't
+currently resolve correctly across that boundary in Vite's dev server.
+The code below is real and correct — confirmed working end-to-end in
+this package's own Playwright e2e suite
+(`packages/vue/tests/e2e/timestack-scale.spec.ts`) — this is a
+docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
+itself. Expected to resolve once this package is built/published for
+real (Phase 7).
+:::
+
+<ExampleTryIt code={TimestackScaleSource} filename="timestack-scale.vue" live={false} />
+
+:::tip[Real, hard dependency on Luxon]
+`chartjs-scale-timestack` requires `luxon` for locale-aware time
+formatting — a real, sizeable added dependency if you opt into this
+scale, not merely optional. Data points must be `{x, y}` with
+millisecond timestamps; X-values as labels aren't supported, and custom
+tick `callback`s are ignored — see the
+[package's own README](https://github.com/jkmnt/chartjs-scale-timestack)
+for its full list of documented constraints. See
+[Plugins](/vue/api/plugins) for the full prop reference.
+:::

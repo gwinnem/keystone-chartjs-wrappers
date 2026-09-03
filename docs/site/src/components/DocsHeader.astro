@@ -1,0 +1,266 @@
+---
+// Overrides Starlight's default Header, following
+// keystone-dashboard-layout's own real Header.astro override closely
+// (read directly from that project, not guessed) — same VitePress-style
+// top nav: a row of top-level section links (per framework), Starlight's
+// own real Search component, and a small custom icon row. The earlier
+// version of this file used hand-rolled --kg-* colors/fonts for the nav
+// text; this rewrite uses Starlight's own design tokens instead
+// (--sl-color-*, --sl-text-*, --sl-nav-*) for anything living inside the
+// Starlight shell, matching KDL's actual approach — --kg-* stays reserved
+// for one-off brand elements (the logo mark's own fill colors), not
+// general typography/color.
+//
+// Search: `virtual:starlight/components/Search` is the real import path
+// (confirmed directly from KDL's own source) — not
+// '@astrojs/starlight/components/Search.astro', which happened to also
+// work in earlier testing here but isn't the pattern KDL itself uses.
+//
+// NOTE (same caveat KDL's own file states): only the desktop (>=50rem)
+// layout is designed here. Starlight's mobile menu toggle/drawer
+// behavior is tied to class names and JS in the default
+// Header/MobileMenuToggle — worth testing on a narrow viewport.
+import Search from 'virtual:starlight/components/Search';
+
+const FRAMEWORK_KEYS = ['vue', 'react', 'angular', 'core'];
+const pathname = Astro.url.pathname;
+const currentFramework =
+  FRAMEWORK_KEYS.find((key) => pathname.startsWith(`/${key}/`)) ?? 'vue';
+const base = `/${currentFramework}`;
+
+// Per-framework nav-link arrays, same shape as KDL's own
+// VUE_NAV_LINKS/REACT_NAV_LINKS/etc. — Core gets its own shorter list
+// (no Features/Components/Examples of its own, matching KDL's own
+// reasoning for its Core section), everything else gets the full set.
+// React/Angular/Core pages are archived right now (see
+// docs/site/_archived-pages/) — these arrays are wired up ready for
+// when those pages return, not dead links today, since currentFramework
+// only ever resolves to 'vue' while the others' folders don't exist
+// under src/content/docs/.
+const navLinks =
+  currentFramework === 'core'
+    ? [
+        { label: 'Guide', href: `${base}/guide/introduction` },
+        { label: 'API reference', href: `${base}/api` },
+      ]
+    : currentFramework === 'angular'
+      ? [
+          { label: 'Guide', href: `${base}/guide/introduction` },
+          { label: 'Features', href: `${base}/features` },
+          { label: 'Components', href: `${base}/components` },
+          { label: 'API', href: `${base}/api` },
+          // Angular's own examples live in a standalone app, not docs
+          // pages — see IMPLEMENTATION_PLAN.md Phase 4. Placeholder
+          // href until that app exists.
+          { label: 'Examples', href: 'https://github.com/gwinnem/keystone-chartjs-wrappers' },
+        ]
+      : [
+          { label: 'Guide', href: `${base}/guide/introduction` },
+          { label: 'Features', href: `${base}/features` },
+          { label: 'Components', href: `${base}/components` },
+          { label: 'API', href: `${base}/api` },
+          { label: 'Examples', href: `${base}/examples` },
+          { label: 'Changelog', href: `${base}/guide/changelog` },
+        ];
+
+const npmHref = `https://www.npmjs.com/package/keystone-chartjs-${currentFramework}`;
+
+const isCurrent = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+const iconLinks: { label: string; href: string; svg: string; color?: string }[] = [
+  {
+    label: 'GitHub',
+    href: 'https://github.com/gwinnem/keystone-chartjs-wrappers',
+    svg: `<path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>`,
+  },
+  {
+    label: 'X',
+    href: 'https://x.com/gwinnem',
+    svg: `<path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/>`,
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/gwinnem/',
+    color: '#0A66C2',
+    svg: `<path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45Z"/>`,
+  },
+  {
+    label: 'Xing',
+    href: 'https://www.xing.com/profile/Geirr_Winnem',
+    svg: `<path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L1.86 16.051c-.099.188-.093.381 0 .529.085.142.239.234.45.234h3.461c.518 0 .766-.348.945-.667l3.734-6.609-2.378-4.155c-.172-.315-.434-.659-.962-.659H3.648v.016z"/>`,
+  },
+];
+---
+
+<div class="header sl-flex">
+  <div class="left-group sl-flex">
+    <div class="title-wrapper sl-flex">
+      <a class="site-title sl-flex" href={Astro.props.siteTitleHref}>
+        <svg class="site-title-icon" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+          <rect fill="#4FB8C9" height="11" rx="1" width="4" x="1" y="10" />
+          <rect fill="#F2A93B" height="17" rx="1" width="4" x="7" y="4" />
+          <rect fill="#4FB8C9" height="9" rx="1" width="4" x="13" y="12" />
+          <rect fill="#F5F4EF" fill-opacity="0.5" height="20" rx="1" width="2" x="19" y="1" />
+        </svg>
+        <span>KCW</span>
+        <span class="site-title-tooltip">Keystone Chart.js Wrappers</span>
+      </a>
+    </div>
+    <nav class="top-nav sl-hidden md:sl-flex" aria-label="Sections">
+      {navLinks.map((link) => (
+        <a class={isCurrent(link.href) ? 'is-current' : ''} href={link.href}>{link.label}</a>
+      ))}
+    </nav>
+  </div>
+  <div class="sl-flex">
+    <Search {...Astro.props} />
+  </div>
+  <div class="sl-hidden md:sl-flex right-group">
+    <div class="sl-flex icon-links">
+      {iconLinks.map((link) => (
+        <a
+          href={link.href}
+          rel="me"
+          aria-label={link.label}
+          class="sl-flex icon-link"
+          style={link.color ? `color: ${link.color}` : undefined}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" set:html={link.svg} />
+          <span class="icon-link-tooltip">{link.label}</span>
+        </a>
+      ))}
+      <a href={npmHref} rel="me" aria-label="npm" class="sl-flex icon-link" target="_blank">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#CB3837"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>
+        <span class="icon-link-tooltip">npm</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .header {
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+  }
+
+  .left-group {
+    align-items: center;
+    gap: 2rem;
+    min-width: 0;
+  }
+
+  .title-wrapper {
+    overflow: visible;
+    padding: 0.25rem;
+    margin: -0.25rem;
+    min-width: 0;
+  }
+
+  .site-title {
+    align-items: center;
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-h4);
+    font-weight: 600;
+    gap: 0.5rem;
+    position: relative;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .site-title-icon {
+    height: calc(var(--sl-nav-height) - 2 * var(--sl-nav-pad-y) - 4px);
+    width: auto;
+  }
+
+  .site-title-tooltip {
+    background: var(--sl-color-black);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 4px;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+    left: 0;
+    opacity: 0;
+    padding: 4px 8px;
+    pointer-events: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    transform: translateY(-4px);
+    transition: opacity 150ms ease, transform 150ms ease;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .site-title:hover .site-title-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .top-nav {
+    gap: 1.5rem;
+    align-items: center;
+    font-size: var(--sl-text-sm);
+    white-space: nowrap;
+  }
+
+  .top-nav a {
+    color: var(--sl-color-text);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .top-nav a:hover,
+  .top-nav a.is-current {
+    color: var(--sl-color-text-accent);
+  }
+
+  .right-group,
+  .icon-links {
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .icon-links {
+    border-inline-start: 1px solid var(--sl-color-gray-5);
+    padding-inline-start: 1rem;
+  }
+
+  .icon-links a {
+    color: var(--sl-color-text);
+    transition: opacity 150ms;
+  }
+
+  .icon-links a:hover {
+    opacity: 0.7;
+  }
+
+  .icon-link {
+    position: relative;
+  }
+
+  .icon-link-tooltip {
+    background: var(--sl-color-black);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 4px;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+    left: 50%;
+    opacity: 0;
+    padding: 4px 8px;
+    pointer-events: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    transform: translate(-50%, -4px);
+    transition: opacity 150ms ease, transform 150ms ease;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .icon-link:hover .icon-link-tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+</style>

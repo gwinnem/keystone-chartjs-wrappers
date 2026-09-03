@@ -1,0 +1,34 @@
+---
+title: Chart events
+description: Reacting to clicks on chart elements via Chart.js's own native options.onClick — no extra prop needed.
+---
+import ChartEvents from '../../../../components/examples/chart-events.vue';
+import ChartEventsSource from '../../../../components/examples/chart-events.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+Reacting to interaction on a chart doesn't need a dedicated prop or a Vue
+event — Chart.js's own native `options.onClick`/`options.onHover`
+callbacks reach `<Chart>` untouched via the `options` prop, exactly like
+any other option. The callback's own second argument is already the array
+of chart elements at the interaction point, so no extra lookup call is
+needed to find out what was clicked.
+
+<ExampleTryIt code={ChartEventsSource} filename="chart-events.vue">
+  <ChartEvents client:visible />
+</ExampleTryIt>
+
+:::tip[This is Chart.js's own API, not this library's]
+`onClick`/`onHover` are Chart.js's own native chart-level options —
+nothing here is `keystone-chartjs-vue`-specific. `options` reaches
+Chart.js completely untouched, so any interaction option Chart.js
+supports already works today. See
+[Options resolution](/vue/guide/concepts/options-resolution) for how
+options like these get resolved.
+:::
+
+:::tip[Need the raw Chart.js instance instead?]
+For anything beyond what an `options` callback covers — calling
+`chart.getElementsAtEventForMode()` yourself, or reading `chart.data`
+directly — use the [exposed `chart` ref](/vue/components/props#escape-hatch)
+instead.
+:::
