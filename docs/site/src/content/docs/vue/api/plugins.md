@@ -5,7 +5,7 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 
 | Plugin | Package | Purpose | Prop | Status |
 |---|---|---|---|---|
-| Zoom/pan | `chartjs-plugin-zoom` | Mouse-wheel/pinch zoom, drag pan | `zoom` | Implemented |
+| Zoom/pan | locally ported, not a dependency | Wheel-zoom, drag-to-zoom, pinch-zoom, touch/pen pan, plus a full programmatic API | `zoom` | Implemented |
 | Annotations | `chartjs-plugin-annotation` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area | `annotation` | Implemented |
 | Data labels | `chartjs-plugin-datalabels` | Renders a label directly on each data element | `dataLabels` | Implemented |
 | Gradient | locally ported, not a dependency | Per-dataset color gradients, keyed by axis position | `gradient` | Implemented |
@@ -16,9 +16,11 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 These are chart-instance plugins, not chart types — they apply across
 whichever `type` you use them with. Each is a one-line opt-in prop on
 `<Chart>` (see [Props](/vue/components/props)) rather than requiring a
-manual `Chart.register()` call in consumer code — the backing package is
-dynamically imported and registered automatically, the first time the prop
-is used (except `gradient`/`imageLabel` — see their own sections below).
+manual `Chart.register()` call in consumer code — the two still-
+dependency-based ones (`annotation`, `dataLabels`) are dynamically
+imported and registered automatically, the first time the prop is used
+(`zoom`/`gradient`/`imageLabel` are local code instead — see their own
+sections below).
 
 `zoom`/`dataLabels` accept either `true` (apply with no extra config) or a
 config object merged into `options.plugins.zoom`/`options.plugins.datalabels`
@@ -28,6 +30,64 @@ with at least one entry under `annotations`.
 ```vue
 <Chart type="line" :data="data" zoom dataLabels :annotation="{ annotations: { line1: { type: 'line', yMin: 50, yMax: 50 } } }" />
 ```
+
+## Zoom/pan — a local port, not a dependency
+
+`zoom` accepts either `true` or a config object merged into
+`options.plugins.zoom`, same as before the port — its own config shape
+is unchanged. What changed is where its logic lives: originally
+`chartjs-plugin-zoom`, now ported directly into `keystone-chartjs-core`
+(`src/zoomPlugin.ts`), never registered via `Chart.register(...)`,
+supplied per-chart-instance via Chart.js's own inline `plugins` array
+instead (the same mechanism `gradient`/`imageLabel` below use).
+
+```vue
+<Chart
+  type="line"
+  :data="data"
+  :zoom="{
+    zoom: { wheel: { enabled: true }, drag: { enabled: true }, pinch: { enabled: true } },
+    pan: { enabled: true },
+  }"
+/>
+```
+
+**Hammer.js is gone, but pinch-zoom and interactive pan are not** — the
+original drove both through Hammer.js, which is itself unmaintained
+(confirmed via a real, open upstream issue). Rather than dropping these
+two features along with that dependency, this port reimplements both
+directly on the standards-based **Pointer Events API**
+(`pointerdown`/`pointermove`/`pointerup`/`pointercancel`), which unifies
+mouse/touch/pen input with no external dependency at all:
+
+- **`zoom.pinch.enabled`** — two-finger pinch-zoom.
+- **`pan.enabled`** — single-finger (or pen) drag-to-pan, honoring
+  `pan.threshold` (minimum drag distance before a pan is recognized) and
+  `pan.onPanStart`/`onPanRejected`/`onPanComplete` exactly as documented
+  below.
+
+**A real, honest limitation worth knowing precisely**: mouse input is
+deliberately excluded from this pointer-event path entirely — mouse
+users get wheel-zoom and drag-to-zoom-rectangle only, with `chart.pan()`
+still callable *programmatically* (useful for a consumer's own custom
+pan buttons, as the docs example below does) but no interactive
+mouse-drag-to-pan gesture. This matches the original package's own real
+mouse behavior, not a new limitation this port introduced: dissecting
+the original's own source directly confirmed it never had a mouse-only
+pan gesture either — `pan()` there was *only* ever invoked from
+Hammer's own gesture recognizer, which handled touch and mouse-pointer
+drags identically. There was no separate "mouse-drag-to-pan" code path
+to port in the first place.
+
+The full programmatic API is unaffected by any of this: `chart.zoom()`,
+`chart.zoomRect()`, `chart.zoomScale()`, `chart.resetZoom()`,
+`chart.pan()`, `chart.getZoomLevel()`, `chart.getInitialScaleBounds()`,
+`chart.getZoomedScaleBounds()`, `chart.isZoomedOrPanned()`,
+`chart.isZoomingOrPanning()` all work regardless of which interactive
+features are enabled.
+
+See the [Zoom plugin example](/vue/examples/zoom-plugin) for the full
+version.
 
 ## Gradient — a local port, not a dependency, config lives on the dataset
 
@@ -57,10 +117,10 @@ on a third-party package at all — its logic (originally
 `chartjs-plugin-gradient`) is ported directly into `keystone-chartjs-core`
 (`src/gradientPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
-instead (the same mechanism `imageLabel` below uses). Being local code
-rather than a dynamic import also means this is one of only two plugins
-on this project's docs site (alongside `imageLabel`) whose own example
-renders genuinely live rather than source-only.
+instead (the same mechanism `zoom`/`imageLabel` use). Being local code
+rather than a dynamic import also means this is one of three plugins on
+this project's docs site (alongside `zoom` and `imageLabel`) whose own
+example renders genuinely live rather than source-only.
 
 See the [Gradient plugin example](/vue/examples/gradient-plugin) for the
 full version, and
@@ -105,8 +165,8 @@ version.
 ## Hierarchical — another real scale, with its own real named export
 
 `hierarchical` is boolean only too, but registers differently from
-every other still-dependency-based helper in this file — confirmed
-directly from the real package's own README
+`timestack`, the other still-dependency-based scale in this file —
+confirmed directly from the real package's own README
 (github.com/sgratzl/chartjs-plugin-hierarchical): its ESM build is
 genuinely tree-shakeable with no side effects, so it needs an explicit
 `Chart.register(HierarchicalScale)` call via its own real, confirmed
@@ -136,14 +196,14 @@ full version.
 
 ## Image label — a local port, not a dependency, doughnut/pie only
 
-Genuinely different mechanism from every still-dependency-based helper
-above: `imageLabel` is never registered globally via
-`Chart.register(...)` at all — it's supplied per-chart-instance, via
-Chart.js's own real inline `plugins` array, the same mechanism the
-`plugins` prop below already exposes for custom/community plugins.
-Unlike `gradient`, it has no plain-boolean opt-in form —
-`imagesList` is required, since there's no sensible empty default (same
-reasoning as `annotation`):
+Genuinely different mechanism from `annotation`/`dataLabels` (the only
+two still-dependency-based plugins left): `imageLabel` is never
+registered globally via `Chart.register(...)` at all — it's supplied
+per-chart-instance, via Chart.js's own real inline `plugins` array, the
+same mechanism the `plugins` prop below already exposes for
+custom/community plugins. Unlike `gradient`/`zoom`, it has no
+plain-boolean opt-in form — `imagesList` is required, since there's no
+sensible empty default (same reasoning as `annotation`):
 
 ```vue
 <Chart

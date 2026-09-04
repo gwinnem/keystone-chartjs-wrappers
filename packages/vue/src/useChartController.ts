@@ -42,14 +42,18 @@ export interface UseChartControllerProps {
    * config. As of the port, this plugin is never registered globally
    * via `Chart.register(...)` — supplied per-chart-instance via
    * Chart.js's own real inline `plugins` array instead, the same
-   * mechanism `gradient`/`imageLabel` below use. **Real scope
-   * limitation, not a bug**: this port drops every Hammer.js-dependent
-   * code path (pinch-zoom, and *all* interactive drag-to-pan, since the
-   * original has no separate mouse-only pan mechanism at all — see
-   * `zoomPlugin.ts`'s own header comment for the full finding). Mouse-
-   * wheel zoom, mouse-drag-to-zoom-rectangle, and the full programmatic
-   * API (`chart.zoom()`, `chart.resetZoom()`, `chart.pan()`, etc.) are
-   * all kept. */
+   * mechanism `gradient`/`imageLabel` below use. **Hammer.js is gone,
+   * but pinch and interactive pan are not** — both are reimplemented
+   * directly on the standards-based Pointer Events API instead of the
+   * original's own Hammer.js dependency (itself confirmed
+   * unmaintained — see `zoomPlugin.ts`'s own header comment). Set
+   * `zoom.pinch.enabled` for pinch-zoom and `pan.enabled` for
+   * single-finger touch/pen pan — mouse drag stays wheel-zoom/drag-to-
+   * zoom-rectangle only, matching the original's own real mouse
+   * behavior (it never had a separate mouse-drag-to-pan gesture
+   * either). The full programmatic API (`chart.zoom()`,
+   * `chart.resetZoom()`, `chart.pan()`, etc.) is available regardless
+   * of what's enabled here. */
   zoom?: ZoomPluginOptions | boolean;
   /** Opt-in to `chartjs-plugin-annotation` — no plain-boolean form (unlike
    * `zoom`/`dataLabels`): `AnnotationPluginOptions.annotations` is

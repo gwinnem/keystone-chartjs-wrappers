@@ -70,7 +70,7 @@ risk, though all three are presently active.
 
 | Plugin | Package | Confirmed version | Purpose |
 |---|---|---|---|
-| Zoom/pan | `chartjs-plugin-zoom` | `^2.2.0` | Mouse-wheel/pinch zoom, drag pan. |
+| Zoom/pan | `chartjs-plugin-zoom` (later locally ported, not a dependency — see below) | `2.2.0` | Mouse-wheel/pinch zoom, drag pan. |
 | Annotations | `chartjs-plugin-annotation` | `^3.1.0` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area; works with line/bar/scatter/bubble charts. |
 | Data labels | `chartjs-plugin-datalabels` | `^2.2.0` | Renders a label directly on each data element. |
 
@@ -80,6 +80,85 @@ kinds the consumer uses them with. The wrapper's job is to (a) make registering
 them a one-line opt-in per framework, and (b) surface typed `options.plugins.*`
 shapes for each, rather than leaving consumers to hand-type against the plugins'
 own (often looser) option interfaces.
+
+### Zoom/pan — later locally ported, not a dependency
+
+`chartjs-plugin-zoom` was part of the original v1 scope decision above, and
+stayed a real npm dependency for most of this project's own history — see §6
+below for the Hammer.js dependency concern flagged early on, and
+`docs/ZOOM_PLUGIN_PORT_PLAN.md` for the full scope analysis written before
+the port started.
+
+**Later ported directly into `packages/core/src/zoomPlugin.ts`, at your
+explicit request, the same way `chartjs-plugin-gradient`/`chartjs-plugin-
+image-label` were** — it is not, and is no longer, a real npm dependency of
+this project (`hammerjs` is gone too, as a direct consequence — see below).
+
+**A real, deliberate scope decision, made explicitly rather than
+silently, later revisited**: this port originally dropped every
+Hammer.js-dependent code path — pinch-zoom, and the gesture-driven pan
+interaction — keeping only what was plain DOM event handling at the
+time: mouse-wheel zoom, mouse-drag-to-zoom-rectangle (with
+Escape-to-cancel), and the full programmatic API (`chart.zoom()`,
+`chart.zoomRect()`, `chart.zoomScale()`, `chart.resetZoom()`,
+`chart.pan()`, `chart.getZoomLevel()`, `chart.getInitialScaleBounds()`,
+`chart.getZoomedScaleBounds()`, `chart.isZoomedOrPanned()`,
+`chart.isZoomingOrPanning()`). **Pinch-zoom and interactive pan were
+later added back in, at your explicit request, reimplemented directly
+on the standards-based Pointer Events API
+(`pointerdown`/`pointermove`/`pointerup`/`pointercancel`)** — which
+unifies mouse/touch/pen input with no external dependency at all —
+rather than staying dropped. `zoom.pinch.enabled` opts into two-finger
+pinch-zoom; `pan.enabled` opts into single-finger/pen drag-to-pan,
+honoring `pan.threshold`/`onPanStart`/`onPanRejected`/`onPanComplete`
+(previously dead configuration with no gesture to apply to — now
+genuinely functional). Mouse input is deliberately excluded from this
+pointer-event path: mouse users keep wheel-zoom and drag-to-zoom-
+rectangle only, with `chart.pan()` still callable programmatically.
+This resolves the exact Hammer.js unmaintained-dependency concern §6
+originally flagged as an open question — it's no longer open — while
+keeping the original's own real feature set intact via a maintained,
+dependency-free replacement instead of a permanent feature cut.
+
+**A real, honest finding from dissecting the original source, not
+assumed from the port plan's own earlier (slightly imprecise)
+summary**: the original plugin has no mouse-only drag-to-pan mechanism
+at all — `pan()` is only ever invoked from Hammer's own `handlePan()`
+(driven by `Hammer.Pan()`, which recognizes both touch *and*
+mouse-pointer drags identically). This port's own pointer-event-based
+pan is touch/pen-only for that reason, not an arbitrary new
+limitation — there was no separate "mouse-drag-to-pan" code path in the
+original to reproduce for mouse users in the first place.
+
+**Two real bugs found and fixed in the port itself, not the original
+package** — confirmed via failing tests during the port, not assumed: (1) an
+earlier draft used `enabledScales.length ? enabledScales :
+liveScales(chart)` to mirror the original's own `enabledScales ||
+chart.scales` — but an empty array is truthy in JavaScript, so the original
+never actually falls back at all; the `.length`-based version zoomed every
+scale whenever none matched the enabled directions, instead of zooming none.
+(2) an earlier draft coerced a genuinely-possibly-`undefined` pixel-to-value
+result to `NaN` for type-safety reasons, which silently made the original's
+own real `logarithmicZoomRange` early-return branch (for an out-of-range
+pixel) permanently unreachable.
+
+**Genuinely distinct registration shape, same as `withGradient`/
+`withImageLabel`'s own local ports**: never passed to a global
+`Chart.register(...)` call — supplied per-chart-instance via Chart.js's own
+real inline `plugins` array instead. Unlike `gradient`/`imageLabel`, `zoom`
+does have real plugin-level config of its own (`pan`/`zoom` sub-objects),
+merged into `options.plugins.zoom` — so `withZoom`'s own boolean-or-config-
+object opt-in shape is unchanged from before the port.
+
+**Full verification via 93+ dedicated unit tests**, each exercising real DOM
+event dispatch (`mousedown`/`mousemove`/`mouseup`/`wheel`/`keydown`/
+`pointerdown`/`pointermove`/`pointerup`) against a real jsdom `<canvas>`
+element, achieving 100% statement and 97%+ branch coverage on the ported
+file — confirmed via a real `test:coverage` run, not assumed. One
+genuinely untestable gap, documented in code rather than forced: jsdom
+has no `setPointerCapture` on `Element.prototype` at all, so the "real
+capture happens" branch of that optional-chained call can only ever be
+exercised in a real browser.
 
 ### Added after v1 kickoff: Gradient (later locally ported, not a dependency)
 
@@ -134,11 +213,11 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — this is now the second of this
-project's plugins/scales (alongside `imageLabel`) that renders live on
-the docs site rather than source-only, for the identical reason: local,
-static code has no dynamic `import()` for the docs-site hydration gap
-(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+varying by each bar's own height — one of three of this project's
+plugins/scales (alongside `imageLabel` and, later, `zoom`) that renders
+live on the docs site rather than source-only, for the identical reason:
+local, static code has no dynamic `import()` for the docs-site hydration
+gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 ### Added after v1 kickoff: Timestack
 
@@ -239,11 +318,13 @@ to resolve when the importing file is served from outside the docs
 site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this and `gradient` are the only two of the seven plugin/scale
-examples on the docs site that render live rather than source-only.
+assumed: this, `gradient`, and, later, `zoom` are the only three of the
+seven plugin/scale examples on the docs site that render live rather
+than source-only.
 
-**Genuinely distinct registration shape, same as `withGradient`’s own
-local port — different from `withTimestack`/`withHierarchical`**:
+**Genuinely distinct registration shape, same as `withGradient`’s and
+`withZoom`’s own local ports — different from `withTimestack`/
+`withHierarchical`**:
 never passed to a global `Chart.register(...)` call. Unlike
 `withTimestack`/`withHierarchical`, it's also never a real module import
 at all — the plugin object (`imageLabelPlugin` in `imageLabelPlugin.ts`)
@@ -267,23 +348,24 @@ matching `annotation`'s own reasoning. Doughnut/pie charts only.
 
 ## 6. Open questions — resolved
 
-Both items previously open here have been checked directly against npm/GitHub:
+All items previously open here have been checked directly against npm/GitHub,
+or resolved by a later decision:
 
 - **Extension package versions** (§3) — verified and pinned above. No longer
   open; update the placeholder ranges in each package's `package.json`
   accordingly at the start of Phase 1/5.
-- **`chartjs-plugin-zoom`'s Hammer.js dependency** — confirmed as a hard,
-  non-optional runtime `dependency` in the plugin's own `package.json`
-  (`hammerjs: ^2.0.8`, plus `@types/hammerjs`), not merely a peer or optional
-  gesture-recognition add-on. There is a real, open upstream issue
-  (chartjs/chartjs-plugin-zoom#938) flagging that Hammer.js itself has been
-  unmaintained for years (no release since well before Chart.js 4 shipped)
-  and already emits build-tool warnings (non-ESM module) under modern
-  bundlers. **Decision needed before Phase 5**: pull in `chartjs-plugin-zoom`
-  as-is (accepting the unmaintained transitive dependency for pinch-gesture
-  support), or scope the wrapper's zoom integration to pointer/wheel-only
-  interactions and treat Hammer.js's pinch-gesture path as unsupported. This
-  directly affects the "minimal runtime dependencies" claim made about
-  `packages/core` — that claim should be scoped explicitly to core itself
-  (which has none) rather than implied for consumers who opt into the zoom
-  plugin.
+- **`chartjs-plugin-zoom`'s Hammer.js dependency** — originally confirmed as
+  a hard, non-optional runtime `dependency` in the plugin's own
+  `package.json` (`hammerjs: ^2.0.8`, plus `@types/hammerjs`), not merely a
+  peer or optional gesture-recognition add-on, with a real, open upstream
+  issue (chartjs/chartjs-plugin-zoom#938) flagging Hammer.js itself as
+  unmaintained for years. **Resolved, not just decided**: `chartjs-plugin-
+  zoom` was later ported locally into `packages/core/src/zoomPlugin.ts` (see
+  §4 above), dropping Hammer.js itself entirely — `hammerjs` and
+  `@types/hammerjs` are no longer dependencies of this project at all,
+  transitively or otherwise. Pinch-zoom and interactive pan, which the
+  original drove through Hammer.js, were **not** left as a permanent
+  feature cut: both were later reimplemented directly on the standards-
+  based Pointer Events API instead, with no external dependency of any
+  kind. The "minimal runtime dependencies" claim about `packages/core` no
+  longer needs the scoping caveat this section originally called for.

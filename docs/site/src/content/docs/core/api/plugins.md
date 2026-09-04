@@ -4,14 +4,12 @@ description: The 7 official Chart.js plugin/scale helpers this project wires in.
 ---
 
 One function per official Chart.js plugin/scale this project targets.
-Four of the seven register a third-party package (dynamically imported,
+Two of the seven register a third-party package (dynamically imported,
 once) and return `options` with the plugin's own config merged into its
 real path under `options.plugins`, without touching any other existing
-`plugins.*` entry. `withGradient` and `withImageLabel` are genuinely
-different — see their own section below.
+`plugins.*` entry. `withZoom`, `withGradient`, and `withImageLabel` are
+genuinely different — see their own section below.
 
-- **`withZoom(options, zoomOptions?)`** — registers `chartjs-plugin-zoom`;
-  merges `zoomOptions` into `options.plugins.zoom`.
 - **`withAnnotation(options, annotationOptions)`** — registers
   `chartjs-plugin-annotation`; merges `annotationOptions` into
   `options.plugins.annotation`.
@@ -29,19 +27,35 @@ different — see their own section below.
   data in this scale's own tree-node shape (`ILabelNode`/`IValueNode`),
   not the flat arrays every other kind/plugin accepts.
 
-## `withGradient` and `withImageLabel` — local ports, not dependencies
+## `withZoom`, `withGradient`, and `withImageLabel` — local ports, not dependencies
 
-Both are genuinely different from the four above: neither is a
+All three are genuinely different from the two above: none is a
 dependency on a third-party package at all. Each one's logic
-(originally `chartjs-plugin-gradient` and `chartjs-plugin-image-label`
-respectively) is ported directly into this package
-(`gradientPlugin.ts`/`imageLabelPlugin.ts`), and neither is ever passed
-to `Chart.register(...)` — both are supplied per-chart-instance via
-Chart.js's own inline `plugins` array instead. Both return
-`Promise<{ options, plugin }>` rather than just `options` (unlike every
-helper above), since the caller needs to merge `plugin` into whatever
-`plugins` array is already in effect.
+(originally `chartjs-plugin-zoom`, `chartjs-plugin-gradient`, and
+`chartjs-plugin-image-label` respectively) is ported directly into this
+package (`zoomPlugin.ts`/`gradientPlugin.ts`/`imageLabelPlugin.ts`), and
+none is ever passed to `Chart.register(...)` — all three are supplied
+per-chart-instance via Chart.js's own inline `plugins` array instead.
+All three return `Promise<{ options, plugin }>` rather than just
+`options` (unlike either helper above), since the caller needs to merge
+`plugin` into whatever `plugins` array is already in effect.
 
+- **`withZoom(options, zoomOptions?)`** — merges `zoomOptions` into
+  `options.plugins.zoom`, same as before the port (this is the one of
+  the three that keeps real plugin-level config, unlike
+  `gradient`/`imageLabel` below). **A real, deliberate scope decision**:
+  the port drops every Hammer.js-dependent code path — pinch-zoom, and
+  the gesture-driven pan interaction — since Hammer.js is itself
+  unmaintained (confirmed via a real, open upstream issue). Mouse-wheel
+  zoom, mouse-drag-to-zoom-rectangle, and the full programmatic API
+  (`chart.zoom()`, `chart.zoomRect()`, `chart.zoomScale()`,
+  `chart.resetZoom()`, `chart.pan()`, `chart.getZoomLevel()`, and more)
+  are all kept. A real, honest finding from dissecting the original
+  source: it has no mouse-only drag-to-pan mechanism at all — `pan()`
+  was only ever driven by Hammer's own gesture recognizer — so dropping
+  Hammer.js means dropping *all* interactive pan, not just touch-pan.
+  `chart.pan()` stays callable programmatically for a consumer's own
+  custom controls, just with no built-in gesture wired to it.
 - **`withGradient(options)`** — no config to merge; its real config
   lives on each *dataset* instead (`dataset.gradient = {...}`), which
   already reaches Chart.js untouched via the existing `data` field, so
@@ -62,10 +76,14 @@ helper above), since the caller needs to merge `plugin` into whatever
 
 - **`ZoomPluginOptions`** / **`AnnotationPluginOptions`** /
   **`DataLabelsPluginOptions`** / **`ImageLabelPluginOptions`** — the
-  option shapes each corresponding helper above accepts. The first three
-  are deliberately loose (not a full mirror of each plugin's own, much
-  larger, option surface — full typing is future hardening work, not yet
-  done); `ImageLabelPluginOptions` is modeled precisely, since it's this
-  package's own local logic with a small, fully-known surface.
+  option shapes each corresponding helper above accepts.
+  `AnnotationPluginOptions`/`DataLabelsPluginOptions` are deliberately
+  loose (not a full mirror of each plugin's own, much larger, option
+  surface — full typing is future hardening work, not yet done);
+  `ZoomPluginOptions`/`ImageLabelPluginOptions` are both modeled
+  precisely, since both are this package's own local logic with a
+  fully-known surface (confirmed by dissecting each plugin's own real
+  source directly, not left loose "for later" the way the two
+  still-dependency-based ones are).
   `withGradient`/`withTimestack`/`withHierarchical` have no corresponding
   options type — none of the three takes a config parameter.

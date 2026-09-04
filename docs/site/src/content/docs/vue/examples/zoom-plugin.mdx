@@ -1,29 +1,40 @@
 ---
 title: Zoom plugin
-description: chartjs-plugin-zoom, registered via the zoom prop with a real wheel/pinch/pan config.
+description: A local, ported implementation of chartjs-plugin-zoom, supplied via the zoom prop, with mouse-wheel zoom, drag-to-zoom, and a programmatic pan/reset API.
 ---
+import ZoomPlugin from '../../../../components/examples/zoom-plugin.vue';
 import ZoomPluginSource from '../../../../components/examples/zoom-plugin.vue?raw';
 import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
 
-The `zoom` prop opts into the real `chartjs-plugin-zoom` package,
-registered on first use. Passing `true` applies it with no extra
-config — this example passes a real config object instead, since the
-plugin itself needs explicit `wheel`/`pinch`/`pan` settings to actually
-respond to anything.
+The `zoom` prop draws on a local port of `chartjs-plugin-zoom`. Like
+[gradient](/vue/examples/gradient-plugin) and
+[image label](/vue/examples/image-label-plugin), it isn't a dependency
+on a third-party package at all — its logic is ported directly into
+`keystone-chartjs-core` (`src/zoomPlugin.ts`).
 
-:::caution[Not yet live-embedded on this docs site]
-This example isn't hydrated on this page yet — this docs site resolves
-`keystone-chartjs-core` from this monorepo's own workspace source, not a
-published package, and the dynamic import that lazily registers plugins
-like `chartjs-plugin-zoom` doesn't currently resolve correctly across
-that boundary in Vite's dev server. The code below is real and correct —
-confirmed working end-to-end in this package's own Playwright e2e suite
-(`packages/vue/tests/e2e/zoom-plugin.spec.ts`) — this is a docs-site
-build-pipeline gap, not a bug in `keystone-chartjs-vue` itself. Expected
-to resolve once this package is built/published for real (Phase 7).
+:::caution[Real scope limitation, not a bug]
+This port drops every Hammer.js-dependent code path — pinch-zoom, and
+the gesture-driven pan interaction — since Hammer.js itself is
+unmaintained (confirmed via a real, open upstream issue). Mouse-wheel
+zoom, mouse-drag-to-zoom-rectangle (with Escape-to-cancel), and the
+full programmatic API (`chart.zoom()`, `chart.resetZoom()`, `chart.pan()`,
+and more) are all kept. A real, honest finding from dissecting the
+original source: it has no mouse-only drag-to-pan mechanism at all —
+`pan()` was only ever driven by Hammer's own gesture recognizer — so
+dropping Hammer.js means dropping *all* interactive pan, not just
+touch-pan. `chart.pan()` stays callable programmatically (see the
+pan buttons below), just with no built-in drag gesture wired to it.
 :::
 
-<ExampleTryIt code={ZoomPluginSource} filename="zoom-plugin.vue" live={false} />
+Being local code rather than a dynamic import also means this example is
+genuinely live on this docs site — unlike the
+[timestack](/vue/examples/timestack-scale) and
+[hierarchical](/vue/examples/hierarchical-scale) examples, which still
+hit a docs-site build-pipeline gap around dynamic imports.
+
+<ExampleTryIt code={ZoomPluginSource} filename="zoom-plugin.vue" live={true}>
+  <ZoomPlugin client:visible />
+</ExampleTryIt>
 
 :::tip[`zoom` has no required config, unlike `annotation`]
 `annotation` has no plain-boolean form — `AnnotationPluginOptions.annotations`

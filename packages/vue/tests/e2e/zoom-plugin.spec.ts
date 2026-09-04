@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-// Every other test suite in this monorepo mocks chartjs-plugin-zoom
-// entirely — this is the first and only place the real plugin's own
-// registration actually gets exercised against a real Chart.js instance
-// in a real browser.
-test('registers and renders a real chart with chartjs-plugin-zoom applied via the real package', async ({ page }) => {
+// This project's own local port of chartjs-plugin-zoom
+// (packages/core/src/zoomPlugin.ts) is otherwise only ever exercised
+// against jsdom mocks (packages/core/tests/unit/zoomPlugin.spec.ts) —
+// this is the one place it runs through the real build pipeline, in a
+// real browser, against a real Chart.js instance.
+test('registers and renders a real chart with the local zoom plugin applied, and wheel-zoom actually works', async ({ page }) => {
   // Only genuine uncaught JS exceptions, not the browser's own
   // `console` 'error' channel — see sankey.spec.ts's own comment for
   // why (harmless favicon-404 noise unrelated to this app's own
@@ -18,6 +19,25 @@ test('registers and renders a real chart with chartjs-plugin-zoom applied via th
   await expect(canvas).toBeVisible();
   const box = await canvas.boundingBox();
   expect(box!.width).toBeGreaterThan(0);
+
+  // A real, genuine wheel-zoom check, not just "did it render" — the
+  // programmatic API attached by zoomPlugin.ts's own `start()` hook
+  // (`chart.getZoomLevel()`) confirms the real DOM wheel-event listener
+  // this port wires up actually changed the chart's own zoom state,
+  // not just that the plugin object was accepted without erroring.
+  // `window.__zoomChart` is exposed by the fixture itself, since the
+  // Chart.js instance carrying this API isn't reachable from the DOM
+  // canvas element directly — only via Chart.vue's own
+  // `defineExpose({ chart })`.
+  const zoomLevelBefore = await page.evaluate(() => (window as any).__zoomChart?.getZoomLevel?.());
+  expect(zoomLevelBefore).toBe(1);
+
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.wheel(0, -200);
+  await page.waitForTimeout(200);
+
+  const zoomLevelAfter = await page.evaluate(() => (window as any).__zoomChart?.getZoomLevel?.());
+  expect(zoomLevelAfter).not.toBe(1);
 
   expect(pageErrors).toEqual([]);
 });

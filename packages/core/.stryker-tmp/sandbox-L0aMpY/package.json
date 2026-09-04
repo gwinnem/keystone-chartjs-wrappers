@@ -1,0 +1,88 @@
+{
+  "name": "keystone-chartjs-core",
+  "version": "1.0.0",
+  "homepage": "https://kcw.winnem.tech",
+  "private": true,
+  "description": "Framework-agnostic core for keystone-chartjs-wrappers — Chart.js instance lifecycle, lazy type registration, resize/theme handling, and plugin helpers shared by the Vue, React, and Angular packages. No framework dependency.",
+  "keywords": [
+    "chartjs",
+    "chart.js",
+    "chart",
+    "charts",
+    "data-visualization",
+    "visualization",
+    "typescript",
+    "bar-chart",
+    "line-chart",
+    "pie-chart",
+    "doughnut-chart",
+    "radar-chart",
+    "scatter-chart",
+    "bubble-chart",
+    "candlestick",
+    "ohlc",
+    "boxplot",
+    "violin",
+    "treemap",
+    "sankey",
+    "matrix-chart",
+    "zoom",
+    "annotation",
+    "datalabels",
+    "gradient",
+    "timestack",
+    "time-scale",
+    "hierarchical",
+    "image-label",
+    "framework-agnostic",
+    "monorepo"
+  ],
+  "license": "MIT",
+  "author": "Geirr Winnem <geirr@winnem.tech>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gwinnem/keystone-chartjs-wrappers.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/gwinnem/keystone-chartjs-wrappers/issues"
+  },
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test-utils": "./src/test-utils.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui --open --coverage",
+    "test:mutation": "stryker run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "chartjs-chart-financial": "^0.2.1",
+    "@sgratzl/chartjs-chart-boxplot": "^4.4.5",
+    "chartjs-chart-matrix": "^3.0.5",
+    "chartjs-chart-sankey": "^0.15.0",
+    "chartjs-chart-treemap": "^4.2.0",
+    "chartjs-plugin-annotation": "^3.1.0",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "chartjs-scale-timestack": "^1.0.1",
+    "luxon": "^3.7.2",
+    "chartjs-plugin-hierarchical": "^4.4.5"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/ui": "^2.0.0",
+    "jsdom": "^24.1.0",
+    "typescript": "^6.0.3",
+    "vitest": "^2.0.0"
+  }
+}

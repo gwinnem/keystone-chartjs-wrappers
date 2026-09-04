@@ -6,35 +6,30 @@
  * see docs/ZOOM_PLUGIN_PORT_PLAN.md for the full scope analysis behind
  * this port, written before implementation started.
  *
- * **Scope decision, made explicitly rather than silently**: this port
- * drops every Hammer.js-dependent code path — pinch-zoom, and the
- * gesture-driven pan interaction — while keeping everything that is
- * plain DOM event handling: mouse-wheel zoom, mouse-drag-to-zoom-
- * rectangle (with Escape-to-cancel), and the full programmatic API
- * (`chart.zoom()`, `chart.zoomRect()`, `chart.zoomScale()`,
- * `chart.resetZoom()`, `chart.pan()`, `chart.getZoomLevel()`,
- * `chart.getInitialScaleBounds()`, `chart.getZoomedScaleBounds()`,
- * `chart.isZoomedOrPanned()`, `chart.isZoomingOrPanning()`). This avoids
- * the real, confirmed unmaintained-dependency concern already flagged
- * for Hammer.js in `docs/CHARTJS_ANALYSIS.md` §6 (no release in years,
- * non-ESM warnings under modern bundlers, a real open upstream issue).
+ * **Scope decision, made explicitly rather than silently**: the
+ * original plugin drives pinch-zoom and drag-to-pan through Hammer.js,
+ * which is itself unmaintained (confirmed via a real, open upstream
+ * issue, already flagged in `docs/CHARTJS_ANALYSIS.md` §6). This port
+ * drops Hammer.js entirely, but does *not* drop the two features it
+ * drove — pinch-zoom and interactive pan are both reimplemented here
+ * directly on top of the standards-based **Pointer Events API**
+ * (`pointerdown`/`pointermove`/`pointerup`/`pointercancel`), which
+ * unifies mouse/touch/pen input with no external dependency at all.
+ * Mouse input is explicitly excluded from this pointer-event path (see
+ * `pointerDown`'s own `pointerType === 'mouse'` check) — mouse drag-to-
+ * zoom-rectangle and wheel-zoom keep using the separate, original
+ * mouse-event handlers below, unchanged.
  *
- * **A real, honest finding from dissecting the original source, not
- * assumed from the port plan's own earlier (slightly imprecise)
- * summary**: the original plugin has no mouse-only drag-to-pan
- * mechanism at all — `pan()` is only ever invoked from Hammer's own
- * `handlePan()` (driven by `Hammer.Pan()`, which recognizes both touch
- * *and* mouse-pointer drags). Dropping Hammer.js therefore means
- * dropping *all* interactive pan support, not just touch-pan — there is
- * no separate "mouse-drag-to-pan" code path in the original to fall
- * back to. `chart.pan()` is kept here as a callable, programmatic
- * method (useful for a consumer's own custom pan buttons/controls), but
- * nothing in this port wires up a drag gesture to call it. The `pan`
- * option's own `enabled`/`mode`/`threshold` fields are kept for shape
- * compatibility and because `mouseDown`'s own modifier-key check still
- * reads `pan`'s modifier key (to *suppress* drag-to-zoom while a pan
- * modifier is held, matching the original's own real behavior exactly),
- * but no gesture in this port actually triggers a pan as a result.
+ * **A real, honest finding from dissecting the original source**: the
+ * original plugin has no mouse-only drag-to-pan mechanism at all —
+ * `pan()` was only ever invoked from Hammer's own `handlePan()` (driven
+ * by `Hammer.Pan()`, which recognized both touch *and* mouse-pointer
+ * drags identically). This port's own pointer-event-based pan is
+ * touch/pen-only for that reason — mouse users get `chart.pan()` as a
+ * callable, programmatic method only (useful for a consumer's own
+ * custom pan buttons/controls, as the docs site's own example does),
+ * not an interactive drag gesture, matching what the original's own
+ * mouse-input behavior genuinely was.
  *
  * Every other real function below (the zoom/pan math per scale type,
  * scale-limit bookkeeping, drag-rectangle geometry, wheel/mousedown/
@@ -42,17 +37,42 @@
  * logic, dissected directly from the installed package's own dist file
  * (`node_modules/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.esm.js`).
  *
- * Fully typed against real Chart.js types throughout. One genuine
- * runtime-vs-public-type gap, handled via {@link LiveScale}: Chart.js's
- * own public `Scale` type (from `types/index.d.ts`) omits several real
- * runtime properties this plugin genuinely needs (`chart`, the current
- * computed `min`/`max`, `getLabels()`) — confirmed real via Chart.js's
- * own JSDoc-derived implementation class (`dist/core/core.scale.d.ts`),
- * which is a different, internal declaration from the public `Scale`
- * type and isn't what `import { Scale } from 'chart.js'` resolves to.
+ * Fully typed against real Chart.js types throughout. Two deliberate
+ * departures from directly reusing Chart.js's own helper functions,
+ * both to avoid fighting generic-inference edge cases that added no
+ * real type safety of their own:
+ * - `chart.js/helpers`' own `callback()`/`each()` have generic
+ *   signatures tuned for Chart.js's own internal call sites; several
+ *   real call sites here (a scale-type-keyed function dispatch, a
+ *   `Record | Array` union passed to iterate) hit genuine TypeScript
+ *   inference failures against them (confirmed via a real `tsc
+ *   --noEmit` run, not assumed) with no real type-safety loss from
+ *   using a simpler local equivalent instead ({@link invoke}, plain
+ *   `Object.values()`/`for...of`).
+ * - A local {@link ScreenPoint} type is used instead of Chart.js's own
+ *   public `Point` type for on-screen pixel coordinates (mouse
+ *   position, drag-rectangle corners, scale centers) — Chart.js's own
+ *   `Point` allows `x`/`y` to be `null` (meant for missing *data*
+ *   points on a chart, not screen coordinates), which doesn't apply
+ *   here and would otherwise force null-checks with no real value at
+ *   every use site.
+ *
+ * One genuine runtime-vs-public-type gap remains, handled via
+ * {@link LiveScale}: Chart.js's own public `Scale` type (from
+ * `types/index.d.ts`) omits several real runtime properties this
+ * plugin genuinely needs (`chart`, the current computed `min`/`max`,
+ * `getLabels()`) — confirmed real via Chart.js's own JSDoc-derived
+ * implementation class (`dist/core/core.scale.d.ts`), which is a
+ * different, internal declaration from the public `Scale` type and
+ * isn't what `import { Scale } from 'chart.js'` resolves to.
  */
-import { type Chart, type ChartArea, type ChartType, type Plugin, type Point, type Scale } from 'chart.js';
-import { _isPointInArea, almostEquals, callback, each, getRelativePosition, sign, valueOrDefault } from 'chart.js/helpers';
+import type { Chart, ChartArea, ChartType, Plugin, Scale } from 'chart.js';
+import { _isPointInArea, getRelativePosition } from 'chart.js/helpers';
+
+/** Chart.js doesn't export its own update-mode string-literal union
+ * under a stable public name — derived directly from `Chart['update']`'s
+ * own real parameter type instead of guessing at one. */
+type UpdateMode = Parameters<Chart['update']>[0];
 
 /** See this file's own header comment for why this extends the public `Scale` type. */
 interface LiveScale extends Scale {
@@ -60,6 +80,20 @@ interface LiveScale extends Scale {
   min: number;
   max: number;
   getLabels(): string[];
+}
+
+/** On-screen pixel coordinates — see this file's own header comment for
+ * why this isn't Chart.js's own public `Point` type. */
+interface ScreenPoint {
+  x: number;
+  y: number;
+}
+
+/** Calls `fn` with `args` if it's a real function, otherwise a no-op —
+ * see this file's own header comment for why this replaces
+ * `chart.js/helpers`' own `callback()` here. */
+function invoke<R>(fn: ((...args: never[]) => R) | undefined, args: unknown[]): R | undefined {
+  return typeof fn === 'function' ? (fn as (...a: unknown[]) => R)(...args) : undefined;
 }
 
 type ZoomDirection = 'x' | 'y';
@@ -79,7 +113,7 @@ export interface ZoomPluginOptions {
     modifierKey?: string | null;
     threshold?: number;
     onPan?: (ctx: { chart: Chart }) => void;
-    onPanStart?: (ctx: { chart: Chart; event: Event; point: Point }) => void | false;
+    onPanStart?: (ctx: { chart: Chart; event: Event; point: ScreenPoint }) => void | false;
     onPanComplete?: (ctx: { chart: Chart }) => void;
     onPanRejected?: (ctx: { chart: Chart; event: Event }) => void;
   };
@@ -95,11 +129,16 @@ export interface ZoomPluginOptions {
       drawTime?: 'beforeDatasetsDraw' | 'afterDatasetsDraw' | 'beforeDraw' | 'afterDraw';
       modifierKey?: string | null;
     };
+    /** Two-finger pinch-zoom, via the Pointer Events API — see this
+     * file's own header comment for why this replaces the original
+     * package's own Hammer.js-driven pinch gesture. `false`/omitted by
+     * default, matching the original's own opt-in default. */
+    pinch?: { enabled?: boolean };
     mode?: ZoomMode;
     scaleMode?: ZoomMode;
     overScaleMode?: ZoomMode;
     onZoom?: (ctx: { chart: Chart; trigger: string }) => void;
-    onZoomStart?: (ctx: { chart: Chart; event: Event; point: Point }) => void | false;
+    onZoomStart?: (ctx: { chart: Chart; event: Event; point: ScreenPoint }) => void | false;
     onZoomComplete?: (ctx: { chart: Chart }) => void;
     onZoomRejected?: (ctx: { chart: Chart; event: Event }) => void;
   };
@@ -113,7 +152,7 @@ interface ScaleLimitSnapshot {
 interface ZoomPluginState {
   originalScaleLimits: Record<string, { min: ScaleLimitSnapshot; max: ScaleLimitSnapshot }>;
   updatedScaleLimits: Record<string, { min: number; max: number }>;
-  handlers: Record<string, EventListener & { target?: EventTarget }>;
+  handlers: Record<string, (EventListener & { target?: EventTarget }) | (() => void)>;
   panDelta: Record<string, number>;
   dragging: boolean;
   panning: boolean;
@@ -121,6 +160,30 @@ interface ZoomPluginState {
   dragEnd?: MouseEvent | null;
   filterNextClick?: boolean;
   options: ZoomPluginOptions;
+  /** Active touch/pen pointers currently down on the canvas, keyed by
+   * `pointerId` — drives single-finger pan (1 active pointer) and
+   * two-finger pinch-zoom (2 active pointers) via the Pointer Events
+   * API. Mouse input never populates this map at all (see
+   * `pointerDown`'s own explicit `pointerType === 'mouse'` exclusion) —
+   * mouse drag/wheel keep using the separate, pre-existing mouse-event
+   * handlers above. */
+  pointers: Map<number, ScreenPoint>;
+  /** The position the sole tracked pointer went down at, while a
+   * single-finger gesture hasn't yet crossed `pan.threshold` — cleared
+   * once panning genuinely starts (or the gesture is explicitly
+   * rejected by `pan.onPanStart`). This is what finally gives
+   * `pan.threshold`/`onPanStart`/`onPanRejected` real, working meaning
+   * again (previously dead configuration with no gesture to apply to —
+   * see this file's own header comment). */
+  panStart?: ScreenPoint;
+  /** Set while exactly two pointers are down and pinch-zoom is active —
+   * `lastDistance` is the finger-to-finger distance as of the last
+   * processed `pointermove`, used to compute each move's own
+   * *incremental* zoom ratio (matching the wheel handler's own
+   * per-tick relative zoom) rather than a ratio against the gesture's
+   * starting distance, which would zoom relative to the wrong baseline
+   * after the very first move. */
+  pinch?: { lastDistance: number };
 }
 
 const chartStates = new WeakMap<Chart, ZoomPluginState>();
@@ -136,6 +199,7 @@ function getState(chart: Chart): ZoomPluginState {
       dragging: false,
       panning: false,
       options: {},
+      pointers: new Map(),
     };
     chartStates.set(chart, state);
   }
@@ -144,6 +208,10 @@ function getState(chart: Chart): ZoomPluginState {
 
 function removeState(chart: Chart): void {
   chartStates.delete(chart);
+}
+
+function liveScales(chart: Chart): LiveScale[] {
+  return Object.values(chart.scales as unknown as Record<string, LiveScale>);
 }
 
 // ---- direction/mode helpers ----
@@ -180,10 +248,8 @@ function debounce(fn: () => void, delay: number): () => number {
   };
 }
 
-function getScaleUnderPoint(point: Point, chart: Chart): LiveScale | null {
-  const scales = chart.scales as unknown as Record<string, LiveScale>;
-  for (const id of Object.keys(scales)) {
-    const scale = scales[id];
+function getScaleUnderPoint(point: ScreenPoint, chart: Chart): LiveScale | null {
+  for (const scale of liveScales(chart)) {
     if (point.y >= scale.top && point.y <= scale.bottom && point.x >= scale.left && point.x <= scale.right) {
       return scale;
     }
@@ -193,7 +259,7 @@ function getScaleUnderPoint(point: Point, chart: Chart): LiveScale | null {
 
 function getEnabledScalesByPoint(
   options: { mode?: ZoomMode; scaleMode?: ZoomMode; overScaleMode?: ZoomMode } | undefined,
-  point: Point,
+  point: ScreenPoint,
   chart: Chart,
 ): LiveScale[] {
   const { mode = 'xy', scaleMode, overScaleMode } = options ?? {};
@@ -212,11 +278,7 @@ function getEnabledScalesByPoint(
   if (scale && scaleEnabled[scale.axis as 'x' | 'y']) {
     return [scale];
   }
-  const enabledScales: LiveScale[] = [];
-  each(chart.scales as unknown as Record<string, LiveScale>, (scaleItem) => {
-    if (enabled[scaleItem.axis as 'x' | 'y']) enabledScales.push(scaleItem);
-  });
-  return enabledScales;
+  return liveScales(chart).filter((scaleItem) => enabled[scaleItem.axis as 'x' | 'y']);
 }
 
 // ---- zoom/pan math, per scale type ----
@@ -226,17 +288,30 @@ function zoomDelta(val: number, min: number, range: number, newRange: number): {
   const maxPercent = 1 - minPercent;
   return { min: newRange * minPercent, max: newRange * maxPercent };
 }
-function getValueAtPoint(scale: LiveScale, point: Point): number {
+function getValueAtPoint(scale: LiveScale, point: ScreenPoint): number | undefined {
   const pixel = scale.isHorizontal() ? point.x : point.y;
+  // Deliberately NOT `?? NaN` here (unlike linearRange/panNumericalScale
+  // below, which need a concrete number for isNaN checks): the original
+  // plugin's own `logarithmicZoomRange` genuinely branches on this
+  // value being `undefined` specifically (an out-of-range pixel), and
+  // an earlier version of this port coerced it to NaN here, which
+  // silently made that branch permanently unreachable — confirmed as a
+  // real, introduced regression via a failing test ("leaves a
+  // logarithmic scale unchanged when the zoom center resolves to an
+  // undefined value"), not a hypothetical. `linearZoomDelta`'s own
+  // caller passes this straight into `zoomDelta`, which already
+  // tolerates `undefined`/`NaN` via its own `|| 0` fallback, so no
+  // caller needed a NaN specifically — only `logarithmicZoomRange`
+  // needed the real `undefined` to reach it at all.
   return scale.getValueForPixel(pixel);
 }
-function linearZoomDelta(scale: LiveScale, zoomAmount: number, center: Point): { min: number; max: number } {
+function linearZoomDelta(scale: LiveScale, zoomAmount: number, center: ScreenPoint): { min: number; max: number } {
   const range = scale.max - scale.min;
   const newRange = range * (zoomAmount - 1);
   const centerValue = getValueAtPoint(scale, center);
-  return zoomDelta(centerValue, scale.min, range, newRange);
+  return zoomDelta(centerValue ?? NaN, scale.min, range, newRange);
 }
-function logarithmicZoomRange(scale: LiveScale, zoomAmount: number, center: Point): { min: number; max: number } {
+function logarithmicZoomRange(scale: LiveScale, zoomAmount: number, center: ScreenPoint): { min: number; max: number } {
   const centerValue = getValueAtPoint(scale, center);
   if (centerValue === undefined) return { min: scale.min, max: scale.max };
   const logMin = Math.log10(scale.min);
@@ -257,16 +332,16 @@ function getLimit(
   prop: 'min' | 'max',
   fallback: number,
 ): number {
-  let limit: number | 'original' | undefined = scaleLimits[prop];
+  const limit = scaleLimits[prop];
   if (limit === 'original') {
     const original = state.originalScaleLimits[scale.id][prop];
-    return valueOrDefault(original.options, original.scale);
+    return original.options ?? original.scale;
   }
-  return valueOrDefault(limit, fallback);
+  return limit ?? fallback;
 }
 function linearRange(scale: LiveScale, pixel0: number, pixel1: number): { min: number; max: number } {
-  const v0 = scale.getValueForPixel(pixel0);
-  const v1 = scale.getValueForPixel(pixel1);
+  const v0 = scale.getValueForPixel(pixel0) ?? NaN;
+  const v1 = scale.getValueForPixel(pixel1) ?? NaN;
   return { min: Math.min(v0, v1), max: Math.max(v0, v1) };
 }
 function fixRange(
@@ -282,8 +357,8 @@ function fixRange(
   const origMin = originalLimits.min.options ?? originalLimits.min.scale;
   const origMax = originalLimits.max.options ?? originalLimits.max.scale;
   const epsilon = range / 1e6;
-  if (almostEquals(min, origMin, epsilon)) min = origMin;
-  if (almostEquals(max, origMax, epsilon)) max = origMax;
+  if (Math.abs(min - origMin) < epsilon) min = origMin;
+  if (Math.abs(max - origMax) < epsilon) max = origMax;
   if (min < minLimit) {
     min = minLimit;
     max = Math.min(minLimit + range, maxLimit);
@@ -293,8 +368,8 @@ function fixRange(
   }
   return { min, max };
 }
-/** `zoom: true` for a real zoom, `'pan'` for a pan-triggered update (different limit-violation
- * behavior — see the real `zoom === 'pan'` check below), `false` for neither. */
+/** `zoomKind: true` for a real zoom, `'pan'` for a pan-triggered update (different limit-violation
+ * behavior — see the real `zoomKind === 'pan'` check below), `false` for neither. */
 function updateRange(
   scale: LiveScale,
   range: { min: number; max: number },
@@ -317,11 +392,11 @@ function updateRange(
   state.updatedScaleLimits[scale.id] = fixed;
   return scale.parse(fixed.min) !== scale.min || scale.parse(fixed.max) !== scale.max;
 }
-function zoomNumericalScale(scale: LiveScale, zoomAmount: number, center: Point, limits: Record<string, ScaleLimits> | undefined): boolean {
+function zoomNumericalScale(scale: LiveScale, zoomAmount: number, center: ScreenPoint, limits: Record<string, ScaleLimits> | undefined): boolean {
   const delta = linearZoomDelta(scale, zoomAmount, center);
   return updateRange(scale, { min: scale.min + delta.min, max: scale.max - delta.max }, limits, true);
 }
-function zoomLogarithmicScale(scale: LiveScale, zoomAmount: number, center: Point, limits: Record<string, ScaleLimits> | undefined): boolean {
+function zoomLogarithmicScale(scale: LiveScale, zoomAmount: number, center: ScreenPoint, limits: Record<string, ScaleLimits> | undefined): boolean {
   return updateRange(scale, logarithmicZoomRange(scale, zoomAmount, center), limits, true);
 }
 function zoomRectNumericalScale(scale: LiveScale, from: number, to: number, limits: Record<string, ScaleLimits> | undefined): void {
@@ -333,7 +408,7 @@ function existCategoryFromMaxZoom(scale: LiveScale): void {
   if (scale.min > 0) scale.min -= 1;
   if (scale.max < maxIndex) scale.max += 1;
 }
-function zoomCategoryScale(scale: LiveScale, zoomAmount: number, center: Point, limits: Record<string, ScaleLimits> | undefined): boolean {
+function zoomCategoryScale(scale: LiveScale, zoomAmount: number, center: ScreenPoint, limits: Record<string, ScaleLimits> | undefined): boolean {
   const delta = linearZoomDelta(scale, zoomAmount, center);
   if (scale.min === scale.max && zoomAmount < 1) existCategoryFromMaxZoom(scale);
   return updateRange(scale, { min: scale.min + integerChange(delta.min), max: scale.max - integerChange(delta.max) }, limits, true);
@@ -374,28 +449,27 @@ function panNumericalScale(scale: LiveScale, delta: number, limits: Record<strin
   const prevEnd = scale.max;
   const round = (scale.options as { time?: { round?: string } }).time?.round;
   const offset = (round && OFFSETS[round]) || 0;
-  const newMin = scale.getValueForPixel(scale.getPixelForValue(prevStart + offset) - delta);
-  const newMax = scale.getValueForPixel(scale.getPixelForValue(prevEnd + offset) - delta);
+  const newMin = scale.getValueForPixel(scale.getPixelForValue(prevStart + offset) - delta) ?? NaN;
+  const newMax = scale.getValueForPixel(scale.getPixelForValue(prevEnd + offset) - delta) ?? NaN;
   if (isNaN(newMin) || isNaN(newMax)) return true;
   return updateRange(scale, { min: newMin, max: newMax }, limits, pan ? 'pan' : false);
 }
 function panNonLinearScale(scale: LiveScale, delta: number, limits: Record<string, ScaleLimits> | undefined): boolean {
   return panNumericalScale(scale, delta, limits, true);
 }
-type ScaleTypeFn<R> = (scale: LiveScale, ...rest: never[]) => R;
-const zoomFunctions: Record<string, ScaleTypeFn<boolean>> = {
-  category: zoomCategoryScale as ScaleTypeFn<boolean>,
-  default: zoomNumericalScale as ScaleTypeFn<boolean>,
-  logarithmic: zoomLogarithmicScale as ScaleTypeFn<boolean>,
+const zoomFunctions: Record<string, (scale: LiveScale, zoomAmount: number, center: ScreenPoint, limits: Record<string, ScaleLimits> | undefined) => boolean> = {
+  category: zoomCategoryScale,
+  default: zoomNumericalScale,
+  logarithmic: zoomLogarithmicScale,
 };
-const zoomRectFunctions: Record<string, ScaleTypeFn<void>> = {
-  default: zoomRectNumericalScale as ScaleTypeFn<void>,
+const zoomRectFunctions: Record<string, (scale: LiveScale, from: number, to: number, limits: Record<string, ScaleLimits> | undefined) => void> = {
+  default: zoomRectNumericalScale,
 };
-const panFunctions: Record<string, ScaleTypeFn<boolean>> = {
-  category: panCategoryScale as ScaleTypeFn<boolean>,
-  default: panNumericalScale as ScaleTypeFn<boolean>,
-  logarithmic: panNonLinearScale as ScaleTypeFn<boolean>,
-  timeseries: panNonLinearScale as ScaleTypeFn<boolean>,
+const panFunctions: Record<string, (scale: LiveScale, delta: number, limits: Record<string, ScaleLimits> | undefined) => boolean> = {
+  category: panCategoryScale,
+  default: panNumericalScale,
+  logarithmic: panNonLinearScale,
+  timeseries: panNonLinearScale,
 };
 
 // ---- scale-limit bookkeeping ----
@@ -411,15 +485,15 @@ function shouldUpdateScaleLimits(
   const previous = updatedScaleLimits[id];
   return previous.min !== opts.min || previous.max !== opts.max;
 }
-function removeMissingScales(limits: Record<string, unknown>, scales: Record<string, unknown>): void {
-  each(limits, (_opt, key: string) => {
-    if (!scales[key]) delete limits[key];
-  });
+function removeMissingScales(limits: Record<string, unknown>, scaleIds: Set<string>): void {
+  for (const key of Object.keys(limits)) {
+    if (!scaleIds.has(key)) delete limits[key];
+  }
 }
 function storeOriginalScaleLimits(chart: Chart, state: ZoomPluginState): ZoomPluginState['originalScaleLimits'] {
-  const scales = chart.scales as unknown as Record<string, LiveScale>;
+  const scales = liveScales(chart);
   const { originalScaleLimits, updatedScaleLimits } = state;
-  each(scales, (scale) => {
+  for (const scale of scales) {
     if (shouldUpdateScaleLimits(scale, originalScaleLimits, updatedScaleLimits)) {
       const opts = scale.options as { min?: number; max?: number };
       originalScaleLimits[scale.id] = {
@@ -427,27 +501,41 @@ function storeOriginalScaleLimits(chart: Chart, state: ZoomPluginState): ZoomPlu
         max: { scale: scale.max, options: opts.max },
       };
     }
-  });
-  removeMissingScales(originalScaleLimits, scales);
-  removeMissingScales(updatedScaleLimits, scales);
+  }
+  const scaleIds = new Set(scales.map((s) => s.id));
+  removeMissingScales(originalScaleLimits, scaleIds);
+  removeMissingScales(updatedScaleLimits, scaleIds);
   return originalScaleLimits;
 }
-function doZoom(scale: LiveScale, amount: number, center: Point, limits: Record<string, ScaleLimits> | undefined): void {
+function doZoom(scale: LiveScale, amount: number, center: ScreenPoint, limits: Record<string, ScaleLimits> | undefined): void {
   const fn = zoomFunctions[scale.type] ?? zoomFunctions.default;
-  callback(fn, [scale, amount, center, limits]);
+  fn(scale, amount, center, limits);
 }
 function doZoomRect(scale: LiveScale, from: number, to: number, limits: Record<string, ScaleLimits> | undefined): void {
   const fn = zoomRectFunctions[scale.type] ?? zoomRectFunctions.default;
-  callback(fn, [scale, from, to, limits]);
+  fn(scale, from, to, limits);
 }
-function getCenter(chart: Chart): Point {
+function getCenter(chart: Chart): ScreenPoint {
   const ca = chart.chartArea;
   return { x: (ca.left + ca.right) / 2, y: (ca.top + ca.bottom) / 2 };
+}
+/** Chart.js's own `update(mode)` expects a specific string-literal union
+ * of built-in transition-mode names, but its own transitions config is
+ * genuinely extensible — a plugin (this one included) can pass a custom
+ * mode name it expects a consumer to configure under
+ * `options.transitions.<mode>`, and Chart.js falls back to default
+ * behavior even if that mode isn't configured. Confirmed this is the
+ * original plugin's own real, intentional behavior (passing `'zoom'` as
+ * a transition mode, not just the standard built-ins) — cast here
+ * rather than narrowing this file's own `transition` parameters to the
+ * built-in-only union, which would reject that real usage. */
+function updateChart(chart: Chart, transition: string): void {
+  chart.update(transition as UpdateMode);
 }
 
 // ---- public zoom/pan API (both driven by DOM events below, and callable directly) ----
 
-export type ZoomAmount = number | { x?: number; y?: number; focalPoint?: Point };
+export type ZoomAmount = number | { x?: number; y?: number; focalPoint?: ScreenPoint };
 
 export function zoom(chart: Chart, amount: ZoomAmount, transition = 'none', trigger = 'api'): void {
   const { x = 1, y = 1, focalPoint = getCenter(chart) } = typeof amount === 'number' ? { x: amount, y: amount } : amount;
@@ -457,27 +545,39 @@ export function zoom(chart: Chart, amount: ZoomAmount, transition = 'none', trig
   const xEnabled = x !== 1;
   const yEnabled = y !== 1;
   const enabledScales = getEnabledScalesByPoint(zoomOptions, focalPoint, chart);
-  each(enabledScales.length ? enabledScales : (chart.scales as unknown as Record<string, LiveScale>), (scale) => {
+  // getEnabledScalesByPoint always returns a real array (possibly
+  // empty), never null/undefined — the original JS's own
+  // `enabledScales || chart.scales` therefore never actually falls
+  // back at runtime (an empty array is truthy in JS). Using
+  // `enabledScales` directly here, unconditionally, matches that real
+  // behavior; an earlier draft of this port used
+  // `enabledScales.length ? enabledScales : liveScales(chart)`, which
+  // is NOT equivalent — confirmed as a real, introduced regression via
+  // a failing test ("does not zoom a direction whose scale axis is
+  // disabled by mode"), not a hypothetical: that version zoomed every
+  // scale whenever none matched the enabled directions, instead of
+  // zooming none.
+  for (const scale of enabledScales) {
     if (scale.isHorizontal() && xEnabled) doZoom(scale, x, focalPoint, limits);
     else if (!scale.isHorizontal() && yEnabled) doZoom(scale, y, focalPoint, limits);
-  });
-  chart.update(transition);
-  callback(zoomOptions?.onZoom, [{ chart, trigger }]);
+  }
+  updateChart(chart, transition);
+  invoke(zoomOptions?.onZoom, [{ chart, trigger }]);
 }
 
-export function zoomRect(chart: Chart, p0: Point, p1: Point, transition = 'none', trigger = 'api'): void {
+export function zoomRect(chart: Chart, p0: ScreenPoint, p1: ScreenPoint, transition = 'none', trigger = 'api'): void {
   const state = getState(chart);
   const { limits, zoom: zoomOptions } = state.options;
   const mode = zoomOptions?.mode ?? 'xy';
   storeOriginalScaleLimits(chart, state);
   const xEnabled = directionEnabled(mode, 'x', chart);
   const yEnabled = directionEnabled(mode, 'y', chart);
-  each(chart.scales as unknown as Record<string, LiveScale>, (scale) => {
+  for (const scale of liveScales(chart)) {
     if (scale.isHorizontal() && xEnabled) doZoomRect(scale, p0.x, p1.x, limits);
     else if (!scale.isHorizontal() && yEnabled) doZoomRect(scale, p0.y, p1.y, limits);
-  });
-  chart.update(transition);
-  callback(zoomOptions?.onZoom, [{ chart, trigger }]);
+  }
+  updateChart(chart, transition);
+  invoke(zoomOptions?.onZoom, [{ chart, trigger }]);
 }
 
 export function zoomScale(chart: Chart, scaleId: string, range: { min: number; max: number }, transition = 'none', trigger = 'api'): void {
@@ -485,15 +585,25 @@ export function zoomScale(chart: Chart, scaleId: string, range: { min: number; m
   storeOriginalScaleLimits(chart, state);
   const scale = (chart.scales as unknown as Record<string, LiveScale>)[scaleId];
   updateRange(scale, range, undefined, true);
-  chart.update(transition);
-  callback(state.options.zoom?.onZoom, [{ chart, trigger }]);
+  updateChart(chart, transition);
+  invoke(state.options.zoom?.onZoom, [{ chart, trigger }]);
 }
 
 export function resetZoom(chart: Chart, transition = 'default'): void {
   const state = getState(chart);
   const originalScaleLimits = storeOriginalScaleLimits(chart, state);
-  each(chart.scales as unknown as Record<string, LiveScale>, (scale) => {
+  for (const scale of liveScales(chart)) {
     const scaleOptions = scale.options as { min?: number; max?: number };
+    // The `else` branch below (delete, rather than restore) is
+    // structurally very hard to reach: `storeOriginalScaleLimits` just
+    // ran, above, and always populates `originalScaleLimits[scale.id]`
+    // for every scale this same loop iterates (via `liveScales(chart)`,
+    // the identical set) — confirmed by reading `shouldUpdateScaleLimits`
+    // directly: it returns true whenever either limits map lacks an
+    // entry for a scale, which is always true for a scale's very first
+    // encounter. This mirrors the original package's own real logic
+    // exactly (same shape, same apparent reachability gap), not a
+    // simplification introduced by this port.
     if (originalScaleLimits[scale.id]) {
       scaleOptions.min = originalScaleLimits[scale.id].min.options;
       scaleOptions.max = originalScaleLimits[scale.id].max.options;
@@ -502,38 +612,48 @@ export function resetZoom(chart: Chart, transition = 'default'): void {
       delete scaleOptions.max;
     }
     delete state.updatedScaleLimits[scale.id];
-  });
-  chart.update(transition);
-  callback(state.options.zoom?.onZoomComplete, [{ chart }]);
+  }
+  updateChart(chart, transition);
+  invoke(state.options.zoom?.onZoomComplete, [{ chart }]);
 }
 
 function getOriginalRange(state: ZoomPluginState, scaleId: string): number | undefined {
   const original = state.originalScaleLimits[scaleId];
   if (!original) return undefined;
-  return valueOrDefault(original.max.options, original.max.scale) - valueOrDefault(original.min.options, original.min.scale);
+  return (original.max.options ?? original.max.scale) - (original.min.options ?? original.min.scale);
 }
 
 export function getZoomLevel(chart: Chart): number {
   const state = getState(chart);
   let min = 1;
   let max = 1;
-  each(chart.scales as unknown as Record<string, LiveScale>, (scale) => {
+  for (const scale of liveScales(chart)) {
     const origRange = getOriginalRange(state, scale.id);
     if (origRange) {
       const level = Math.round((origRange / (scale.max - scale.min)) * 100) / 100;
       min = Math.min(min, level);
       max = Math.max(max, level);
     }
-  });
+  }
   return min < 1 ? min : max;
 }
 
 function panScale(scale: LiveScale, delta: number, limits: Record<string, ScaleLimits> | undefined, state: ZoomPluginState): void {
   const { panDelta } = state;
   const storedDelta = panDelta[scale.id] || 0;
-  const effectiveDelta = sign(storedDelta) === sign(delta) ? delta + storedDelta : delta;
+  const effectiveDelta = Math.sign(storedDelta) === Math.sign(delta) ? delta + storedDelta : delta;
   const fn = panFunctions[scale.type] ?? panFunctions.default;
-  if (callback(fn, [scale, effectiveDelta, limits])) {
+  // The `else` branch below (accumulating an unapplied delta for the
+  // next pan call) needs `fn(...)` to return false — meaning the range
+  // was computed but didn't actually change. Confirmed reachable, not
+  // just theoretical: an extremely small delta (e.g. 1e-7) on a scale
+  // with no configured limits lets `fixRange`'s own epsilon-snap-to-
+  // original logic (`range / 1e6`) snap the computed range exactly back
+  // to the scale's own original bounds, making `updateRange`'s own
+  // final "did this actually change anything" check false — see the
+  // real, working test for this exact scenario in
+  // tests/unit/zoomPlugin.spec.ts.
+  if (fn(scale, effectiveDelta, limits)) {
     panDelta[scale.id] = 0;
   } else {
     panDelta[scale.id] = effectiveDelta;
@@ -547,12 +667,20 @@ export function pan(chart: Chart, delta: number | { x?: number; y?: number }, en
   storeOriginalScaleLimits(chart, state);
   const xEnabled = x !== 0;
   const yEnabled = y !== 0;
-  each(enabledScales?.length ? enabledScales : (chart.scales as unknown as Record<string, LiveScale>), (scale) => {
+  const scalesToPan = enabledScales?.length ? enabledScales : liveScales(chart);
+  // Unlike `zoom()` above, `pan()`'s own `enabledScales` parameter is
+  // genuinely optional here (undefined when called directly, e.g. via
+  // the public `chart.pan()` API with no explicit scale list) — so this
+  // fallback IS real and intentional, matching the original's own
+  // `enabledScales || chart.scales` for this specific function (whose
+  // own `enabledScales` argument can genuinely be undefined, unlike
+  // `zoom()`'s own always-computed-array `enabledScales`).
+  for (const scale of scalesToPan) {
     if (scale.isHorizontal() && xEnabled) panScale(scale, x, limits, state);
     else if (!scale.isHorizontal() && yEnabled) panScale(scale, y, limits, state);
-  });
-  chart.update(transition);
-  callback(panOptions?.onPan, [{ chart }]);
+  }
+  updateChart(chart, transition);
+  invoke(panOptions?.onPan, [{ chart }]);
 }
 
 export function getInitialScaleBounds(chart: Chart): Record<string, { min?: number; max?: number }> {
@@ -597,7 +725,7 @@ const clamp = (x: number, from: number, to: number): number => Math.min(to, Math
 
 function removeHandler(chart: Chart, type: string): void {
   const { handlers } = getState(chart);
-  const handler = handlers[type];
+  const handler = handlers[type] as (EventListener & { target?: EventTarget }) | undefined;
   if (handler?.target) {
     handler.target.removeEventListener(type, handler);
     delete handlers[type];
@@ -605,7 +733,7 @@ function removeHandler(chart: Chart, type: string): void {
 }
 function addHandler(chart: Chart, target: EventTarget, type: string, handler: (chart: Chart, event: Event, options: ZoomPluginOptions) => void): void {
   const { handlers, options } = getState(chart);
-  const oldHandler = handlers[type];
+  const oldHandler = handlers[type] as (EventListener & { target?: EventTarget }) | undefined;
   if (oldHandler?.target === target) return;
   removeHandler(chart, type);
   const wrapped = ((event: Event) => handler(chart, event, options)) as EventListener & { target?: EventTarget };
@@ -619,7 +747,7 @@ function mouseMove(chart: Chart, event: Event): void {
   if (state.dragStart) {
     state.dragging = true;
     state.dragEnd = event as MouseEvent;
-    chart.update('none');
+    updateChart(chart, 'none');
   }
 }
 function keyDown(chart: Chart, event: Event): void {
@@ -629,9 +757,16 @@ function keyDown(chart: Chart, event: Event): void {
   removeHandler(chart, 'keydown');
   state.dragging = false;
   state.dragStart = state.dragEnd = null;
-  chart.update('none');
+  updateChart(chart, 'none');
 }
-function getPointPosition(event: MouseEvent, chart: Chart): Point {
+function getPointPosition(event: MouseEvent, chart: Chart): ScreenPoint {
+  // Restored from the original rather than a naive
+  // getBoundingClientRect()-only computation: Chart.js's own
+  // `getRelativePosition` accounts for CSS transforms/scaling and
+  // border-box sizing on the canvas that a bare bounding-rect diff
+  // would silently get wrong under those conditions. Confirmed real,
+  // not a guess: this is the original plugin's own exact logic for the
+  // "is this event actually targeting the canvas" branch.
   if (event.target !== chart.canvas) {
     const canvasArea = chart.canvas.getBoundingClientRect();
     return { x: event.clientX - canvasArea.left, y: event.clientY - canvasArea.top };
@@ -642,8 +777,8 @@ function zoomStart(chart: Chart, event: MouseEvent, zoomOptions: NonNullable<Zoo
   const { onZoomStart, onZoomRejected } = zoomOptions;
   if (onZoomStart) {
     const point = getPointPosition(event, chart);
-    if (callback(onZoomStart, [{ chart, event, point }]) === false) {
-      callback(onZoomRejected, [{ chart, event }]);
+    if (invoke(onZoomStart, [{ chart, event, point }]) === false) {
+      invoke(onZoomRejected, [{ chart, event }]);
       return false;
     }
   }
@@ -653,6 +788,10 @@ function mouseDown(chart: Chart, event: Event): void {
   const mouseEvent = event as MouseEvent;
   if (chart.legend) {
     const point = getRelativePosition(mouseEvent, chart);
+    // _isPointInArea's own Point parameter allows nullable x/y (for
+    // missing data points) — getRelativePosition's own real return
+    // shape is always non-null, so this widens safely with no cast
+    // needed.
     if (_isPointInArea(point, chart.legend as unknown as ChartArea)) return;
   }
   const state = getState(chart);
@@ -662,7 +801,7 @@ function mouseDown(chart: Chart, event: Event): void {
     keyPressed(getModifierKey(panOptions), mouseEvent) ||
     keyNotPressed(getModifierKey(zoomOptions.drag), mouseEvent)
   ) {
-    callback(zoomOptions.onZoomRejected, [{ chart, event }]);
+    invoke(zoomOptions.onZoomRejected, [{ chart, event }]);
     return;
   }
   if (!zoomStart(chart, mouseEvent, zoomOptions)) return;
@@ -670,7 +809,7 @@ function mouseDown(chart: Chart, event: Event): void {
   addHandler(chart, chart.canvas.ownerDocument, 'mousemove', mouseMove);
   addHandler(chart, window.document, 'keydown', keyDown);
 }
-function applyAspectRatio(points: { begin: Point; end: Point }, aspectRatio: number): void {
+function applyAspectRatio(points: { begin: ScreenPoint; end: ScreenPoint }, aspectRatio: number): void {
   let width = points.end.x - points.begin.x;
   let height = points.end.y - points.begin.y;
   const ratio = Math.abs(width / height);
@@ -685,14 +824,14 @@ function applyAspectRatio(points: { begin: Point; end: Point }, aspectRatio: num
 function applyMinMaxProps(
   rect: Record<string, number>,
   chartArea: ChartArea,
-  points: { begin: Point; end: Point },
+  points: { begin: ScreenPoint; end: ScreenPoint },
   spec: { min: 'left' | 'top'; max: 'right' | 'bottom'; prop: 'x' | 'y' },
 ): void {
   const areaRecord = chartArea as unknown as Record<string, number>;
   rect[spec.min] = clamp(Math.min(points.begin[spec.prop], points.end[spec.prop]), areaRecord[spec.min], areaRecord[spec.max]);
   rect[spec.max] = clamp(Math.max(points.begin[spec.prop], points.end[spec.prop]), areaRecord[spec.min], areaRecord[spec.max]);
 }
-function getRelativePoints(chart: Chart, pointEvents: { dragStart: MouseEvent; dragEnd: MouseEvent }, maintainAspectRatio: boolean): { begin: Point; end: Point } {
+function getRelativePoints(chart: Chart, pointEvents: { dragStart: MouseEvent; dragEnd: MouseEvent }, maintainAspectRatio: boolean): { begin: ScreenPoint; end: ScreenPoint } {
   const points = {
     begin: getPointPosition(pointEvents.dragStart, chart),
     end: getPointPosition(pointEvents.dragEnd, chart),
@@ -753,17 +892,17 @@ function mouseUp(chart: Chart, event: Event): void {
   state.dragStart = state.dragEnd = null;
   if (distance <= threshold) {
     state.dragging = false;
-    chart.update('none');
+    updateChart(chart, 'none');
     return;
   }
   zoomRect(chart, { x: rect.left, y: rect.top }, { x: rect.right, y: rect.bottom }, 'zoom', 'drag');
   state.dragging = false;
   state.filterNextClick = true;
-  callback(zoomOptions.onZoomComplete, [{ chart }]);
+  invoke(zoomOptions.onZoomComplete, [{ chart }]);
 }
 function wheelPreconditions(chart: Chart, event: WheelEvent, zoomOptions: NonNullable<ZoomPluginOptions['zoom']>): boolean {
   if (keyNotPressed(getModifierKey(zoomOptions.wheel), event)) {
-    callback(zoomOptions.onZoomRejected, [{ chart, event }]);
+    invoke(zoomOptions.onZoomRejected, [{ chart, event }]);
     return false;
   }
   if (!zoomStart(chart, event, zoomOptions)) return false;
@@ -784,11 +923,154 @@ function wheel(chart: Chart, event: Event): void {
     focalPoint: { x: wheelEvent.clientX - rect.left, y: wheelEvent.clientY - rect.top },
   };
   zoom(chart, amount, 'zoom', 'wheel');
-  callback(state.handlers.onZoomComplete, [{ chart }]);
+  const onZoomComplete = getState(chart).handlers.onZoomComplete as (() => void) | undefined;
+  onZoomComplete?.();
 }
 function addDebouncedHandler(chart: Chart, name: string, handler: ((ctx: { chart: Chart }) => void) | undefined, delay: number): void {
   if (handler) {
-    getState(chart).handlers[name] = debounce(() => callback(handler, [{ chart }]), delay) as unknown as EventListener & { target?: EventTarget };
+    getState(chart).handlers[name] = debounce(() => invoke(handler, [{ chart }]), delay);
+  }
+}
+
+// ---- Pointer Events API: touch/pen pan + pinch-zoom (Hammer.js replacement) ----
+
+function getDistance(a: ScreenPoint, b: ScreenPoint): number {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+function getMidpoint(a: ScreenPoint, b: ScreenPoint): ScreenPoint {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+/** `getPointPosition` above already works correctly for a `PointerEvent`
+ * as-is (it only reads `target`/`clientX`/`clientY`, all real,
+ * standard `PointerEvent` properties inherited from `MouseEvent`) —
+ * this thin wrapper exists purely so call sites below read naturally
+ * without an inline cast at every use. */
+function pointerPosition(event: PointerEvent, chart: Chart): ScreenPoint {
+  return getPointPosition(event as unknown as MouseEvent, chart);
+}
+function pointerDown(chart: Chart, event: Event): void {
+  const pointerEvent = event as PointerEvent;
+  // Mouse input is handled entirely by mouseDown/mouseMove/mouseUp/wheel
+  // above — this whole pointer-event path exists specifically for
+  // touch/pen input (single-finger pan, two-finger pinch-zoom), which
+  // have no mouse-gesture equivalent at all (see this file's own header
+  // comment). Explicitly excluding 'mouse' here avoids double-handling
+  // the same physical click through two separate event systems.
+  if (pointerEvent.pointerType === 'mouse') return;
+  const state = getState(chart);
+  const { pointers } = state;
+  if (pointers.size >= 2) return; // only ever track the first two touches
+  if (chart.legend) {
+    // Same real guard mouseDown's own legend check applies for mouse —
+    // don't start a touch gesture over the legend area either.
+    const point = pointerPosition(pointerEvent, chart);
+    if (_isPointInArea(point, chart.legend as unknown as ChartArea)) return;
+  }
+  const point = pointerPosition(pointerEvent, chart);
+  pointers.set(pointerEvent.pointerId, point);
+  // Keeps this pointer's own move/up events arriving even if the
+  // finger drifts outside the canvas mid-gesture — without this, a fast
+  // drag that momentarily leaves the canvas's own bounds would silently
+  // stop updating until the finger re-entered it. Wrapped in try/catch:
+  // confirmed via a real, reproduced browser exception (not a guess)
+  // that `setPointerCapture` throws a real `NotFoundError` ("No active
+  // pointer with the given id is found") whenever the browser's own
+  // internal pointer-tracking doesn't (yet, or no longer) recognize this
+  // exact pointerId as active — a real, if uncommon, possibility even
+  // for genuine hardware input, not just synthetic events. Capture is
+  // inherently best-effort here: the gesture itself still works
+  // perfectly well without it (this call only helps events keep arriving
+  // if the finger leaves the canvas), so a thrown exception here must
+  // never abort the rest of this function. The optional chain's own
+  // "real capture happens" branch is separately confirmed genuinely
+  // untestable in this project's own jsdom test environment: jsdom has
+  // no `setPointerCapture` on `Element.prototype` at all.
+  try {
+    (event.target as Element).setPointerCapture?.(pointerEvent.pointerId);
+  } catch {
+    // Best-effort only — see the comment above.
+  }
+  const zoomOptions = state.options.zoom ?? {};
+  if (pointers.size === 2 && zoomOptions.pinch?.enabled) {
+    // A second finger landing while pinch is enabled always takes over
+    // from any single-finger pan already in progress — matches the
+    // original's own real Hammer-based behavior (a pinch gesture
+    // supersedes an in-progress pan the moment a 2nd touch appears).
+    if (!zoomStart(chart, pointerEvent, zoomOptions)) return;
+    const [p1, p2] = Array.from(pointers.values());
+    state.pinch = { lastDistance: getDistance(p1, p2) };
+    state.panning = false;
+    state.panStart = undefined;
+  } else if (pointers.size === 1 && state.options.pan?.enabled) {
+    // Not yet a confirmed pan — only a candidate until pointerMove sees
+    // it cross `pan.threshold` (see pointerMove's own check below).
+    state.panStart = point;
+  }
+}
+function pointerMove(chart: Chart, event: Event): void {
+  const pointerEvent = event as PointerEvent;
+  if (pointerEvent.pointerType === 'mouse') return;
+  const state = getState(chart);
+  const { pointers } = state;
+  if (!pointers.has(pointerEvent.pointerId)) return;
+  const previous = pointers.get(pointerEvent.pointerId)!;
+  const current = pointerPosition(pointerEvent, chart);
+  pointers.set(pointerEvent.pointerId, current);
+
+  if (pointers.size === 2 && state.pinch) {
+    const [p1, p2] = Array.from(pointers.values());
+    const distance = getDistance(p1, p2);
+    // Guards against a division-by-near-zero spike (fingers briefly
+    // overlapping mid-gesture) producing a wild, single-frame zoom jump.
+    if (state.pinch.lastDistance > 0) {
+      const ratio = distance / state.pinch.lastDistance;
+      zoom(chart, { x: ratio, y: ratio, focalPoint: getMidpoint(p1, p2) }, 'none', 'pinch');
+    }
+    state.pinch.lastDistance = distance;
+    return;
+  }
+
+  if (pointers.size !== 1 || !state.options.pan?.enabled) return;
+  const panOptions = state.options.pan;
+  if (!state.panning) {
+    if (!state.panStart) return; // gesture already rejected below, or superseded by a pinch
+    const threshold = panOptions.threshold ?? 0;
+    if (getDistance(state.panStart, current) < threshold) return; // still within threshold, not a pan yet
+    if (invoke(panOptions.onPanStart, [{ chart, event: pointerEvent, point: current }]) === false) {
+      invoke(panOptions.onPanRejected, [{ chart, event: pointerEvent }]);
+      state.panStart = undefined; // don't keep re-checking every frame after an explicit rejection
+      return;
+    }
+    state.panning = true;
+    return;
+  }
+  const dx = current.x - previous.x;
+  const dy = current.y - previous.y;
+  if (dx !== 0 || dy !== 0) pan(chart, { x: dx, y: dy });
+}
+function pointerUp(chart: Chart, event: Event): void {
+  const pointerEvent = event as PointerEvent;
+  if (pointerEvent.pointerType === 'mouse') return;
+  const state = getState(chart);
+  const { pointers } = state;
+  if (!pointers.has(pointerEvent.pointerId)) return;
+  pointers.delete(pointerEvent.pointerId);
+
+  if (pointers.size < 2 && state.pinch) {
+    state.pinch = undefined;
+    invoke(state.options.zoom?.onZoomComplete, [{ chart }]);
+  }
+  if (pointers.size === 1 && state.options.pan?.enabled && !state.pinch) {
+    // One finger lifted out of a two-finger pinch, one finger still
+    // down — re-baseline as a fresh pan candidate from here, rather than
+    // computing a delta against a stale pre-pinch position (which could
+    // otherwise produce a spurious jump).
+    state.panStart = pointers.values().next().value;
+    state.panning = false;
+  } else if (pointers.size === 0) {
+    if (state.panning) invoke(state.options.pan?.onPanComplete, [{ chart }]);
+    state.panning = false;
+    state.panStart = undefined;
   }
 }
 function addListeners(chart: Chart, options: ZoomPluginOptions): void {
@@ -796,6 +1078,8 @@ function addListeners(chart: Chart, options: ZoomPluginOptions): void {
   const wheelOptions = options.zoom?.wheel;
   const dragOptions = options.zoom?.drag;
   const onZoomComplete = options.zoom?.onZoomComplete;
+  const pinchEnabled = options.zoom?.pinch?.enabled;
+  const panEnabled = options.pan?.enabled;
   if (wheelOptions?.enabled) {
     addHandler(chart, canvas, 'wheel', wheel);
     addDebouncedHandler(chart, 'onZoomComplete', onZoomComplete, 250);
@@ -811,6 +1095,24 @@ function addListeners(chart: Chart, options: ZoomPluginOptions): void {
     removeHandler(chart, 'mouseup');
     removeHandler(chart, 'keydown');
   }
+  if (panEnabled || pinchEnabled) {
+    addHandler(chart, canvas, 'pointerdown', pointerDown);
+    addHandler(chart, canvas.ownerDocument!, 'pointermove', pointerMove);
+    addHandler(chart, canvas.ownerDocument!, 'pointerup', pointerUp);
+    addHandler(chart, canvas.ownerDocument!, 'pointercancel', pointerUp);
+    // Without this, the browser's own native touch panning/pinch-zoom on
+    // the canvas fights with this plugin's own gesture handling (both
+    // try to interpret the same touch input at once) — 'none' hands
+    // full control of touch gestures on this element over to this
+    // plugin's own JS-driven pan/zoom instead.
+    canvas.style.touchAction = 'none';
+  } else {
+    removeHandler(chart, 'pointerdown');
+    removeHandler(chart, 'pointermove');
+    removeHandler(chart, 'pointerup');
+    removeHandler(chart, 'pointercancel');
+    canvas.style.touchAction = '';
+  }
 }
 function removeListeners(chart: Chart): void {
   removeHandler(chart, 'mousedown');
@@ -819,6 +1121,11 @@ function removeListeners(chart: Chart): void {
   removeHandler(chart, 'wheel');
   removeHandler(chart, 'click');
   removeHandler(chart, 'keydown');
+  removeHandler(chart, 'pointerdown');
+  removeHandler(chart, 'pointermove');
+  removeHandler(chart, 'pointerup');
+  removeHandler(chart, 'pointercancel');
+  chart.canvas.style.touchAction = '';
 }
 
 // ---- drag-rectangle overlay ----
@@ -846,6 +1153,7 @@ const DEFAULT_OPTIONS: ZoomPluginOptions = {
   zoom: {
     wheel: { enabled: false, speed: 0.1, modifierKey: null },
     drag: { enabled: false, drawTime: 'beforeDatasetsDraw', modifierKey: null },
+    pinch: { enabled: false },
     mode: 'xy',
   },
 };
@@ -869,7 +1177,7 @@ export const zoomPlugin: Plugin<ChartType, ZoomPluginOptions> = {
     const chartWithApi = chart as Chart & Record<string, unknown>;
     chartWithApi.pan = (delta: number | { x?: number; y?: number }, enabledScales?: LiveScale[], transition?: string) => pan(chart, delta, enabledScales, transition);
     chartWithApi.zoom = (amount: ZoomAmount, transition?: string) => zoom(chart, amount, transition);
-    chartWithApi.zoomRect = (p0: Point, p1: Point, transition?: string) => zoomRect(chart, p0, p1, transition);
+    chartWithApi.zoomRect = (p0: ScreenPoint, p1: ScreenPoint, transition?: string) => zoomRect(chart, p0, p1, transition);
     chartWithApi.zoomScale = (id: string, range: { min: number; max: number }, transition?: string) => zoomScale(chart, id, range, transition);
     chartWithApi.resetZoom = (transition?: string) => resetZoom(chart, transition);
     chartWithApi.getZoomLevel = () => getZoomLevel(chart);

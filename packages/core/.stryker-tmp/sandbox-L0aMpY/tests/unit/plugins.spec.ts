@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('chart.js', () => ({ Chart: { register: vi.fn() }, registerables: [] }));

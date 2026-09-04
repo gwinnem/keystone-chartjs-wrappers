@@ -10,11 +10,12 @@ now ships (zoom, annotation, dataLabels, gradient, timestack,
 hierarchical, image-label — all seven already appear in this same
 "awesome" list, confirming they were reasonable picks; each of the last
 four started as one of the rows below and was promoted to implemented —
-see their own notes under Styling/Features. `gradient` and `image-label`
-are both partial exceptions among the seven: each was later ported
-directly into this project's own source rather than kept as a real
-dependency — see `CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff:
-Gradient"/"...Image label" sections).
+see their own notes under Styling/Features/Interactions. `zoom`,
+`gradient`, and `image-label` are all partial exceptions among the seven:
+each was later ported directly into this project's own source rather
+than kept as a real dependency — see `CHARTJS_ANALYSIS.md` §4's own
+"Zoom/pan"/"Added after v1 kickoff: Gradient"/"...Image label"
+sections).
 
 Confidence: this list states what the "awesome" list itself claims
 (name, repo, one-line description, v4-support badge) — none of these
@@ -67,12 +68,12 @@ above.
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
 directly into `packages/core/src/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. Also the only one of this
-project's own 7 official plugins/scales that renders live on the docs
-site rather than source-only, since local code has no dynamic import
-for the known docs-site hydration gap to apply to. See
-`CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff: Image label"
-section for the full verification, and
+bugs found in the original along the way. One of three of this
+project's own 7 official plugins/scales (alongside `gradient` and
+`zoom`) that renders live on the docs site rather than source-only,
+since local code has no dynamic import for the known docs-site
+hydration gap to apply to. See `CHARTJS_ANALYSIS.md` §4's own "Added
+after v1 kickoff: Image label" section for the full verification, and
 `docs/site/src/content/docs/vue/examples/image-label-plugin.mdx` for
 the docs-site example. No longer a survey candidate — removed from the
 table above.
@@ -88,8 +89,15 @@ table above.
 | interaction-tools | NVital14/chartjs-plugin-interaction-tools | Drag data points and draw freeform trails directly on charts |
 | select-drag | 01CodeLT/chartjs-plugin-selectdrag | Drag across charts to select an axis range |
 
-(`zoom` also appears in this list's own "Interactions" category — already
-this project's own official plugin, not a new candidate.)
+(`zoom` also appears in this list's own "Interactions" category —
+already this project's own official plugin, not a new candidate.
+**Later ported directly into `packages/core/src/zoomPlugin.ts`, at your
+explicit request** — it is no longer a real npm dependency of this
+project, dropping every Hammer.js-dependent code path (pinch-zoom,
+gesture-driven pan) along the way, which also resolves the Hammer.js
+unmaintained-dependency concern `CHARTJS_ANALYSIS.md` §6 originally
+flagged as open. See that document's own §4 "Zoom/pan" section for the
+full verification.)
 
 **a11y-legend and chart2music are directly relevant to this project's own
 existing, tracked accessibility gap** (see `IMPLEMENTATION_PLAN.md`'s

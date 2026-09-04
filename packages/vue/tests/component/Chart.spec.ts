@@ -65,9 +65,17 @@ beforeEach(() => {
   // assertions on the final `options` object passed to
   // createChartController/handle.update are meaningful, not just
   // "was the helper called at all".
+  // withZoom still merges real config into options.plugins.zoom (unlike
+  // gradient/imageLabel below, which have none), but as of the local
+  // port it too returns { options, plugin } rather than just options,
+  // since it's now supplied via the inline plugins array rather than
+  // Chart.register(...).
   withZoom.mockImplementation(async (opts: Record<string, unknown>, zoomOptions: unknown) => ({
-    ...opts,
-    plugins: { ...(opts.plugins as object), zoom: zoomOptions ?? {} },
+    options: {
+      ...opts,
+      plugins: { ...(opts.plugins as object), zoom: zoomOptions ?? {} },
+    },
+    plugin: { id: 'zoom-plugin' },
   }));
   withAnnotation.mockImplementation(async (opts: Record<string, unknown>, annotationOptions: unknown) => ({
     ...opts,
@@ -293,6 +301,7 @@ describe('Chart — plugin opt-ins', () => {
       type: 'bar',
       data: { datasets: [] },
       options: { plugins: { zoom: {} } },
+      plugins: [{ id: 'zoom-plugin' }],
     });
   });
 
@@ -475,6 +484,7 @@ describe('Chart — plugin opt-ins', () => {
       type: 'bar',
       data: { datasets: [] },
       options: { plugins: { zoom: {}, annotation: { annotations: {} }, datalabels: {} } },
+      plugins: [{ id: 'zoom-plugin' }],
     });
   });
 
@@ -498,12 +508,14 @@ describe('Chart — plugin opt-ins', () => {
     // it ran *after* the other three (last in resolveOptions's own
     // sequence) without wiping out what they'd already merged in, while
     // still contributing its own plugin object to the effective
-    // `plugins` array.
+    // `plugins` array — alongside zoom's own plugin object too, since
+    // zoom is also supplied via the inline plugins array as of its own
+    // local port.
     expect(createChartController).toHaveBeenCalledWith(expect.anything(), {
       type: 'bar',
       data: { datasets: [] },
       options: { plugins: { zoom: {}, annotation: { annotations: {} }, datalabels: {} } },
-      plugins: [{ id: 'gradient-plugin' }],
+      plugins: [{ id: 'zoom-plugin' }, { id: 'gradient-plugin' }],
     });
     expect(withGradient).toHaveBeenCalledTimes(1);
   });
@@ -527,13 +539,13 @@ describe('Chart — plugin opt-ins', () => {
 
     // withTimestack's own mock returns options unchanged too, so this
     // confirms it ran last without wiping out what the others already
-    // merged in. gradient's own plugin object still lands in the
-    // effective plugins array regardless of timestack being set too.
+    // merged in. zoom's and gradient's own plugin objects still land in
+    // the effective plugins array regardless of timestack being set too.
     expect(createChartController).toHaveBeenCalledWith(expect.anything(), {
       type: 'bar',
       data: { datasets: [] },
       options: { plugins: { zoom: {}, annotation: { annotations: {} }, datalabels: {} } },
-      plugins: [{ id: 'gradient-plugin' }],
+      plugins: [{ id: 'zoom-plugin' }, { id: 'gradient-plugin' }],
     });
     expect(withTimestack).toHaveBeenCalledTimes(1);
   });
@@ -558,13 +570,14 @@ describe('Chart — plugin opt-ins', () => {
 
     // withHierarchical's own mock returns options unchanged too, so this
     // confirms it ran last without wiping out what the others already
-    // merged in. gradient's own plugin object still lands in the
-    // effective plugins array regardless of hierarchical being set too.
+    // merged in. zoom's and gradient's own plugin objects still land in
+    // the effective plugins array regardless of hierarchical being set
+    // too.
     expect(createChartController).toHaveBeenCalledWith(expect.anything(), {
       type: 'bar',
       data: { datasets: [] },
       options: { plugins: { zoom: {}, annotation: { annotations: {} }, datalabels: {} } },
-      plugins: [{ id: 'gradient-plugin' }],
+      plugins: [{ id: 'zoom-plugin' }, { id: 'gradient-plugin' }],
     });
     expect(withHierarchical).toHaveBeenCalledTimes(1);
   });
@@ -599,7 +612,7 @@ describe('Chart — plugin opt-ins', () => {
           imageLabel: { imagesList: [] },
         },
       },
-      plugins: [{ id: 'gradient-plugin' }, { id: 'image-label-plugin' }],
+      plugins: [{ id: 'zoom-plugin' }, { id: 'gradient-plugin' }, { id: 'image-label-plugin' }],
     });
     expect(withImageLabel).toHaveBeenCalledTimes(1);
   });
