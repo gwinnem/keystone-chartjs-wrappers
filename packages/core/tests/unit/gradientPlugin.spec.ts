@@ -93,6 +93,22 @@ describe('gradientPlugin', () => {
       expect(chart.ctx.createLinearGradient).not.toHaveBeenCalled();
     });
 
+    it('treats a chart area with valid width but zero height as invalid too (isolates bottom>top from right>left)', () => {
+      // The zero-width/height test above makes BOTH `right > left` and
+      // `bottom > top` false simultaneously — a `bottom >= top` mutation
+      // there would still leave the overall check false (via the
+      // untouched `right > left` clause), never getting exercised on its
+      // own. A degenerate-HEIGHT-only area (real width, zero height)
+      // isolates it: `right > left` is genuinely true here, so only a
+      // correct `bottom > top` (not `>=`) check keeps this area invalid.
+      const chart = makeChart({ chartArea: { top: 50, left: 0, bottom: 50, right: 100 }, datasets: [{ gradient: { backgroundColor: { axis: 'x', colors: { 0: 'red' } } } }] });
+      gradientPlugin.beforeInit!(chart, {} as never, {});
+
+      gradientPlugin.beforeDatasetsUpdate!(chart, {} as never, {});
+
+      expect(chart.ctx.createLinearGradient).not.toHaveBeenCalled();
+    });
+
     it('skips a dataset with no gradient config at all', () => {
       const chart = makeChart({ datasets: [{ data: [1, 2, 3] }] });
       gradientPlugin.beforeInit!(chart, {} as never, {});
@@ -176,6 +192,34 @@ describe('gradientPlugin', () => {
       // throwing or silently no-opping once a prior entry already
       // existed for this exact dataset/key pair.
       expect(chart.ctx.createLinearGradient).toHaveBeenCalledTimes(2);
+    });
+
+    it('discards the stale entry on refresh, not just appends alongside it (getStateEntries\' own filter, observed via its actual content)', () => {
+      // The test above only confirms a second update recomputes a
+      // gradient at all — that would be true even if the stale entry
+      // from the first update were never actually removed, just left to
+      // accumulate alongside the fresh one, since createLinearGradient
+      // is called unconditionally either way. Observing the FILTER
+      // itself working needs the stale and fresh entries to genuinely
+      // differ in content: if getGradientState's own `.find()` still
+      // finds the first-pushed (stale) entry instead of the fresh one,
+      // reading back an exact-match stop color exposes the wrong one.
+      const dataset = { data: [0], gradient: { backgroundColor: { axis: 'x', colors: { 0: 'red', 100: 'blue' } } } };
+      const meta = { hidden: false, xScale: makeLinearScale() };
+      const legendItems: any[] = [{ datasetIndex: 99, index: 0 }];
+      const chart = makeChart({ datasets: [dataset], metas: { 0: meta }, legend: { options: { display: true, labels: { boxWidth: 40, boxHeight: 12 } }, legendItems, legendHitBoxes: [{ top: 0, left: 0 }] } });
+      gradientPlugin.beforeInit!(chart, {} as never, {});
+
+      gradientPlugin.beforeDatasetsUpdate!(chart, {} as never, {});
+      // Change to genuinely different colors before the second update —
+      // if the stale entry survives, .find() would return IT (pushed
+      // first), still red at stop 0, not the fresh green.
+      (dataset.gradient.backgroundColor as any).colors = { 0: 'green', 100: 'yellow' };
+      gradientPlugin.beforeDatasetsUpdate!(chart, {} as never, {});
+
+      gradientPlugin.afterUpdate!(chart, {} as never, {});
+
+      expect(legendItems[0].fillStyle).toBe(color('green').rgbString());
     });
 
     it('creates a radial gradient for the r axis', () => {
@@ -506,14 +550,19 @@ describe('gradientPlugin', () => {
 
       gradientPlugin.afterUpdate!(chart, {} as never, {});
 
-      // data[1] === 50, exactly halfway between the 0/red and 100/blue
-      // stops — must be a real, interpolated color, distinct from both
-      // endpoints, confirming interpolateColor's own real math ran
-      // rather than the exact-match early return above.
+      // Exact expected midpoint, computed via the same IEC 61966-2-1
+      // gamma-aware formula the plugin itself uses (toSRGB/fromSRGB):
+      // red (255,0,0) and blue (0,0,255) blended at 50% in linear-light
+      // space give rgb(188,0,188), distinctly different from the naive-
+      // lerp midpoint (rgb(128,0,128)) a broken or naive implementation
+      // would produce instead — this exact value pins down every
+      // constant and operator in the sRGB conversion (toSRGB's own
+      // 12.92/1.055/0.055/2.4 constants and its <=0.0031308 boundary,
+      // fromSRGB's own mirrored constants and its <=0.04045 boundary),
+      // none of which the earlier "is a string, not red, not blue"
+      // assertion could ever catch.
       const fillStyle = legendItems[1].fillStyle as string;
-      expect(fillStyle).toEqual(expect.any(String));
-      expect(fillStyle).not.toBe(color('red').rgbString());
-      expect(fillStyle).not.toBe(color('blue').rgbString());
+      expect(fillStyle).toBe(color({ r: 188, g: 0, b: 188, a: 1 }).rgbString());
     });
 
     it('resolves the color from only the nearest earlier stop when a value falls before the very first stop', () => {

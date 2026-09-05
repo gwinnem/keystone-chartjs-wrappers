@@ -12,8 +12,19 @@ const config = {
   plugins: ['@stryker-mutator/vitest-runner'],
   testRunner: 'vitest',
   reporters: ['clear-text', 'progress', 'html', 'json'],
-  coverageAnalysis: 'perTest',
-  ignoreStatic: true,
+  // 'all', not 'perTest': confirmed via a real side-by-side run that
+  // 'perTest' was silently undercounting real coverage across this
+  // project's test suites (zoomPlugin.ts alone jumped from 66.04% to
+  // 68.57% — 27 mutants "freed" with zero new tests — and
+  // gradientPlugin.ts/imageLabelPlugin.ts improved too), not just for
+  // it.each-parameterized tests. Slower per run (reruns the full suite
+  // per mutant instead of only the tests that "covered" it), but the
+  // accuracy is worth it — a fast, wrong number is worse than a slow,
+  // right one.
+  coverageAnalysis: 'all',
+  // 'all' and ignoreStatic are mutually exclusive per Stryker's own
+  // config validation — disabled together with the change above.
+  ignoreStatic: false,
   // Explicit test-run timeout budget, not left to Stryker's own default —
   // matches keystone-dashboard-layout's own real core package config
   // (confirmed directly from that project's actual stryker.conf.json, not

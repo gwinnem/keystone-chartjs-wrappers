@@ -694,11 +694,21 @@ describe('zoomPlugin', () => {
       // limits lets fixRange's own epsilon-snap-to-original logic
       // (`range / 1e6`) snap the computed range exactly back to the
       // scale's own original bounds, making updateRange's own final
-      // "did the range actually change" check false. A visible-effect
-      // way to confirm this really happened (panDelta stored, not
-      // reset): a second, larger pan afterward should reflect the
-      // accumulated tiny delta added on top of it, not just its own
-      // delta alone.
+      // "did the range actually change" check false.
+      //
+      // Crucially, scale.options.min/max are set unconditionally inside
+      // updateRange BEFORE its own final return — they're the same
+      // (snapped-back) values whether that final `!==` check returns
+      // true or false, so asserting on them alone (as this test
+      // originally did) can never actually distinguish the two: any
+      // mutation to line 393's own return expression would still pass.
+      // The only real, observable effect of that return value is
+      // whether panScale resets panDelta to 0 or accumulates it — which
+      // only shows up on a SECOND pan call afterward. Comparing against
+      // a fresh chart that skips the tiny first pan isolates that
+      // accumulated delta precisely: if it was wrongly reset to 0
+      // instead of accumulated, both charts would end up at the exact
+      // same min/max after their own second, identical pan.
       const scale = makeScale({ min: 0, max: 100 });
       const chart = makeChart({ scales: { x: scale } });
       initPlugin(chart, { pan: { enabled: true } });
@@ -710,6 +720,62 @@ describe('zoomPlugin', () => {
       // real condition panScale's own else branch requires.
       expect((scale.options as any).min).toBe(0);
       expect((scale.options as any).max).toBe(100);
+
+      // A second, larger pan should reflect the accumulated tiny delta
+      // added on top of it (panScale's own sign-matching accumulation),
+      // not just the second pan's own delta alone.
+      chart.pan({ x: 10, y: 0 });
+      const withAccumulation = { min: (scale.options as any).min, max: (scale.options as any).max };
+
+      const freshScale = makeScale({ min: 0, max: 100 });
+      const freshChart = makeChart({ scales: { x: freshScale } });
+      initPlugin(freshChart, { pan: { enabled: true } });
+      freshChart.pan({ x: 10, y: 0 });
+      const withoutAccumulation = { min: (freshScale.options as any).min, max: (freshScale.options as any).max };
+
+      expect(withAccumulation.min).not.toBe(withoutAccumulation.min);
+      expect(withAccumulation.max).not.toBe(withoutAccumulation.max);
+    });
+
+    it('resets the accumulated pan delta to zero after a pan that genuinely changes the range, not just when a tiny pan snaps back', () => {
+      // The test above only ever exercises updateRange's own line-393
+      // return value at `false` (the tiny pan's range snaps back
+      // unchanged) — a mutation forcing that whole expression to
+      // permanently `false` would still produce the identical outcome
+      // there, since `false` was already the real value. This test
+      // exercises the OTHER side: a normal pan whose range genuinely
+      // DOES change, where the real return value is `true` — panScale's
+      // own `if` branch resets panDelta to 0.
+      //
+      // Verifying this can't just compare against a fresh chart's own
+      // single genuine pan: fixRange's own epsilon-snap-to-original
+      // check compares against the SCALE'S true original bounds (0/100
+      // here), not its current position — once the range has already
+      // shifted away from those original bounds, a tiny follow-up pan
+      // no longer snaps back to anything, genuine small effect or not,
+      // making an exact-equality comparison against a no-follow-up
+      // baseline fragile. Instead: a THIRD, equally tiny pan afterward
+      // should shift the range by a negligible amount on top of the
+      // second (genuine) pan's own result — IF panDelta was correctly
+      // reset to 0. If the genuine pan's own `true` return was mutated
+      // to `false`, panDelta would incorrectly retain that pan's own
+      // full delta, which this third tiny pan's own same-signed
+      // accumulation would then add AGAIN on top of the range the
+      // second pan already produced — a large, easily distinguished
+      // shift instead of a negligible one.
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true } });
+
+      chart.pan({ x: 0.0000001, y: 0 }); // snaps back to original — real fn() returns false, panDelta accumulates
+      chart.pan({ x: 10, y: 0 }); // genuinely changes the range — real fn() returns true, panDelta should reset to 0
+      const afterGenuinePan = { min: (scale.options as any).min, max: (scale.options as any).max };
+
+      chart.pan({ x: 0.0000001, y: 0 }); // negligible on its own — should stay negligible if panDelta was reset
+      const afterThirdPan = { min: (scale.options as any).min, max: (scale.options as any).max };
+
+      expect(Math.abs(afterThirdPan.min - afterGenuinePan.min)).toBeLessThan(0.001);
+      expect(Math.abs(afterThirdPan.max - afterGenuinePan.max)).toBeLessThan(0.001);
     });
   });
 
@@ -893,6 +959,69 @@ describe('zoomPlugin', () => {
       expect(newRange).toBeGreaterThan(50);
     });
 
+    it('wheel: a real, nonzero speed produces the exact hand-computed zoom percentage (kills a 1-speed → 1+speed mix-up)', () => {
+      // wheel's own `percentage = wheelEvent.deltaY >= 0 ? 2 - 1/(1-speed)
+      // : 1 + speed` — the negative-deltaY branch's own `1 + speed`
+      // is asserted only loosely elsewhere ("zoom happened"); here it's
+      // checked against an exact, hand-computed resulting range.
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true, speed: 0.25 } } });
+
+      // deltaY<0 (zoom in): percentage=1+0.25=1.25 exactly. focalPoint
+      // at x=0 (=scale.min, canvas offset 0) — minPercent=0, so the
+      // entire zoom lands on max: newRange=100*(1.25-1)=25,
+      // max=100-25*1=75 exactly (delta.max=newRange*maxPercent=25*1=25).
+      const wheelEvent = new WheelEvent('wheel', { deltaY: -100, clientX: 0, clientY: 150, cancelable: true, bubbles: true });
+      Object.defineProperty(wheelEvent, 'target', { value: chart.canvas, configurable: true });
+      chart.canvas.dispatchEvent(wheelEvent);
+
+      expect((scale.options as any).min).toBe(0);
+      expect((scale.options as any).max).toBe(75);
+    });
+
+    it('wheel: the focal point is computed from the real event target\'s own bounding rect, not the canvas\'s (kills clientX-rect.left → clientX+rect.left)', () => {
+      // wheel's own `{x: wheelEvent.clientX - rect.left, y:
+      // wheelEvent.clientY - rect.top}` — every other wheel test in this
+      // file has rect.left/top at 0 (the default mock), where `-` and
+      // `+` produce the SAME result. A nonzero offset on the wheel
+      // event's own target rules that out.
+      const scale = makeScale({ min: 0, max: 1000 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true, speed: 0.1 } } });
+
+      const fakeTarget = document.createElement('div');
+      vi.spyOn(fakeTarget, 'getBoundingClientRect').mockReturnValue({
+        top: 20, left: 30, right: 430, bottom: 320, width: 400, height: 300, x: 30, y: 20, toJSON: () => ({}),
+      });
+      // deltaY<0: percentage=1+0.1=1.1. focalPoint.x = clientX(30) -
+      // rect.left(30) = 0 exactly (real) vs 30+30=60 (mutant) — real
+      // focal value 0 = scale.min exactly, so min should stay EXACTLY 0.
+      const wheelEvent = new WheelEvent('wheel', { deltaY: -100, clientX: 30, clientY: 150, cancelable: true, bubbles: true });
+      Object.defineProperty(wheelEvent, 'target', { value: fakeTarget, configurable: true });
+      chart.canvas.dispatchEvent(wheelEvent);
+
+      expect((scale.options as any).min).toBe(0);
+    });
+
+    it('wheel: the y-coordinate of the focal point uses the real target rect too, not just x (kills clientY-rect.top → clientY+rect.top)', () => {
+      const scale = makeScale({ axis: 'y', min: 0, max: 1000 });
+      const chart = makeChart({ scales: { y: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true, speed: 0.1 } } });
+
+      const fakeTarget = document.createElement('div');
+      vi.spyOn(fakeTarget, 'getBoundingClientRect').mockReturnValue({
+        top: 20, left: 30, right: 430, bottom: 320, width: 400, height: 300, x: 30, y: 20, toJSON: () => ({}),
+      });
+      // focalPoint.y = clientY(20) - rect.top(20) = 0 exactly (real) vs
+      // 20+20=40 (mutant) — real focal value 0 = scale.min exactly.
+      const wheelEvent = new WheelEvent('wheel', { deltaY: -100, clientX: 200, clientY: 20, cancelable: true, bubbles: true });
+      Object.defineProperty(wheelEvent, 'target', { value: fakeTarget, configurable: true });
+      chart.canvas.dispatchEvent(wheelEvent);
+
+      expect((scale.options as any).min).toBe(0);
+    });
+
     it('does not zoom when wheel.enabled is false (default)', () => {
       const scale = makeScale();
       const chart = makeChart({ scales: { x: scale } });
@@ -1033,6 +1162,29 @@ describe('zoomPlugin', () => {
       expect((scale.options as any).min).toBeUndefined();
     });
 
+    it('keyDown: does nothing when there is no drag in progress at all, even for a real Escape press (state.dragStart is falsy)', () => {
+      // keyDown's own `if (!state.dragStart || keyEvent.key !== 'Escape')
+      // return;` — a ConditionalExpression mutation replacing the whole
+      // guard with `false` means keyDown NEVER returns early, always
+      // proceeding to call chart.update() regardless. Since dragStart/
+      // dragEnd are already null either way, only a spy on chart.update
+      // itself (not scale.options) can distinguish "returned early" from
+      // "proceeded anyway".
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 } } });
+
+      fireMouseDown(chart, 50, 50);
+      fireMouseMove(chart, 250, 250);
+      fireMouseUp(chart, 250, 250); // completes normally, clearing dragStart
+      chart.update.mockClear();
+
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+      window.document.dispatchEvent(escEvent);
+
+      expect(chart.update).not.toHaveBeenCalled();
+    });
+
     it('does not start a drag when mousedown targets the legend area', () => {
       const scale = makeScale();
       const legend = { left: 0, top: 0, right: 400, bottom: 40 };
@@ -1134,22 +1286,22 @@ describe('zoomPlugin', () => {
       const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
       initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5, maintainAspectRatio: true } } });
 
-      // A drag whose own raw width/height (300x100) does NOT match the
-      // chart area's own 4:3 aspect ratio — applyAspectRatio's own real
-      // logic must adjust one dimension to match, confirmed here by the
-      // resulting zoom not simply matching the raw, unadjusted drag
-      // coordinates.
-      fireMouseDown(chart, 50, 50);
-      fireMouseMove(chart, 350, 150);
-      fireMouseUp(chart, 350, 150);
+      // applyAspectRatio's own `ratio > aspectRatio` branch, traced
+      // through precisely: a drag 300 wide, 100 tall has ratio=3, well
+      // above the chart area's own 400/300≈1.333 aspectRatio — real
+      // width becomes `Math.sign(300) * Math.abs(100 * 1.333...) =
+      // 133.33...`, giving an exact expected resulting max of
+      // 50 + 133.33... ≈ 183.33, not the raw, unadjusted 350.
+      const downEvent = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(downEvent);
+      const moveEvent = new MouseEvent('mousemove', { clientX: 350, clientY: 150, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(moveEvent);
+      const upEvent = new MouseEvent('mouseup', { clientX: 350, clientY: 150, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(upEvent);
 
-      expect((scale.options as any).min).toBeDefined();
-      // The unadjusted drag would have zoomed x from 50 to 350 exactly —
-      // aspect-ratio correction changes at least one of the resulting
-      // bounds away from that raw value.
-      const unadjusted = { min: 50, max: 350 };
-      const actual = { min: (scale.options as any).min, max: (scale.options as any).max };
-      expect(actual.min !== unadjusted.min || actual.max !== unadjusted.max).toBe(true);
+      const expectedWidth = Math.abs(100 * (400 / 300));
+      expect((scale.options as any).min).toBeCloseTo(50, 5);
+      expect((scale.options as any).max).toBeCloseTo(50 + expectedWidth, 4);
     });
 
     it('applies drag-to-zoom with maintainAspectRatio the other way (ratio < aspectRatio, adjusting height instead of width)', () => {
@@ -1171,6 +1323,48 @@ describe('zoomPlugin', () => {
       const unadjusted = { min: 50, max: 250 };
       const actual = { min: (scale.options as any).min, max: (scale.options as any).max };
       expect(actual.min !== unadjusted.min || actual.max !== unadjusted.max).toBe(true);
+    });
+
+    it('applyAspectRatio: a ratio one hair above aspectRatio still takes the width-adjustment branch (kills a > → >= boundary flip)', () => {
+      // applyAspectRatio's own `ratio > aspectRatio` is strict — a ratio
+      // JUST barely above aspectRatio should still take this branch.
+      // chartArea 400x300 → aspectRatio exactly 4/3. A drag of
+      // width=200.1, height=150 gives ratio=200.1/150≈1.334, marginally
+      // above 4/3≈1.3333 — kept well within the chart area's own
+      // 400x300 bounds so applyMinMaxProps' own clamp never interferes.
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5, maintainAspectRatio: true } } });
+
+      const downEvent = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(downEvent);
+      const moveEvent = new MouseEvent('mousemove', { clientX: 250.1, clientY: 200, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(moveEvent);
+      const upEvent = new MouseEvent('mouseup', { clientX: 250.1, clientY: 200, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(upEvent);
+
+      // width-adjustment branch taken: width recomputed as
+      // sign(200.1)*abs(150*4/3)=200 exactly (not the raw 200.1).
+      expect((scale.options as any).max).toBeCloseTo(250, 1);
+    });
+
+    it('applyAspectRatio: a ratio one hair below aspectRatio still takes the height-adjustment branch (kills a < → <= boundary flip)', () => {
+      const scale = makeScale({ axis: 'y' });
+      const chart = makeChart({ scales: { y: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5, maintainAspectRatio: true } } });
+
+      // width=200, height=150.1 → ratio=200/150.1≈1.3324, marginally
+      // BELOW 4/3≈1.3333 — kept within the chart area's own bounds.
+      const downEvent = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(downEvent);
+      const moveEvent = new MouseEvent('mousemove', { clientX: 250, clientY: 200.1, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(moveEvent);
+      const upEvent = new MouseEvent('mouseup', { clientX: 250, clientY: 200.1, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(upEvent);
+
+      // height-adjustment branch taken: height recomputed as
+      // sign(150.1)*abs(200/(4/3))=150 exactly (not the raw 150.1).
+      expect((scale.options as any).max).toBeCloseTo(200, 1);
     });
   });
 
@@ -1213,6 +1407,48 @@ describe('zoomPlugin', () => {
       chart.canvas.ownerDocument.dispatchEvent(move);
 
       expect((scale.options as any).min).toBeUndefined();
+    });
+
+    it('pointerDown: a mouse-type pointerdown never even reaches setPointerCapture (the real early-return happens before tracking anything at all)', () => {
+      // pointerDown's own mouse-exclusion returns before EVER touching
+      // `pointers`/setPointerCapture — the existing mouse-exclusion test
+      // only confirms the eventual zoom/pan never happens, but that's
+      // also true if the mouse pointer got incorrectly tracked here and
+      // pointerMove's OWN separate (and still-correct) mouse check
+      // later blocked it anyway. Spying on setPointerCapture directly
+      // isolates pointerDown's OWN check specifically, independent of
+      // the other two handlers' own checks.
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      const captureSpy = vi.fn();
+      (chart.canvas as any).setPointerCapture = captureSpy;
+      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0 } });
+
+      firePointerDown(chart, 100, 150, { pointerType: 'mouse' });
+
+      expect(captureSpy).not.toHaveBeenCalled();
+    });
+
+    it('pointerMove: a mouse-type pointermove never calls pan(), even for a pointerId a touch gesture already legitimately tracks', () => {
+      // pointerMove's own mouse-exclusion is a SEPARATE mutation site
+      // from pointerDown's own — isolated here by first tracking a real
+      // touch pointer (id 1), then sending a mouse-type pointermove
+      // event reusing that SAME id. If pointerMove's own check were
+      // broken, this would still process the move as if it were the
+      // real touch (since the id is genuinely tracked) — confirmed by a
+      // spy on chart.update, which pan() always calls when it actually
+      // runs.
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0 } });
+
+      firePointerDown(chart, 200, 150); // real touch, id=1, starts pan candidate
+      firePointerMove(chart, 250, 150); // crosses threshold, panning=true
+      chart.update.mockClear();
+      const mouseMove = makePointerEvent('pointermove', 999, 150, 1, 'mouse'); // same id, but pointerType='mouse'
+      chart.canvas.ownerDocument.dispatchEvent(mouseMove);
+
+      expect(chart.update).not.toHaveBeenCalled();
     });
 
     it('does not abort the gesture when setPointerCapture throws (a real, confirmed browser exception, not just a jsdom gap)', () => {
@@ -1353,6 +1589,15 @@ describe('zoomPlugin', () => {
       firePointerDown(chart, 100, 150, { pointerId: 1 });
       firePointerDown(chart, 300, 150, { pointerId: 2 });
       expect(() => firePointerDown(chart, 200, 200, { pointerId: 3 })).not.toThrow();
+
+      // The real guard is `pointers.size >= 2`, not `> 2` — confirmed
+      // by moving the (never-tracked) 3rd pointer and seeing it change
+      // nothing at all, since `pointers.has(3)` must be false.
+      firePointerMove(chart, 250, 200, 3);
+      const before = { min: (scale.options as any).min, max: (scale.options as any).max };
+      firePointerMove(chart, 999, 999, 3);
+      expect((scale.options as any).min).toBe(before.min);
+      expect((scale.options as any).max).toBe(before.max);
     });
 
     it('starts a pinch-zoom gesture on a second touch when pinch.enabled, and zooms as the fingers move apart', () => {
@@ -1429,7 +1674,8 @@ describe('zoomPlugin', () => {
     it('ignores a mouse-type pointerup too, not just pointerdown/pointermove (pointerUp\'s own mouse-exclusion check)', () => {
       const scale = makeScale({ min: 0, max: 100 });
       const chart = makeChart({ scales: { x: scale } });
-      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0 } });
+      const onPanComplete = vi.fn();
+      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0, onPanComplete } });
 
       firePointerDown(chart, 200, 150);
       firePointerMove(chart, 250, 150);
@@ -1437,10 +1683,50 @@ describe('zoomPlugin', () => {
       const mouseUpEvent = makePointerEvent('pointerup', 300, 150, 1, 'mouse');
       chart.canvas.ownerDocument.dispatchEvent(mouseUpEvent);
 
+      // If pointerUp's own mouse-exclusion check were broken, this
+      // mouse-typed event (reusing the real touch's own tracked id)
+      // would end the gesture early — confirmed here via onPanComplete
+      // NOT having fired yet (the touch is still genuinely down).
+      expect(onPanComplete).not.toHaveBeenCalled();
       // The touch pointer (id 1) is still genuinely down from the real
       // pointerdown above — a same-id mouse-type pointerup must not be
       // able to end that touch gesture early.
       expect(() => firePointerMove(chart, 350, 150)).not.toThrow();
+    });
+
+    it('pointerDown: exactly two already-tracked pointers blocks a third from ever reaching setPointerCapture (the >= 2 boundary, not > 2)', () => {
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      const captureSpy = vi.fn();
+      (chart.canvas as any).setPointerCapture = captureSpy;
+      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0 }, zoom: { pinch: { enabled: true }, mode: 'xy' } });
+
+      firePointerDown(chart, 100, 150, { pointerId: 1 });
+      firePointerDown(chart, 300, 150, { pointerId: 2 });
+      captureSpy.mockClear();
+      firePointerDown(chart, 200, 200, { pointerId: 3 });
+
+      // With exactly 2 already tracked, a 3rd pointerdown must be
+      // rejected before ever reaching setPointerCapture — a `> 2`
+      // mutation would instead let it through (since 2 is not > 2).
+      expect(captureSpy).not.toHaveBeenCalled();
+    });
+
+    it('pointerDown: omitting zoom.pinch entirely behaves identically to pinch.enabled:false (the real optional-chaining fallback, not a crash)', () => {
+      // zoomOptions.pinch?.enabled — zoomOptions.pinch itself can be
+      // genuinely undefined (omitted from config), not just its own
+      // `enabled` sub-property. Every other pinch test in this file sets
+      // `pinch: {enabled: true/false}` explicitly as an object.
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
+      initPlugin(chart, { zoom: { mode: 'xy' } }); // no `pinch` key at all
+
+      expect(() => {
+        firePointerDown(chart, 150, 150, { pointerId: 1 });
+        firePointerDown(chart, 250, 150, { pointerId: 2 });
+        firePointerMove(chart, 100, 150, 1);
+      }).not.toThrow();
+      expect((scale.options as any).min).toBeUndefined();
     });
 
     it('sets touch-action:none on the canvas while pan or pinch is enabled, and clears it when neither is', () => {
@@ -1507,8 +1793,18 @@ describe('zoomPlugin', () => {
       const chart = makeChart({ scales: { x: scale } });
       initPlugin(chart, { pan: { enabled: true, modifierKey: 'ctrl' }, zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 } } });
 
+      // Completing the full drag sequence (not just mousedown) matters:
+      // zooming only ever happens in mouseUp(), so a mousedown-only test
+      // can never actually distinguish rejection from acceptance here —
+      // scale.options.min stays undefined either way without a
+      // completed drag, making the assertion trivially true regardless
+      // of whether mouseDown's own modifier-key check genuinely ran.
       const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, ctrlKey: true, bubbles: true });
       chart.canvas.dispatchEvent(down);
+      const move = new MouseEvent('mousemove', { clientX: 250, clientY: 250, ctrlKey: true, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(move);
+      const up = new MouseEvent('mouseup', { clientX: 250, clientY: 250, ctrlKey: true, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(up);
 
       expect((scale.options as any).min).toBeUndefined();
     });
@@ -1606,6 +1902,60 @@ describe('zoomPlugin', () => {
       expect((yScale.options as any).min).toBeDefined();
       expect((xScale.options as any).min).toBeUndefined();
     });
+
+    it('getScaleUnderPoint: a false top-edge clause does not incorrectly match via the shortcut (two-scale, diverging mode/scaleMode)', () => {
+      // Single-scale tests (like the "one pixel outside the top edge"
+      // test above) can't distinguish "matched via getScaleUnderPoint's
+      // own shortcut" from "missed it, then caught anyway by the base
+      // enabled-filter fallback" when mode and scaleMode agree — with
+      // both 'xy' there, a single scale ends up in enabledScales either
+      // way, so a `point.y >= scale.top` mutation forced to `true` is
+      // completely unobservable there. mode:'y' + scaleMode:'x' here
+      // means only a genuine shortcut match (getScaleUnderPoint actually
+      // returning xScale) can ever zoom xScale — the base fallback
+      // (mode:'y') would exclude it outright.
+      const xScale = makeScale({ axis: 'x', id: 'x', top: 10, bottom: 110, left: 20, right: 220 });
+      const yScale = makeScale({ axis: 'y', id: 'y', top: 500, bottom: 600, left: 500, right: 600 });
+      const chart = makeChart({ scales: { x: xScale, y: yScale } });
+      initPlugin(chart, { zoom: { mode: 'y', scaleMode: 'x' } });
+
+      // y=9 is one pixel above xScale's own top (10) — real
+      // getScaleUnderPoint finds no match (clause 1 false, short-
+      // circuiting the whole `&&` chain), falls to the base filter,
+      // which (mode:'y') excludes xScale entirely.
+      chart.zoom({ x: 2, y: 2, focalPoint: { x: 120, y: 9 } });
+
+      expect((xScale.options as any).min).toBeUndefined();
+    });
+
+    it('getScaleUnderPoint: a false bottom-edge clause does not incorrectly match via the shortcut', () => {
+      // Same isolation technique as the top-edge test above, targeting
+      // `point.y <= scale.bottom` specifically.
+      const xScale = makeScale({ axis: 'x', id: 'x', top: 10, bottom: 110, left: 20, right: 220 });
+      const yScale = makeScale({ axis: 'y', id: 'y', top: 500, bottom: 600, left: 500, right: 600 });
+      const chart = makeChart({ scales: { x: xScale, y: yScale } });
+      initPlugin(chart, { zoom: { mode: 'y', scaleMode: 'x' } });
+
+      // y=111 is one pixel below xScale's own bottom (110) — clause 2
+      // false, real getScaleUnderPoint finds no match.
+      chart.zoom({ x: 2, y: 2, focalPoint: { x: 120, y: 111 } });
+
+      expect((xScale.options as any).min).toBeUndefined();
+    });
+
+    it('getScaleUnderPoint: a false left-edge clause does not incorrectly match via the shortcut', () => {
+      // Same isolation technique again, targeting `point.x >= scale.left`.
+      const xScale = makeScale({ axis: 'x', id: 'x', top: 10, bottom: 110, left: 20, right: 220 });
+      const yScale = makeScale({ axis: 'y', id: 'y', top: 500, bottom: 600, left: 500, right: 600 });
+      const chart = makeChart({ scales: { x: xScale, y: yScale } });
+      initPlugin(chart, { zoom: { mode: 'y', scaleMode: 'x' } });
+
+      // x=19 is one pixel left of xScale's own left edge (20) — clause 3
+      // false, real getScaleUnderPoint finds no match.
+      chart.zoom({ x: 2, y: 2, focalPoint: { x: 19, y: 60 } });
+
+      expect((xScale.options as any).min).toBeUndefined();
+    });
   });
 
   describe('precise mutation-hardening: zoom/pan math (zoomDelta, log-scale, fixRange, updateRange, category)', () => {
@@ -1650,6 +2000,27 @@ describe('zoomPlugin', () => {
       expect((scale.options as any).max).toBeCloseTo(100, 6);
     });
 
+    it('zoomDelta/linearZoomDelta: a scale with a nonzero min produces the exact hand-computed result (kills val-min → val+min and max-min → max+min mutations)', () => {
+      // Every zoomDelta test above uses scale.min=0, where `val-min` and
+      // `val+min` (and `max-min`/`max+min` for the range itself)
+      // coincidentally produce the SAME result whenever val or min is 0
+      // — both mutations are entirely invisible there. min=20 (nonzero)
+      // makes them genuinely disagree.
+      const scale = makeScale({ min: 20, max: 120 }); // range=100 real, 140 if max+min mutated
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      // Focal point at value 20 (=scale.min exactly): real minPercent=
+      // (20-20)/100=0 — mutant (val+min): (20+20)/100=0.4, a completely
+      // different, nonzero split. amount=1.5: newRange=100*0.5=50 (real)
+      // vs 140*0.5=70 (mutant range). Real: min stays exactly 20
+      // (minPercent=0), max=120-50=70.
+      chart.zoom({ x: 1.5, y: 1, focalPoint: { x: 20, y: 150 } });
+
+      expect((scale.options as any).min).toBe(20);
+      expect((scale.options as any).max).toBe(70);
+    });
+
     it('logarithmicZoomRange: known log-space values produce the exact expected bounds (not just "narrower")', () => {
       // A scale from 1 to 100 (log10 range exactly 2), zoomed by 2x
       // centered exactly at value 10 (log10(10)=1, the exact midpoint)
@@ -1688,6 +2059,60 @@ describe('zoomPlugin', () => {
 
       expect((scale.options as any).min).toBeCloseTo(Math.pow(10, 0.5), 4);
       expect((scale.options as any).max).toBeCloseTo(Math.pow(10, 1.5), 4);
+    });
+
+    it('logarithmicZoomRange: a nonzero logMin produces the exact hand-computed result (kills logMax-logMin → logMax+logMin)', () => {
+      // Every logarithmicZoomRange test above uses scale.min=1 (logMin=
+      // log10(1)=0 exactly), where `logMax-logMin` and `logMax+logMin`
+      // coincidentally produce the SAME result (subtracting or adding
+      // zero) — the mutation is entirely invisible there. min=10
+      // (logMin=1, nonzero) makes them genuinely disagree.
+      const scale = makeScale({ type: 'logarithmic', min: 10, max: 1000 }); // logMin=1, logMax=3
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      // Focal point at value 100 (log10(100)=2, the exact midpoint of
+      // logMin=1/logMax=3) — real logRange=3-1=2 (mutant: 3+1=4).
+      // amount=1.5: real newLogRange=2*0.5=1, minPercent=(2-1)/2=0.5 →
+      // delta.min=delta.max=0.5. Expected: min=10^(1+0.5)=10^1.5≈31.62,
+      // max=10^(3-0.5)=10^2.5≈316.23.
+      chart.zoom({ x: 1.5, y: 1, focalPoint: { x: 100, y: 150 } });
+
+      expect((scale.options as any).min).toBeCloseTo(Math.pow(10, 1.5), 2);
+      expect((scale.options as any).max).toBeCloseTo(Math.pow(10, 2.5), 2);
+    });
+
+    it('existCategoryFromMaxZoom: the real maxIndex (labels.length-1), not labels.length+1, gates whether the max side widens', () => {
+      // existCategoryFromMaxZoom's own `scale.max < maxIndex` check —
+      // with 10 labels (indices 0-9), a scale already at the real LAST
+      // index (9) should NOT widen on the max side (9<9 is false); a
+      // `length+1` mutation would compute maxIndex=11 instead, making
+      // 9<11 true and incorrectly widening it anyway.
+      const scale = makeScale({ type: 'category', min: 9, max: 9, getLabels: () => Array.from({ length: 10 }, (_, i) => `L${i}`) });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      chart.zoom(0.5); // zoomAmount<1, scale.min===scale.max — triggers existCategoryFromMaxZoom
+
+      expect((scale.options as any).max).toBe(9);
+    });
+
+    it('getOriginalRange/getZoomLevel: an asymmetric original range produces the exact hand-computed zoom level, not a coincidentally-matching one', () => {
+      // getOriginalRange's own `(max-min)` — kills a `+` mutation there;
+      // getZoomLevel's own `origRange/(scale.max-scale.min)` — kills a
+      // `+`/`*` mix-up in the current-range denominator too. A scale
+      // whose original span (80) and current span (40) are both
+      // distinctly nonzero and different from each other, on a scale
+      // whose min is ALSO nonzero, rules out every degenerate
+      // zero-coincidence a `min=0` scale would otherwise hide.
+      const scale = makeScale({ id: 'x', min: 20, max: 100 }); // original span = 80
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      chart.zoomScale('x', { min: 40, max: 80 }); // current span = 40
+
+      // getZoomLevel = round((80/40)*100)/100 = 2 exactly.
+      expect(chart.getZoomLevel()).toBe(2);
     });
 
     it('fixRange: clamps min to exactly minLimit, and computes max as exactly minLimit+range (not some other formula)', () => {
@@ -1929,6 +2354,215 @@ describe('zoomPlugin', () => {
       expect((scale.options as any).min).toBeCloseTo(50, 5);
       expect((scale.options as any).max).toBeCloseTo(250, 5);
     });
+
+    it('updateRange: rejects a pan whose min OR max alone would violate a limit (kills || → && on the pan-limit check)', () => {
+      // updateRange's own `zoomKind === 'pan' && (range.min < minLimit ||
+      // range.max > maxLimit)` — only ever reached with zoomKind==='pan',
+      // which panNumericalScale only passes for non-linear scale types
+      // (via panNonLinearScale, used for 'logarithmic'/'timeseries') —
+      // a plain 'linear' scale's own pan never takes this path at all.
+      // An && mutation on the inner `||` would require BOTH sides to
+      // violate their own limit simultaneously; a pan whose own max
+      // alone exceeds maxLimit (min staying within bounds) isolates the
+      // `range.max > maxLimit` side specifically.
+      const scale = makeScale({ id: 'x', type: 'timeseries', min: 80, max: 95 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true }, limits: { x: { min: 0, max: 100 } } });
+
+      // delta=-20: newMin=getValueForPixel(getPixelForValue(80)-(-20))=100
+      // (within [0,100]), newMax=getValueForPixel(getPixelForValue(95)-(-20))=115
+      // (over the 100 limit) — real: rejected outright (early return,
+      // scale.options never written at all, confirmed by min/max both
+      // staying undefined rather than some clamped value).
+      chart.pan({ x: -20, y: 0 });
+
+      expect((scale.options as any).min).toBeUndefined();
+      expect((scale.options as any).max).toBeUndefined();
+    });
+
+    it('shouldUpdateScaleLimits: a max-only change (min unchanged) still triggers a re-store (kills && → || on the change check)', () => {
+      // shouldUpdateScaleLimits' own `previous.min !== opts.min ||
+      // previous.max !== opts.max` — an && mutation would require BOTH
+      // to differ. zoomScale() changes only max, leaving min identical
+      // to what storeOriginalScaleLimits already recorded — isolating
+      // the max-only side of this check specifically. Confirmed via
+      // resetZoom() actually restoring the (still up-to-date) original
+      // value afterward, which only happens if the scale's own entry
+      // was genuinely re-stored.
+      const scale = makeScale({ id: 'x', min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      chart.zoomScale('x', { min: 0, max: 50 }); // min unchanged, max changed
+      chart.zoomScale('x', { min: 0, max: 25 }); // triggers a second storeOriginalScaleLimits call
+
+      chart.resetZoom();
+
+      expect((scale.options as any).min).toBeUndefined();
+      expect((scale.options as any).max).toBeUndefined();
+    });
+
+    it('shouldUpdateScaleLimits: a min-only change (max unchanged) also triggers a re-store, not just the max-only side', () => {
+      const scale = makeScale({ id: 'x', min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' } });
+
+      chart.zoomScale('x', { min: 50, max: 100 }); // max unchanged, min changed
+      chart.zoomScale('x', { min: 75, max: 100 });
+
+      chart.resetZoom();
+
+      expect((scale.options as any).min).toBeUndefined();
+      expect((scale.options as any).max).toBeUndefined();
+    });
+
+    it('OFFSETS: a real "day" time.round offset produces its own exact millisecond value (12*60*60*1000, not some other sub-expression)', () => {
+      const scale = makeScale({
+        min: 0,
+        max: 100,
+        options: { time: { round: 'day' } },
+        getPixelForValue: (v: number) => v,
+        getValueForPixel: (p: number) => p,
+      });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true } });
+
+      chart.pan({ x: 0.0000001, y: 0 });
+
+      expect((scale.options as any).min).toBeCloseTo(0 + 12 * 60 * 60 * 1000, 0);
+      expect((scale.options as any).max).toBeCloseTo(100 + 12 * 60 * 60 * 1000, 0);
+    });
+
+    it('fixRange: minRange forcing a wider span than requested produces a genuinely nonzero, symmetric offset', () => {
+      // scale.min/max deliberately far wider (0-1000) than minRange
+      // (100) here, so updateRange's own "already at minRange" early
+      // rejection (scaleRange<=minRange) never fires — confirmed as a
+      // real, reproduced conflict, not a guess: an earlier version of
+      // this test used a scale whose own range happened to equal
+      // minRange exactly, tripping that unrelated check instead.
+      const scale = makeScale({ id: 'x', min: 0, max: 1000 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' }, limits: { x: { min: -1000, max: 2000, minRange: 100 } } });
+
+      // Raw drag span is only 20 (60->80), but minRange=100 forces
+      // newSpan=100 — fixRange's own offset=(100-80+60)/2=40 exactly.
+      // Expected: min=60-40=20, max=80+40=120.
+      chart.zoomRect({ x: 60, y: 0 }, { x: 80, y: 300 });
+
+      expect((scale.options as any).min).toBe(20);
+      expect((scale.options as any).max).toBe(120);
+    });
+
+    it('updateRange: a newSpan exactly equal to minRange, with the scale already at minRange, rejects further zoom-in outright', () => {
+      // updateRange's own `if (zoomKind && newSpan === minRange &&
+      // scaleRange <= minRange) return true;` — the existing "rejects
+      // zooming in further" test already covers the equal-scaleRange
+      // case; this isolates scaleRange being genuinely LESS than
+      // minRange too (a scale somehow already narrower than its own
+      // configured floor), which the `<=` (not `<`) comparison must
+      // also catch.
+      const scale = makeScale({ id: 'x', min: 48, max: 52 }); // scaleRange=4, already below minRange=10
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy' }, limits: { x: { minRange: 10 } } });
+
+      chart.zoom(2);
+
+      expect((scale.options as any).min).toBeUndefined();
+      expect((scale.options as any).max).toBeUndefined();
+    });
+
+    it('invoke(): every callback omitted entirely (not just falsy) never throws, across zoom/pan/reset/pinch', () => {
+      // invoke()'s own `typeof fn === 'function'` check — every other
+      // test in this file that exercises a callback always PROVIDES one
+      // (even if just a plain vi.fn()); none confirm the entirely-
+      // omitted case doesn't crash, across the full range of call sites
+      // (onZoom, onPan, onZoomComplete, onZoomRejected, onZoomStart,
+      // onPanStart, onPanComplete, onPanRejected).
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 }, pinch: { enabled: true } }, pan: { enabled: true, mode: 'x', threshold: 0 } });
+
+      expect(() => {
+        chart.zoom(2);
+        chart.pan({ x: 10, y: 0 });
+        chart.resetZoom();
+        const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+        chart.canvas.dispatchEvent(down);
+        const move = new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true });
+        chart.canvas.ownerDocument.dispatchEvent(move);
+        const up = new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true });
+        chart.canvas.ownerDocument.dispatchEvent(up);
+      }).not.toThrow();
+    });
+
+    it('directionsEnabled: a mode string with \'x\' NOT at index 0 still resolves correctly (kills a !== -1 → !== +1 mutation)', () => {
+      // directionsEnabled's own `resolved.indexOf('x') !== -1` — every
+      // other test in this file uses a mode string like 'xy' or 'x',
+      // where 'x' happens to sit at index 0: `0 !== -1` and `0 !== +1`
+      // are BOTH true, so a -1→+1 mutation is invisible there. 'yx' puts
+      // 'x' at index 1 specifically: `1 !== -1` (real, true) vs
+      // `1 !== +1` (mutant, false) genuinely disagree.
+      const scale = makeScale({ axis: 'x', id: 'x' });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'yx' } });
+
+      chart.zoom(2);
+
+      expect((scale.options as any).min).toBeDefined();
+    });
+
+    it('directionEnabled (singular): a mode string with the direction NOT at index 0 still resolves correctly, the same real gap as directionsEnabled above', () => {
+      const scale = makeScale({ axis: 'x' });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'yx' } });
+
+      chart.zoomRect({ x: 100, y: 0 }, { x: 300, y: 300 });
+
+      expect((scale.options as any).min).toBeCloseTo(100, 5);
+    });
+
+    it('computeDragRect: zoomX/zoomY fall back to exactly 1 (unchanged) when their own axis is disabled by mode', () => {
+      // computeDragRect's own `xEnabled && width ? ... : 1` /
+      // `yEnabled && height ? ... : 1` — zoomX/zoomY themselves are never
+      // read anywhere else in this file (dead fields as far as behavior
+      // goes), so this can only be confirmed by NOT throwing when mode
+      // disables one axis entirely, combined with maintainAspectRatio
+      // (which internally reads chartArea.width/height regardless).
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
+      initPlugin(chart, { zoom: { mode: 'x', drag: { enabled: true, threshold: 5, maintainAspectRatio: true } } });
+
+      expect(() => {
+        const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+        chart.canvas.dispatchEvent(down);
+        const move = new MouseEvent('mousemove', { clientX: 250, clientY: 200, bubbles: true });
+        chart.canvas.ownerDocument.dispatchEvent(move);
+        const up = new MouseEvent('mouseup', { clientX: 250, clientY: 200, bubbles: true });
+        chart.canvas.ownerDocument.dispatchEvent(up);
+      }).not.toThrow();
+      expect((scale.options as any).min).toBeCloseTo(50, 5);
+    });
+
+    it('beforeEvent: does NOT suppress an event type other than "click"/"mouseup" even with filterNextClick set (the exact string-equality check)', () => {
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 } } });
+      const event = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(event);
+      const moveEvent = new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(moveEvent);
+      const upEvent = new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(upEvent);
+
+      // filterNextClick is now set (a completed drag just ran) — an
+      // event type that is neither 'click' nor 'mouseup' should pass
+      // through untouched, confirming the check is a genuine
+      // string-equality test and not, say, a mutated version that
+      // matches everything (or nothing).
+      const result = zoomPlugin.beforeEvent!(chart, { event: { type: 'mousemove' } } as never, {});
+
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('precise mutation-hardening: event-type isolation (addListeners/removeListeners)', () => {
@@ -1969,6 +2603,144 @@ describe('zoomPlugin', () => {
       Object.defineProperty(down, 'pointerType', { value: 'touch', configurable: true });
       chart.canvas.dispatchEvent(down);
 
+      expect(chart.canvas.style.touchAction).toBe('');
+    });
+
+    it('a real keydown event does nothing on its own when drag was never enabled at all (keydown handler genuinely never attached)', () => {
+      const chart = makeChart();
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true }, drag: { enabled: false } } });
+
+      // Should not throw even though no drag is in progress to cancel —
+      // confirms the handler genuinely isn't attached at all, not just
+      // that it silently no-ops.
+      const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+      expect(() => window.document.dispatchEvent(esc)).not.toThrow();
+    });
+
+    it('disabling drag after it was enabled genuinely detaches mousedown/mousemove/mouseup/keydown (addListeners\' own disable-branch removeHandler calls)', () => {
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 } } });
+
+      // Disable drag entirely via a second beforeUpdate (mirrors a real
+      // config change mid-session), THEN dispatch a fresh mousedown —
+      // dispatching mousedown BEFORE disabling would already have set
+      // state.dragStart and attached mousemove/keydown before the
+      // disable ever ran, making the mutation invisible regardless of
+      // whether removeHandler('mousedown') genuinely fired.
+      zoomPlugin.beforeUpdate!(chart, {} as never, { zoom: { mode: 'xy', drag: { enabled: false } } });
+
+      const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(down);
+      const move = new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(move);
+      const up = new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(up);
+
+      expect((scale.options as any).min).toBeUndefined();
+    });
+
+    it('addListeners: disabling drag calls removeEventListener with each of the exact 4 real event-type strings, not empty ones', () => {
+      // A direct spy on removeEventListener sidesteps the indirect
+      // behavioral tracing above entirely — confirms each of the 4
+      // StringLiteral arguments passed to removeHandler() in this one
+      // disable branch precisely, rather than relying on downstream
+      // handler interactions to surface a difference. mousemove/keydown
+      // are only ever attached dynamically once a real drag starts (not
+      // upfront by addListeners' own enable branch alone, confirmed via
+      // a real, reproduced mismatch, not assumed) — a real drag start
+      // (mousedown+mousemove, left uncompleted) is needed first so
+      // removeHandler's own `handler?.target` guard doesn't skip them.
+      const chart = makeChart();
+      zoomPlugin.start!(chart, {} as never, {});
+      zoomPlugin.beforeUpdate!(chart, {} as never, { zoom: { mode: 'xy', drag: { enabled: true, threshold: 5 } } });
+      const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(down);
+      const move = new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(move);
+      const canvasRemoveSpy = vi.spyOn(chart.canvas, 'removeEventListener');
+      const docRemoveSpy = vi.spyOn(chart.canvas.ownerDocument, 'removeEventListener');
+
+      zoomPlugin.beforeUpdate!(chart, {} as never, { zoom: { mode: 'xy', drag: { enabled: false } } });
+
+      const allRemovedTypes = [...canvasRemoveSpy.mock.calls, ...docRemoveSpy.mock.calls].map((call) => call[0]);
+      expect(allRemovedTypes).toEqual(expect.arrayContaining(['mousedown', 'mousemove', 'mouseup', 'keydown']));
+    });
+
+    it('addListeners: disabling pan/pinch calls removeEventListener with each of the exact 4 real pointer event-type strings', () => {
+      const chart = makeChart();
+      const canvasRemoveSpy = vi.spyOn(chart.canvas, 'removeEventListener');
+      const docRemoveSpy = vi.spyOn(chart.canvas.ownerDocument, 'removeEventListener');
+      zoomPlugin.start!(chart, {} as never, {});
+      zoomPlugin.beforeUpdate!(chart, {} as never, { pan: { enabled: true } });
+      canvasRemoveSpy.mockClear();
+      docRemoveSpy.mockClear();
+
+      zoomPlugin.beforeUpdate!(chart, {} as never, { pan: { enabled: false }, zoom: { pinch: { enabled: false } } });
+
+      const allRemovedTypes = [...canvasRemoveSpy.mock.calls, ...docRemoveSpy.mock.calls].map((call) => call[0]);
+      expect(allRemovedTypes).toEqual(
+        expect.arrayContaining(['pointerdown', 'pointermove', 'pointerup', 'pointercancel']),
+      );
+    });
+
+    it('stop() calls removeEventListener with every real handler type it ever attaches, including "click" and "wheel"', () => {
+      // removeListeners() (called by stop()) unconditionally tries to
+      // remove all 10 possible handler types, including 'click' and
+      // 'wheel' — two strings no other test in this describe block's
+      // own removeEventListener spies happen to check for. mousemove/
+      // keydown are only ever attached dynamically once a real drag
+      // starts, so a real drag start (left uncompleted) is needed
+      // first, same as the disabling-drag test above.
+      const chart = makeChart();
+      zoomPlugin.start!(chart, {} as never, {});
+      zoomPlugin.beforeUpdate!(chart, {} as never, { zoom: { mode: 'xy', wheel: { enabled: true }, drag: { enabled: true, threshold: 5 } }, pan: { enabled: true } });
+      const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(down);
+      const move = new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(move);
+      const canvasRemoveSpy = vi.spyOn(chart.canvas, 'removeEventListener');
+      const docRemoveSpy = vi.spyOn(chart.canvas.ownerDocument, 'removeEventListener');
+
+      zoomPlugin.stop!(chart, {} as never, {});
+
+      const allRemovedTypes = [...canvasRemoveSpy.mock.calls, ...docRemoveSpy.mock.calls].map((call) => call[0]);
+      expect(allRemovedTypes).toEqual(
+        expect.arrayContaining(['mousedown', 'mousemove', 'mouseup', 'wheel', 'keydown', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel']),
+      );
+    });
+
+    it('disabling wheel after it was enabled genuinely detaches the wheel handler (addListeners\' own removeHandler(\'wheel\') call)', () => {
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true } } });
+
+      zoomPlugin.beforeUpdate!(chart, {} as never, { zoom: { mode: 'xy', wheel: { enabled: false } } });
+
+      const wheelEvent = new WheelEvent('wheel', { deltaY: -100, clientX: 200, clientY: 150, cancelable: true, bubbles: true });
+      Object.defineProperty(wheelEvent, 'target', { value: chart.canvas, configurable: true });
+      chart.canvas.dispatchEvent(wheelEvent);
+
+      expect((scale.options as any).min).toBeUndefined();
+    });
+
+    it('disabling both pan and pinch after either was enabled genuinely detaches all four pointer handlers', () => {
+      const scale = makeScale({ min: 0, max: 100 });
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true, mode: 'x', threshold: 0 } });
+
+      zoomPlugin.beforeUpdate!(chart, {} as never, { pan: { enabled: false }, zoom: { pinch: { enabled: false } } });
+
+      function pe(type: string, x: number, y: number) {
+        const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true });
+        Object.defineProperty(event, 'pointerId', { value: 1, configurable: true });
+        Object.defineProperty(event, 'pointerType', { value: 'touch', configurable: true });
+        return event;
+      }
+      chart.canvas.dispatchEvent(pe('pointerdown', 200, 150));
+      chart.canvas.ownerDocument.dispatchEvent(pe('pointermove', 300, 150));
+
+      expect((scale.options as any).min).toBeUndefined();
       expect(chart.canvas.style.touchAction).toBe('');
     });
   });
@@ -2056,6 +2828,49 @@ describe('zoomPlugin', () => {
       chart.zoom(2);
 
       expect(onZoom).toHaveBeenCalledWith(expect.objectContaining({ chart, trigger: 'api' }));
+    });
+
+    it('invoke()s onZoom with the exact default "api" trigger for zoomRect() too, not just zoom()', () => {
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      const onZoom = vi.fn();
+      initPlugin(chart, { zoom: { mode: 'xy', onZoom } });
+
+      chart.zoomRect({ x: 100, y: 0 }, { x: 300, y: 300 });
+
+      expect(onZoom).toHaveBeenCalledWith(expect.objectContaining({ chart, trigger: 'api' }));
+    });
+
+    it('invoke()s onZoom with the exact default "api" trigger for zoomScale() too', () => {
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      const onZoom = vi.fn();
+      initPlugin(chart, { zoom: { mode: 'xy', onZoom } });
+
+      chart.zoomScale('x', { min: 10, max: 20 });
+
+      expect(onZoom).toHaveBeenCalledWith(expect.objectContaining({ chart, trigger: 'api' }));
+    });
+
+    it('zoomRect() resolves mode from state.options.zoom.mode when zoomOptions is genuinely omitted (the ?? \'xy\' fallback, not the object-access chain)', () => {
+      // zoomRect's own `zoomOptions?.mode ?? \'xy\'` — every other test
+      // configures `zoom` explicitly; this omits it entirely (only `pan`
+      // configured), confirming the optional-chain fallback itself works
+      // rather than crashing or silently disabling both directions.
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { pan: { enabled: true } }); // no `zoom` key at all
+
+      chart.zoomRect({ x: 100, y: 0 }, { x: 300, y: 300 });
+
+      expect((scale.options as any).min).toBeCloseTo(100, 5);
+    });
+
+    it('resetZoom() invoke()s onZoomComplete with the real chart even when zoomOptions is genuinely omitted (optional chaining, not a crash)', () => {
+      const chart = makeChart();
+      initPlugin(chart, { pan: { enabled: true } }); // no `zoom` key — state.options.zoom is undefined
+
+      expect(() => chart.resetZoom()).not.toThrow();
     });
 
     it('invoke()s onPan with the real chart, on a programmatic pan', () => {
@@ -2155,11 +2970,14 @@ describe('zoomPlugin', () => {
 
     it('getDistance/getMidpoint: a real pinch computes the exact finger-to-finger distance and midpoint, not an approximation', () => {
       // getDistance's own Pythagorean formula and getMidpoint's own
-      // average — using a real 3-4-5 triangle (dx=3×scale, dy=4×scale)
-      // gives an exact, easily-checked expected distance, ruling out a
-      // `-` instead of `+`/`**` mutation in the Pythagorean sum or a `*2`
-      // instead of `/2` in the midpoint average.
-      const scale = makeScale({ min: 0, max: 100 });
+      // average — real 3-4-5/4.5-6-7.5 triangles (dist 50→75, ratio
+      // exactly 1.5) give an exact, hand-computed expected zoom result,
+      // ruling out a `-` instead of `+`/`**` mutation in the Pythagorean
+      // sum or a `*2` instead of `/2` in the midpoint average. Scale
+      // range widened to 0-400 (matching the real pixel coordinate
+      // space used here) specifically to avoid zoomDelta's own
+      // Math.min(1,...) clamp kicking in and masking the real math.
+      const scale = makeScale({ min: 0, max: 400 });
       const chart = makeChart({ scales: { x: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300 } });
       initPlugin(chart, { zoom: { pinch: { enabled: true }, mode: 'xy' } });
 
@@ -2169,19 +2987,53 @@ describe('zoomPlugin', () => {
         Object.defineProperty(event, 'pointerType', { value: 'touch', configurable: true });
         return event;
       }
-      // Initial distance: dx=30 (3×10), dy=40 (4×10) → real distance = 50 exactly.
-      chart.canvas.dispatchEvent(pe('pointerdown', 100, 100, 1));
-      chart.canvas.dispatchEvent(pe('pointerdown', 130, 140, 2));
-      // Move finger 1 so the new distance is exactly 100 (dx=60,dy=80→100) — ratio 100/50=2 exactly.
-      chart.canvas.ownerDocument.dispatchEvent(pe('pointermove', 70, 60, 1));
+      // finger 2 fixed at (150,190). finger 1 initial (120,150): dx=30,
+      // dy=40 → dist=50 exactly. finger 1 moves to (105,130): dx=45,
+      // dy=60 → dist=75 exactly — ratio 75/50=1.5 exactly.
+      chart.canvas.dispatchEvent(pe('pointerdown', 120, 150, 1));
+      chart.canvas.dispatchEvent(pe('pointerdown', 150, 190, 2));
+      chart.canvas.ownerDocument.dispatchEvent(pe('pointermove', 105, 130, 1));
 
-      // A real, distinguishable 2x zoom from an exact-ratio pinch —
-      // confirms both getDistance calls (before/after) computed their
-      // own correct Pythagorean values, not some mutated formula that
-      // would produce a different ratio and a different resulting range.
-      const newRange = (scale.options as any).max - (scale.options as any).min;
-      expect(newRange).toBeLessThan(100);
-      expect((scale.options as any).min).toBeDefined();
+      // Midpoint of the final positions (105,130)/(150,190) = (127.5,160)
+      // — value=127.5 on this identity-mapped scale. range=400,
+      // minPercent=127.5/400=0.31875, newRange=400*(1.5-1)=200,
+      // delta.min=200*0.31875=63.75, delta.max=200*0.68125=136.25.
+      // Expected: min=0+63.75=63.75, max=400-136.25=263.75.
+      expect((scale.options as any).min).toBeCloseTo(63.75, 4);
+      expect((scale.options as any).max).toBeCloseTo(263.75, 4);
+    });
+
+    it('getMidpoint: the y-coordinate average is exact too, not just x (kills a.y-b.y → a.y+b.y on a y-axis scale specifically)', () => {
+      // getMidpoint's own `(a.y+b.y)/2` — every pinch test elsewhere in
+      // this file uses an x-axis scale, where the midpoint's own
+      // y-coordinate is computed but never actually READ by zoomDelta
+      // (isHorizontal() scales only ever use focalPoint.x) — completely
+      // invisible there regardless of the mutation. A y-axis scale
+      // makes the midpoint's own y-value the ONE thing that matters.
+      const scale = makeScale({ axis: 'y', min: 0, max: 400 });
+      const chart = makeChart({ scales: { y: scale }, chartArea: { top: 0, left: 0, right: 400, bottom: 400, width: 400, height: 400 } });
+      initPlugin(chart, { zoom: { pinch: { enabled: true }, mode: 'xy' } });
+
+      function pe(type: string, x: number, y: number, pointerId: number) {
+        const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true });
+        Object.defineProperty(event, 'pointerId', { value: pointerId, configurable: true });
+        Object.defineProperty(event, 'pointerType', { value: 'touch', configurable: true });
+        return event;
+      }
+      // finger 2 fixed at (150,190). finger 1 initial (120,150): dist=50.
+      // finger 1 moves to (105,130): dist=75, ratio=1.5. Midpoint of
+      // final positions (105,130)/(150,190) = y: (130+190)/2=160 (real)
+      // vs (130+190)*2=640 (mutant) — wildly different focal values on
+      // this 0-400 scale, producing a completely different zoom split.
+      chart.canvas.dispatchEvent(pe('pointerdown', 120, 150, 1));
+      chart.canvas.dispatchEvent(pe('pointerdown', 150, 190, 2));
+      chart.canvas.ownerDocument.dispatchEvent(pe('pointermove', 105, 130, 1));
+
+      // range=400, minPercent=160/400=0.4, newRange=400*0.5=200,
+      // delta.min=200*0.4=80, delta.max=200*0.6=120.
+      // Expected: min=0+80=80, max=400-120=280.
+      expect((scale.options as any).min).toBeCloseTo(80, 4);
+      expect((scale.options as any).max).toBeCloseTo(280, 4);
     });
 
     it('mouseMove: does nothing at all when no drag has started (state.dragStart is falsy)', () => {
@@ -2329,6 +3181,49 @@ describe('zoomPlugin', () => {
       zoomPlugin.beforeDraw!(chart, {} as never, options);
 
       expect((chart.ctx as any).fillStyle).toBe('rgba(225,225,225,0.3)');
+    });
+
+    it('drawDragOverlay: a real backgroundColor override replaces the default entirely, not just adding to it', () => {
+      // 1151-1159's own ObjectLiteral/StringLiteral mutants — confirms
+      // ctx.fillStyle genuinely reflects a CONFIGURED backgroundColor
+      // (not just the untested default), and drawTime/borderColor keys
+      // are read from the real options object, not a mutated {} stand-in.
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      const options = { zoom: { mode: 'xy' as const, drag: { enabled: true, threshold: 5, drawTime: 'beforeDraw' as const, backgroundColor: 'blue', borderColor: 'red', borderWidth: 3 } } };
+      initPlugin(chart, options);
+
+      const down = new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 50, bubbles: true });
+      chart.canvas.dispatchEvent(down);
+      const move = new MouseEvent('mousemove', { clientX: 250, clientY: 200, bubbles: true });
+      chart.canvas.ownerDocument.dispatchEvent(move);
+
+      zoomPlugin.beforeDraw!(chart, {} as never, options);
+
+      expect((chart.ctx as any).fillStyle).toBe('blue');
+      expect((chart.ctx as any).strokeStyle).toBe('red');
+      expect((chart.ctx as any).lineWidth).toBe(3);
+    });
+
+    it('beforeEvent: the real string "zoom" is this plugin\'s own id, not some empty or wrong string', () => {
+      expect(zoomPlugin.id).toBe('zoom');
+    });
+
+    it('stop(): a real wheel event does nothing after stop() runs, even if wheel was enabled right before it', () => {
+      // stop()'s own removeListeners()+removeState() — confirms the
+      // plugin's own internal state is genuinely torn down, not just
+      // that SOME cleanup ran.
+      const scale = makeScale();
+      const chart = makeChart({ scales: { x: scale } });
+      initPlugin(chart, { zoom: { mode: 'xy', wheel: { enabled: true } } });
+
+      zoomPlugin.stop!(chart, {} as never, {});
+
+      const wheelEvent = new WheelEvent('wheel', { deltaY: -100, clientX: 200, clientY: 150, cancelable: true, bubbles: true });
+      Object.defineProperty(wheelEvent, 'target', { value: chart.canvas, configurable: true });
+      chart.canvas.dispatchEvent(wheelEvent);
+
+      expect((scale.options as any).min).toBeUndefined();
     });
 
     it('drawDragOverlay: a borderWidth of exactly 0 does not stroke (the > 0 boundary, not >= )', () => {

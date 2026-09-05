@@ -104,6 +104,48 @@ describe('imageLabelPlugin', () => {
     expect(ctx.arc).not.toHaveBeenCalled();
   });
 
+  it("calls the arc's own getCenterPoint with false (current, not final/animated position)", () => {
+    // makeArc's own mock getCenterPoint ignores its argument entirely
+    // (returns the same {x,y} regardless), so no assertion on the
+    // RESULT could ever distinguish getCenterPoint(false) from a
+    // mutated getCenterPoint(true) — in the real ArcElement API this
+    // argument matters (current vs. post-animation position). Spying
+    // directly on the call arguments is the only way to pin this down.
+    const getCenterPoint = vi.fn(() => ({ x: 50, y: 50 }));
+    const arc = Object.setPrototypeOf({ startAngle: 0, endAngle: Math.PI, innerRadius: 0, outerRadius: 100, getCenterPoint }, ArcElement.prototype);
+    const ctx = makeCtx();
+    const chart = {
+      ctx,
+      data: { datasets: [{}] },
+      getDatasetMeta: () => ({ type: 'doughnut', data: [arc] }),
+    };
+
+    imageLabelPlugin.afterDraw(chart as never, {}, { imagesList: [{ imageUrl: 'a.png', imageWidth: 10, imageHeight: 10 }] });
+
+    expect(getCenterPoint).toHaveBeenCalledWith(false);
+  });
+
+  it('processes a dataset whose meta.type is pie, not just doughnut', () => {
+    // Every other test in this file uses type: 'doughnut'; the "neither
+    // doughnut nor pie" test above uses type: 'bar', which makes BOTH
+    // `meta.type !== 'doughnut'` and `meta.type !== 'pie'` genuinely
+    // true at once — a mutation replacing 'pie' with '', or forcing
+    // the pie clause to always true, changes nothing there, since
+    // 'bar' was never equal to either literal to begin with. Only an
+    // actual type: 'pie' dataset can distinguish "pie is an allowed
+    // type, don't skip it" from a broken guard that skips it too.
+    const ctx = makeCtx();
+    const chart = {
+      ctx,
+      data: { datasets: [{}] },
+      getDatasetMeta: () => ({ type: 'pie', data: [makeArc()] }),
+    };
+
+    imageLabelPlugin.afterDraw(chart as never, {}, { imagesList: [{ imageUrl: 'a.png', imageWidth: 10, imageHeight: 10 }] });
+
+    expect(ctx.arc).toHaveBeenCalled();
+  });
+
   it('fix #1: draws labels for every dataset, not just the first — the original\'s own confirmed bug', async () => {
     const metas = [
       { type: 'doughnut', data: [makeArc({ x: 1, y: 1 })] },
@@ -160,9 +202,25 @@ describe('imageLabelPlugin', () => {
     await flushImageLoad();
 
     expect(ctx.arc).toHaveBeenCalledTimes(1);
-    const [calledX, calledY] = ctx.arc.mock.calls[0];
+    const [calledX, calledY, calledRadius, calledStartAngle, calledEndAngle, calledAnticlockwise] = ctx.arc.mock.calls[0];
     expect(calledX).toBeCloseTo(expectedX, 5);
     expect(calledY).toBeCloseTo(expectedY, 5);
+    // Previously unchecked — confirms the clip circle's own radius
+    // (imageWidth/2, half of the 10px imageWidth used above) and its
+    // full-circle sweep (0 to a genuine 2π, drawn clockwise), none of
+    // which any prior assertion here actually verified.
+    expect(calledRadius).toBeCloseTo(5, 5);
+    expect(calledStartAngle).toBe(0);
+    expect(calledEndAngle).toBeCloseTo(Math.PI * 2, 10);
+    expect(calledAnticlockwise).toBe(false);
+
+    // Previously unchecked — drawImage's own imageX/imageY (top-left
+    // corner, not the center point ctx.arc receives above) were never
+    // verified by any test, only ctx.arc's own centerX/centerY.
+    expect(ctx.drawImage).toHaveBeenCalledTimes(1);
+    const [, calledImageX, calledImageY] = ctx.drawImage.mock.calls[0];
+    expect(calledImageX).toBeCloseTo(expectedX - 5, 5); // imageWidth(10)/2
+    expect(calledImageY).toBeCloseTo(expectedY - 5, 5); // imageHeight(10)/2
   });
 
   it('skips an imagesList entry with no imageUrl, and an index beyond the list', () => {
@@ -208,38 +266,79 @@ describe('imageLabelPlugin', () => {
 
   it('evicts the oldest cached image once the cache reaches its cap, so a later draw of that URL re-loads rather than reuses it', async () => {
     // MAX_CACHED_IMAGES is 200 and not exported — exercised through the
-    // public afterDraw API by drawing 201 distinct URLs, the same way a
-    // real long-running page cycling through many images would.
-    const firstUrl = `evict-first-${Math.random()}.png`;
-    for (let i = 0; i < 201; i++) {
-      const url = i === 0 ? firstUrl : `evict-filler-${i}-${Math.random()}.png`;
+    // public afterDraw API. loadedImages is a module-level singleton
+    // normally shared across every test in this file (never reset) —
+    // an earlier version of this test tried to work around that by
+    // "flushing" the shared cache with 200 filler entries first, but
+    // that made the test fragile (400+ sequential async draws sharing
+    // state with every other test in the file). `vi.resetModules()` +
+    // a fresh dynamic import gets a genuinely empty, isolated cache
+    // instead — 'chart.js' itself must be re-imported alongside it
+    // (confirmed via a real, reproduced failure, not a guess): the
+    // freshly-imported plugin's own `instanceof ArcElement` check
+    // otherwise compares against a DIFFERENT ArcElement class than
+    // this file's own top-level import, which this test's own arc
+    // mocks are built from, making every arc silently fail that check.
+    vi.resetModules();
+    const { imageLabelPlugin: freshPlugin } = await import('../../src/imageLabelPlugin.js');
+    const { ArcElement: FreshArcElement } = await import('chart.js');
+
+    function makeFreshArc() {
+      return Object.setPrototypeOf(
+        { startAngle: 0, endAngle: Math.PI, innerRadius: 0, outerRadius: 100, getCenterPoint: () => ({ x: 50, y: 50 }) },
+        FreshArcElement.prototype,
+      );
+    }
+
+    const draw = async (plugin: typeof freshPlugin, url: string) => {
       const ctx = makeCtx();
       const chart = {
         ctx,
         data: { datasets: [{}] },
-        getDatasetMeta: () => ({ type: 'doughnut', data: [makeArc()] }),
+        getDatasetMeta: () => ({ type: 'doughnut', data: [makeFreshArc()] }),
       };
-      imageLabelPlugin.afterDraw(chart as never, {}, { imagesList: [{ imageUrl: url, imageWidth: 10, imageHeight: 10 }] });
+      plugin.afterDraw(chart as never, {}, { imagesList: [{ imageUrl: url, imageWidth: 10, imageHeight: 10 }] });
       await flushImageLoad();
+    };
+
+    // Fill the fresh, empty cache to exactly its own 200-entry cap.
+    for (let i = 0; i < 200; i++) {
+      await draw(freshPlugin, `evict-fill-${i}`);
     }
 
-    // The 201st distinct URL pushed the cache past its 200-entry cap,
-    // evicting the very first one (insertion order) — a fresh draw of
-    // that same URL should therefore still work (a new Image() load,
-    // not an already-evicted cache hit that would otherwise be
-    // indistinguishable from this test's own perspective either way,
-    // so what's actually being confirmed is that the plugin doesn't
-    // throw or otherwise break once eviction has occurred).
-    const ctx = makeCtx();
-    const chart = {
-      ctx,
-      data: { datasets: [{}] },
-      getDatasetMeta: () => ({ type: 'doughnut', data: [makeArc()] }),
-    };
-    imageLabelPlugin.afterDraw(chart as never, {}, { imagesList: [{ imageUrl: firstUrl, imageWidth: 10, imageHeight: 10 }] });
-    await flushImageLoad();
+    // The cache is now exactly full (200 entries: fill-0..fill-199,
+    // fill-0 the oldest). One more draw of a new URL evicts fill-0
+    // specifically — confirmed by fill-0 needing a fresh load
+    // afterward (not a synchronous cache hit).
+    await draw(freshPlugin, 'evict-newest');
 
-    expect(ctx.drawImage).toHaveBeenCalledTimes(1);
+    // fill-1 is one entry newer than fill-0 and should still be cached
+    // — checked FIRST, before touching fill-0 at all: re-loading fill-0
+    // next (since it was evicted) re-inserts it, which itself evicts
+    // whatever is then the new oldest entry (fill-1, if checked after)
+    // — checking fill-1 first avoids that self-inflicted side effect.
+    const newerCtx = makeCtx();
+    const newerChart = {
+      ctx: newerCtx,
+      data: { datasets: [{}] },
+      getDatasetMeta: () => ({ type: 'doughnut', data: [makeFreshArc()] }),
+    };
+    freshPlugin.afterDraw(newerChart as never, {}, { imagesList: [{ imageUrl: 'evict-fill-1', imageWidth: 10, imageHeight: 10 }] });
+    expect(newerCtx.drawImage).toHaveBeenCalledTimes(1);
+
+    // fill-0 itself was genuinely evicted — a fresh draw must NOT hit
+    // synchronously; it needs its own load.
+    const oldestCtx = makeCtx();
+    const oldestChart = {
+      ctx: oldestCtx,
+      data: { datasets: [{}] },
+      getDatasetMeta: () => ({ type: 'doughnut', data: [makeFreshArc()] }),
+    };
+    freshPlugin.afterDraw(oldestChart as never, {}, { imagesList: [{ imageUrl: 'evict-fill-0', imageWidth: 10, imageHeight: 10 }] });
+    // A real, fresh load never draws synchronously — a still-cached hit would.
+    expect(oldestCtx.drawImage).not.toHaveBeenCalled();
+    await flushImageLoad();
+    expect(oldestCtx.drawImage).toHaveBeenCalledTimes(1);
   });
 
   it('logs a warning and does not draw when the image fails to load', async () => {
@@ -313,7 +412,14 @@ describe('imageLabelPlugin', () => {
     expect(calledY).toBeCloseTo(expectedY, 5);
   });
 
-  it('positions using verticalAlign: bottom and horizontalAlign: end, the other untested case of each switch', async () => {
+  it('positions using verticalAlign: bottom and horizontalAlign: end, combined with a nonzero offset', async () => {
+    // The original version of this test omitted offset entirely, leaving
+    // offsetRadian at 0 — at which point `endAngle - ... - offsetRadian`
+    // and a mutated `endAngle - ... + offsetRadian` are identical (both
+    // subtract/add zero). Only a genuinely nonzero offset combined with
+    // horizontalAlign: 'end' specifically (the other offset test below
+    // only ever combines a nonzero offset with 'start') can distinguish
+    // the two signs.
     const arc = makeArc({ startAngle: 0, endAngle: Math.PI / 2, innerRadius: 20, outerRadius: 40, x: 100, y: 100 });
     const ctx = makeCtx();
     const chart = {
@@ -322,9 +428,11 @@ describe('imageLabelPlugin', () => {
       getDatasetMeta: () => ({ type: 'doughnut', data: [arc] }),
     };
 
+    const offset = 8;
     const imageRadius = 5;
+    const offsetRadian = offset / arc.outerRadius;
     const expectedDistanceBottom = arc.innerRadius + imageRadius;
-    const expectedAngleEnd = arc.endAngle - imageRadius / arc.outerRadius;
+    const expectedAngleEnd = arc.endAngle - imageRadius / arc.outerRadius - offsetRadian;
     const { x: centerX, y: centerY } = arc.getCenterPoint();
     const expectedX = centerX + expectedDistanceBottom * Math.cos(expectedAngleEnd);
     const expectedY = centerY + expectedDistanceBottom * Math.sin(expectedAngleEnd);
@@ -335,7 +443,46 @@ describe('imageLabelPlugin', () => {
       {
         verticalAlign: 'bottom',
         horizontalAlign: 'end',
+        offset,
         imagesList: [{ imageUrl: `align2-${Math.random()}.png`, imageWidth: 10, imageHeight: 10 }],
+      },
+    );
+    await flushImageLoad();
+
+    expect(ctx.arc).toHaveBeenCalledTimes(1);
+    const [calledX, calledY] = ctx.arc.mock.calls[0];
+    expect(calledX).toBeCloseTo(expectedX, 5);
+    expect(calledY).toBeCloseTo(expectedY, 5);
+  });
+
+  it('uses the smaller of imageWidth/imageHeight for imageRadius, not the larger', async () => {
+    // Every other test in this file uses imageWidth === imageHeight (10
+    // and 10), making Math.min and Math.max of the two identical — a
+    // mutation swapping min for max is completely unobservable there.
+    // A genuinely asymmetric width/height (10 vs 100) makes the two
+    // functions disagree sharply (imageRadius 5 vs 50), which then
+    // propagates into the resulting angle via horizontalAlign: 'start'.
+    const arc = makeArc({ startAngle: 0, endAngle: Math.PI / 2, innerRadius: 20, outerRadius: 40, x: 100, y: 100 });
+    const ctx = makeCtx();
+    const chart = {
+      ctx,
+      data: { datasets: [{}] },
+      getDatasetMeta: () => ({ type: 'doughnut', data: [arc] }),
+    };
+
+    const imageRadius = 5; // Math.min(10, 100) / 2 — Math.max would give 50
+    const distanceMiddle = arc.innerRadius + (arc.outerRadius - arc.innerRadius) / 2;
+    const expectedAngleStart = arc.startAngle + imageRadius / arc.outerRadius;
+    const { x: centerX, y: centerY } = arc.getCenterPoint();
+    const expectedX = centerX + distanceMiddle * Math.cos(expectedAngleStart);
+    const expectedY = centerY + distanceMiddle * Math.sin(expectedAngleStart);
+
+    imageLabelPlugin.afterDraw(
+      chart as never,
+      {},
+      {
+        horizontalAlign: 'start',
+        imagesList: [{ imageUrl: `asymmetric-${Math.random()}.png`, imageWidth: 10, imageHeight: 100 }],
       },
     );
     await flushImageLoad();
