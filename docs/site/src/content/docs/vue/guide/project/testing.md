@@ -38,27 +38,22 @@ tiers.
 
 All four tiers are real and confirmed, not placeholder scaffolding:
 
-- **Unit** (core): 414 tests. **100% coverage on every metric except one
-  file**: `hierarchicalScale.ts` sits at 98.2% statements/lines, 90.93%
-  branches, 98% functions — every other file (`controller.ts`,
-  `gradientPlugin.ts`, `imageLabelPlugin.ts`, `autocolorsPlugin.ts`,
-  `index.ts`, `plugins.ts`, `registry.ts`, `test-utils.ts`) is a clean
-  100% across the board, and `zoomPlugin.ts` sits at 98.41% branches
-  (its own pre-existing, documented gap). Every file individually
-  clears the project's own 90% floor on every metric —
-  `hierarchicalScale.ts`'s own remaining gaps are narrow, defensive
-  edge cases (a handful of jsdom-style unreachable branches), the same
-  class of accepted gap `zoomPlugin.ts`/`gradientPlugin.ts` already
-  carry.
-- **Component** (this package): 48 tests, 100% coverage on every metric.
-- **End-to-end**: **81/81 passing** across all 3 browsers — every chart
-  kind, all 9 plugins, and resize behavior pass on every browser. No
+- **Unit** (core): 520 tests. **98.92% statements/lines, 94.35%
+  branches, 99.61% functions overall** — most files (`controller.ts`,
+  `index.ts`, `plugins.ts`, `registry.ts`, `test-utils.ts`,
+  `imageLabelPlugin.ts`) are a clean 100% across the board;
+  `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`,
+  `autocolorsPlugin.ts`, and the newer `plugins/trendline/*.ts` files
+  each sit in the 87–99% branch range, their own documented, accepted
+  gaps. Every file individually clears the project's own 90% floor on
+  every metric — the remaining gaps are narrow, defensive edge cases
+  (a handful of jsdom-style unreachable branches, or state genuinely
+  unobservable through any external assertion), the same class of
+  accepted gap across every local port in this project.
+- **Component** (this package): 49 tests, 100% coverage on every metric.
+- **End-to-end**: **84/84 passing** across all 3 browsers — every chart
+  kind, all 10 plugins, and resize behavior pass on every browser. No
   known limitations remain.
-- **Mutation**: 93.55% for core (`plugins.ts` alone: 88.14%, with 7
-  accepted survivors, all tracing to one root cause — see that file's
-  own doc comment on `withTimestack`), 97.73% for this package (one
-  accepted survivor). `hierarchicalScale.ts` has not yet had its own
-  dedicated mutation-hardening pass.
 
 See [docs/IMPLEMENTATION_PLAN.md](https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/docs/IMPLEMENTATION_PLAN.md)
 for the full history — including every real bug this testing process

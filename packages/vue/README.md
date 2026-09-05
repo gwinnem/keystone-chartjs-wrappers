@@ -83,6 +83,7 @@ const options = { responsive: true };
 | `imageLabel` | `ImageLabelPluginOptions` | — | Opt in to chartjs-plugin-image-label (draws an image on each doughnut/pie slice) |
 | `autocolors` | `AutocolorsPluginOptions \| boolean` | — | Opt in to chartjs-plugin-autocolors (automatically assigns a distinct color per dataset) |
 | `deferred` | `DeferredPluginOptions \| boolean` | — | Opt in to chartjs-plugin-deferred (defers the chart's initial update until it scrolls into the viewport) |
+| `trendline` | `boolean` | — | Opt in to chartjs-plugin-trendline (config lives on each dataset) |
 | `plugins` | `ChartConfiguration['plugins']` | — | Inline, custom Chart.js plugin objects |
 
 Any attribute that isn't a declared prop (including `aria-label`, `role`,
@@ -144,7 +145,10 @@ const chartRef = ref<InstanceType<typeof Chart> | null>(null);
 <!-- Deferred (accepts true or a config object, like zoom/dataLabels) -->
 <Chart type="bar" :deferred="{ xOffset: 150, yOffset: '50%', delay: 500 }" :data="data" />
 
-<!-- Custom, inline plugins (any plugin outside the 9 official ones above) -->
+<!-- Trendline (boolean only — config lives on each dataset, not here) -->
+<Chart type="line" trendline :data="{ datasets: [{ data: [12, 19, 15, 24, 30], trendlineLinear: { colorMin: 'red', colorMax: 'red' } }] }" />
+
+<!-- Custom, inline plugins (any plugin outside the 10 official ones above) -->
 <Chart type="bar" :data="data" :plugins="[customPlugin]" />
 ```
 

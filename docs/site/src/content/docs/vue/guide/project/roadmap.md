@@ -18,25 +18,23 @@ it applies to this package specifically.
   ecosystem bug forced this switch — not a local config choice).
 - **Phase 1 — Core engine** (`keystone-chartjs-core`) — chart lifecycle
   (construct, diffed update, destroy), lazy chart-kind registration, the
-  nine official-plugin helpers, resize handling, the theme
-  re-application hook, and inline-plugin support. 414 unit tests. 100%
-  coverage on every metric except one file: `hierarchicalScale.ts` sits
-  at 98.2% statements/lines, 90.93% branches, 98% functions (every
-  other core file is a clean 100%) — every file individually clears
-  the project's own 90% floor on every metric. 93.55% mutation score
-  overall (`plugins.ts` alone: 88.14%, with 7 accepted survivors, all
-  one root cause — see that file's own doc comment on `withTimestack`
-  for the full explanation; `controller.ts`/`registry.ts` both
-  unaffected, at 98.08%/100% respectively).
+  ten official-plugin helpers, resize handling, the theme
+  re-application hook, and inline-plugin support. 520 unit tests. 98.92%
+  statements/lines, 94.35% branches, 99.61% functions overall — every
+  file clears the project's own 90% per-file floor on every metric,
+  with `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`, and
+  the `plugins/trendline/*.ts` files each sitting in the 87–99% branch
+  range rather than a clean 100%, each with its own documented,
+  accepted survivors.
 - **Phase 2 — This package** — the real `<Chart>` component: all 15 chart
-  kinds, all 9 official plugins as opt-in props, reactive updates
+  kinds, all 10 official plugins as opt-in props, reactive updates
   (diffed on top-level `type` and the `plugins` array's own reference,
   not a blanket destroy/recreate), automatic resize, an exposed
   chart-instance ref, and mixed-chart support (see
-  [Mixed charts](/vue/guide/concepts/mixed-charts)). 48 unit/component
-  tests, 100% coverage, 97.73% mutation score. End-to-end: **81/81
+  [Mixed charts](/vue/guide/concepts/mixed-charts)). 49 unit/component
+  tests, 100% coverage. End-to-end: **84/84
   passing** across Chromium/Firefox/WebKit — every one of the 15 chart
-  kinds, all 9 plugins, and resize behavior render/behave correctly on
+  kinds, all 10 plugins, and resize behavior render/behave correctly on
   every browser. (An earlier state of this suite sat at 51/57, with 6
   extension kinds failing for a fully diagnosed reason — a
   variable-specifier dynamic import in `registry.ts`'s own
@@ -50,7 +48,7 @@ it applies to this package specifically.
   for real fallback content (also confirmed via a dedicated test). See
   [Accessibility](/vue/guide/concepts/accessibility) for the full guide.
 - **Inline, custom Chart.js plugins** — Chart.js's own
-  `ChartConfiguration.plugins` field, distinct from this package's 9
+  `ChartConfiguration.plugins` field, distinct from this package's 10
   official opt-in props, via a `plugins` prop. Unlike `data`/`options`,
   a changed `plugins` reference forces a destroy-and-reconstruct, since
   Chart.js only reads this field at construction time. See
@@ -94,13 +92,27 @@ it applies to this package specifically.
   config-merging shape). Confirmed via a real e2e test
   (`packages/vue/tests/e2e/autocolors-plugin.spec.ts`). See
   [API → Plugins](/vue/api/plugins) for the full guide.
-- **Deferred plugin** — a real npm dependency, `chartjs-plugin-
-  deferred` (the official Chart.js team), via a boolean-or-config-
-  object `deferred` prop (same shape as `dataLabels`). Defers a chart's
-  own real initial update — and its initial-render animations — until
-  the canvas actually scrolls into the viewport. Confirmed via a real
+- **Deferred plugin** — originally added as a real npm dependency
+  (`chartjs-plugin-deferred`, the official Chart.js team), later ported
+  directly into `keystone-chartjs-core` (no longer a real npm
+  dependency), via a boolean-or-config-object `deferred` prop (same
+  shape as `dataLabels`). Defers a chart's own real initial update —
+  and its initial-render animations — until the canvas actually
+  scrolls into the viewport. Confirmed via a real
   e2e test (`packages/vue/tests/e2e/deferred-plugin.spec.ts`) that
   scrolls a canvas starting below the fold into view mid-test. See
+  [API → Plugins](/vue/api/plugins) for the full guide.
+- **Trendline plugin** — originally added as a real npm dependency
+  (`chartjs-plugin-trendline`), later ported directly into
+  `keystone-chartjs-core` (no longer a real npm dependency, at your
+  explicit request, so the core package depends on nothing but
+  `chart.js` itself), via a boolean-only `trendline` prop — its real
+  config lives on each dataset rather than `options.plugins.trendline`.
+  Fits and draws a real linear or exponential trend line per dataset;
+  several real, undocumented features found only by reading the source
+  (`fillColor`, `dataset.order`, `dataset.alwaysShowTrendline`,
+  automatic ARIA labels, real legend integration). Confirmed via a real
+  e2e test (`packages/vue/tests/e2e/trendline-plugin.spec.ts`). See
   [API → Plugins](/vue/api/plugins) for the full guide.
 
 ## Open, real gaps (not just "not started yet")
@@ -118,11 +130,13 @@ it applies to this package specifically.
   per extension kind and per plugin, across all three frameworks.
 - **Phase 6 — Documentation site** — this site. React/Angular sections
   aren't published yet; live interactive examples exist for the 8
-  built-ins plus mixed charts and multiple axes (all live-hydrated), with
-  `sankey` and the zoom plugin shown as real source code only, not yet
-  live-embedded (a docs-site-specific build-pipeline gap, not the same
-  issue as the e2e one above); SEO/meta parity (OG/Twitter tags,
-  JSON-LD) is still open.
+  built-ins plus mixed charts, multiple axes, and 7 of the 10 official
+  plugins (`zoom`, `gradient`, `hierarchical`, `imageLabel`,
+  `autocolors`, `deferred`, `trendline`), with `annotation`/`dataLabels`/
+  `timestack` shown as real source code only, not yet live-embedded (a
+  docs-site-specific build-pipeline gap around dynamic imports of their
+  own real npm dependencies, not the same issue as the e2e one above);
+  SEO/meta parity (OG/Twitter tags, JSON-LD) is still open.
 - **Phase 7 — Release** — semantic-release isn't set up yet.
 
 Nothing here is committed to a date — phases gate on the previous one's

@@ -9,7 +9,7 @@ description: What keystone-chartjs-vue implements today, and what's planned.
 | 8 built-in Chart.js kinds (bar, line, bubble, scatter, doughnut, pie, polarArea, radar) | Implemented |
 | 7 ecosystem extension kinds (candlestick, ohlc, boxplot, violin, matrix, sankey, treemap) | Implemented |
 | Lazy chart-type registration (unused controllers stay out of the bundle) | Implemented |
-| Official plugins (zoom/pan, annotation, data labels, gradient, timestack, hierarchical, image label, autocolors, deferred) | Implemented — opt-in props (`zoom`, `annotation`, `dataLabels`, `gradient`, `timestack`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`) |
+| Official plugins (zoom/pan, annotation, data labels, gradient, timestack, hierarchical, image label, autocolors, deferred, trendline) | Implemented — opt-in props (`zoom`, `annotation`, `dataLabels`, `gradient`, `timestack`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`, `trendline`) |
 | Reactive updates (`chart.update()`, not destroy/recreate) | Implemented — diffed on top-level `type` and the `plugins` array's own reference; unchanged, an update applies in place, a change to either destroys and reconstructs |
 | Resize handling | Implemented — automatic via `ResizeObserver` |
 | Exposed chart-instance ref (escape hatch) | Implemented — `defineExpose({ chart })` |
@@ -17,25 +17,22 @@ description: What keystone-chartjs-vue implements today, and what's planned.
 | TypeScript types for every prop, config, and chart kind | Implemented |
 | Vue-native lifecycle events (`ready`/`update`/`destroy`) | Not implemented — see [Events](/vue/components/events) |
 | Accessibility (ARIA-attribute fallthrough, fallback-content slot) | Implemented — see [Accessibility](/vue/guide/concepts/accessibility) |
-| Inline, custom Chart.js plugins (`ChartConfiguration.plugins`, distinct from the 9 official opt-ins above) | Implemented — the `plugins` prop, see [API → Plugins](/vue/api/plugins) |
+| Inline, custom Chart.js plugins (`ChartConfiguration.plugins`, distinct from the 10 official opt-ins above) | Implemented — the `plugins` prop, see [API → Plugins](/vue/api/plugins) |
 
 ## Test coverage
 
 All implemented features above are backed by real, confirmed test tiers,
 not just written and assumed correct:
 
-- Unit (core) + component (this package) tests: 100% coverage on every
-  metric except one core file — `hierarchicalScale.ts` sits at 98.2%
-  statements/lines, 90.93% branches, 98% functions (every other core
-  file, and this package's own component tests, are a clean 100%) —
-  every file individually clears the project's own 90% floor on every
-  metric
-- Mutation testing (Stryker): 97.73% for this package (one accepted,
-  explained survivor), 93.55% for `keystone-chartjs-core` (`plugins.ts`
-  alone: 88.14%, with 7 accepted survivors — all one root cause, see
-  that file's own doc comment on `withTimestack`)
-- End-to-end (real browser, real Chart.js, Chromium/Firefox/WebKit): 81/81
-  passing — all 15 chart kinds, all 9 plugins, and resize behavior pass
+- Unit (core) + component (this package) tests: core is at 98.92%
+  statements/lines, 94.35% branches, 99.61% functions overall — every
+  file clears the project's own 90% per-file floor on every metric,
+  with `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`,
+  and the newer `plugins/trendline/*.ts` files each sitting in the
+  87–99% branch range rather than a clean 100%. This package's own
+  component tests are a clean 100%.
+- End-to-end (real browser, real Chart.js, Chromium/Firefox/WebKit): 84/84
+  passing — all 15 chart kinds, all 10 plugins, and resize behavior pass
   across all 3 browsers. No known limitations remain.
 
 See the
