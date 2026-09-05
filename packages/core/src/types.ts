@@ -263,3 +263,76 @@ export interface DeferredPluginOptions {
    * @default 500 */
   delay?: number;
 }
+
+/**
+ * `chartjs-plugin-trendline`'s real per-dataset config — confirmed
+ * directly from the real, installed package's own real source
+ * (`src/components/trendline.js`, not just its README, which omits two
+ * real, working fields: `fillColor` and `accessibility`), dissected
+ * during this project's own local port (see `plugins/trendline/
+ * trendlinePlugin.ts` for the full port rationale). Lives on each
+ * *dataset* (`dataset.trendlineLinear`/`dataset.trendlineExponential`),
+ * not `options.plugins.trendline` — the same mechanism `gradient`'s own
+ * `dataset.gradient` field already uses, reaching Chart.js untouched via
+ * this project's own `ChartConfigDataset` index signature (no type
+ * change needed there). A dataset may set either, both, or neither —
+ * they aren't mutually exclusive at the type level, matching the real
+ * package's own behavior. `dataset.order`/`dataset.alwaysShowTrendline`
+ * are separate, real dataset-level fields (not part of this config
+ * object itself) — already reach the plugin untouched via
+ * `ChartConfigDataset`'s own index signature, no type change needed for
+ * those either.
+ */
+export interface TrendlineConfig {
+  colorMin?: string;
+  colorMax?: string;
+  lineStyle?: 'dotted' | 'solid' | 'dashed' | 'dashdot';
+  width?: number;
+  /** Fills the area between the trendline and the chart's own bottom
+   * edge with this color — a real, working feature the real package's
+   * own README never documents at all, confirmed only by reading its
+   * source directly. */
+  fillColor?: string | false;
+  /** Reads x-values from this dataset key instead of Chart.js's own
+   * default `x`/index-based resolution — for datasets using a
+   * non-default parsing key (e.g. `{ xAxisKey: 'date' }`). */
+  xAxisKey?: string;
+  yAxisKey?: string;
+  /** Extends the fitted line beyond the real data's own first/last
+   * point, across the full chart area. */
+  projection?: boolean;
+  /** If positive, skips this many leading data points before fitting;
+   * if negative, fits only the last `abs(trendoffset)` points — useful
+   * for excluding an initial ramp-up/outlier period from the fit. */
+  trendoffset?: number;
+  label?: {
+    color?: string;
+    text?: string;
+    display?: boolean;
+    /** Linear: shows the fitted line's own slope. Exponential: shows
+     * the fitted `a`/`b` parameters (`y = a × e^(b×x)`). */
+    displayValue?: boolean;
+    /** Linear only: shows the slope as a percentage rather than a raw
+     * value. */
+    percentage?: boolean;
+    offset?: number;
+    font?: { family?: string; size?: number };
+  };
+  legend?: {
+    text?: string;
+    strokeStyle?: string;
+    color?: string;
+    fillStyle?: string;
+    lineCap?: CanvasLineCap;
+    lineDash?: number[];
+    lineWidth?: number;
+  };
+  /** Feeds this project's own local port's automatic ARIA-label
+   * generation — also a real, working feature the real package's own
+   * README never documents at all, confirmed only by reading its
+   * source directly. `description`, if given, is used verbatim as the
+   * chart canvas's own generated `aria-label` contribution for this
+   * dataset's trendline; otherwise `label` is folded into a short,
+   * auto-generated sentence instead. */
+  accessibility?: { description?: string; label?: string };
+}

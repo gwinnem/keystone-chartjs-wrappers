@@ -1,5 +1,37 @@
 # Trendline Plugin Implementation Plan
 
+**Status: Implemented, then ported.** This plan's own original
+recommendation (below) was to keep `chartjs-plugin-trendline` as a real
+npm dependency — no concrete bug or unmaintained-dependency reason
+motivated a port, unlike every other plugin this project has ported.
+Implemented that way first. **Later ported anyway, at your explicit
+request, specifically so `keystone-chartjs-core` depends on nothing but
+`chart.js` itself** — `annotation`/`dataLabels` remain the only two
+real npm dependencies left in this project.
+
+Real, confirmed results of the port: real source dissected directly
+from the installed package's own real `src/` (six real files:
+`core/plugin.js`, `components/{trendline,label}.js`, `utils/
+{baseFitter,lineFitter,exponentialFitter,drawing,accessibility}.js`),
+mirrored into `packages/core/src/plugins/trendline/` (`fitters.ts`,
+`drawing.ts`, `label.ts`, `accessibility.ts`, `trendlineCore.ts`,
+`trendlinePlugin.ts`). `withTrendline` in `plugins.ts` now registers
+directly and synchronously via `Chart.register(trendlinePlugin)`, no
+dynamic import at all. The docs example now renders live, like every
+other local port, rather than source-only. See `CHARTJS_ANALYSIS.md`
+§4's own "Added after v1 kickoff: Trendline" section for the full,
+current verification, including several real, undocumented features
+found only by reading the source (`fillColor`, `dataset.order`,
+`dataset.alwaysShowTrendline`, automatic ARIA labels, real legend
+integration) and a real, deliberate omission (the original's own unused
+`correlation()`/`generateTrendlineDescription()` dead code, confirmed
+never called anywhere in the original's own real source, not ported).
+
+The rest of this document is kept as the original, real scoping pass
+written before implementation started — its own "keep as a dependency"
+recommendation and step-by-step plan describe the *first* implementation
+phase, not the final state.
+
 Companion to `CHARTJS_ANALYSIS.md` §4 and `CHARTJS_AWESOME_PLUGINS.md`'s own
 "Features" table (`trendline` — the one v4-compatible, not-yet-implemented
 candidate remaining in that category; `crosshair`/`doughnutlabel`/

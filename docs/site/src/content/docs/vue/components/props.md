@@ -17,16 +17,17 @@ description: Props accepted by the <Chart> component.
 | `imageLabel` | `ImageLabelPluginOptions` | No | Implemented |
 | `autocolors` | `AutocolorsPluginOptions \| boolean` | No | Implemented |
 | `deferred` | `DeferredPluginOptions \| boolean` | No | Implemented |
+| `trendline` | `boolean` | No | Implemented |
 | `plugins` | `ChartConfiguration['plugins']` (Chart.js's own type) | No | Implemented |
 
 `zoom`/`dataLabels`/`autocolors`/`deferred` accept either `true` (apply the
 plugin with no extra config) or a config object. `annotation`/`imageLabel`
 have no boolean form — each has a required field (`annotations`/
 `imagesList` respectively) with no sensible empty default to apply the
-plugin with. `gradient`/`timestack`/`hierarchical` are boolean only —
-unlike the other five, none has any plugin-level config to merge into
-`options.plugins.<id>`; their real config lives elsewhere instead (see
-[Plugins](/vue/api/plugins) for the full explanation).
+plugin with. `gradient`/`timestack`/`hierarchical`/`trendline` are boolean
+only — unlike the other five, none has any plugin-level config to merge
+into `options.plugins.<id>`; their real config lives elsewhere instead
+(see [Plugins](/vue/api/plugins) for the full explanation).
 
 `data` isn't Chart.js's own bare `ChartConfiguration['data']` type — Chart.js's
 own types only model its 8 built-in kinds' data shapes; `ChartConfigData` is
@@ -37,7 +38,7 @@ a deliberately widened type covering this package's 7 extension kinds too
 
 `plugins` is Chart.js's own real, separate `ChartConfiguration.plugins`
 field — an array of inline, per-chart-instance plugin objects, distinct from
-the 9 official opt-in props above. Use it for any custom plugin you write
+the 10 official opt-in props above. Use it for any custom plugin you write
 yourself, or any community plugin this package doesn't ship dedicated
 support for:
 

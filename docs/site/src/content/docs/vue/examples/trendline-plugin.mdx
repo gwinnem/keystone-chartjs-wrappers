@@ -1,0 +1,66 @@
+---
+title: Trendline plugin
+description: A local port of chartjs-plugin-trendline, supplied via the trendline prop, fitting a real linear or exponential trend line to each dataset.
+---
+import TrendlinePlugin from '../../../../components/examples/trendline-plugin.vue';
+import TrendlinePluginSource from '../../../../components/examples/trendline-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `trendline` prop wires in a local port of `chartjs-plugin-trendline`
+(real source dissected directly from the installed package's own real
+`src/`, not just its README) — registered once via
+`Chart.register(trendlinePlugin)`, at your explicit request, so
+`keystone-chartjs-core` depends on nothing but `chart.js` itself.
+`annotation`/`dataLabels` remain the only two real npm dependencies left
+in this project.
+
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site, like `zoom`/`gradient`/
+`hierarchical`/`imageLabel`/`autocolors`/`deferred` — unlike
+`annotation`/`dataLabels`, which still render source-only here.
+
+<ExampleTryIt code={TrendlinePluginSource} filename="trendline-plugin.vue" live={true}>
+  <TrendlinePlugin client:visible />
+</ExampleTryIt>
+
+:::tip[Boolean only — the real config lives on the dataset]
+```js
+datasets: [{
+  data: [...],
+  trendlineLinear: {
+    colorMin: 'red',
+    colorMax: 'red',
+    lineStyle: 'dotted', // 'dotted' | 'solid' | 'dashed' | 'dashdot'
+    width: 2,
+    projection: true, // extend the line beyond the real data range
+    fillColor: 'rgba(255,0,0,0.1)', // fills the area below the trendline
+  },
+}]
+```
+Use `trendlineExponential` instead of `trendlineLinear` to fit
+`y = a × e^(b×x)` — works best with positive y-values, per the real
+package's own documented caveat. Both accept the identical set of
+styling/label/legend options.
+:::
+
+:::note[Real features found only by reading the source]
+Neither the real package's own README nor its `MIGRATION.md` documents
+these — confirmed only by dissecting the installed package's own real
+`src/` directly, not assumed:
+- **`fillColor`** — fills the area between the trendline and the chart's
+  own bottom edge (shown above).
+- **`dataset.order`** — trendlines draw in ascending order, except
+  order-`0` datasets (Chart.js's own real default when unset), which
+  draw *last*, on top of every other trendline.
+- **`dataset.alwaysShowTrendline`** — draws the trendline even when the
+  dataset itself is currently hidden via the legend.
+- **Automatic ARIA labels** — the chart canvas's own `aria-label` is
+  updated automatically with a generated description of each dataset's
+  trendline, customizable per dataset via `accessibility.description`/
+  `.label`.
+- **Legend integration** — a `legend` sub-config on the trendline adds
+  a real, additional legend entry for it, alongside Chart.js's own
+  default-generated entries.
+
+See [Plugins](/vue/api/plugins/) for the full prop reference.
+:::

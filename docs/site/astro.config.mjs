@@ -211,6 +211,7 @@ export default defineConfig({
                     { label: 'Image label plugin', slug: 'vue/examples/image-label-plugin' },
                     { label: 'Autocolors plugin', slug: 'vue/examples/autocolors-plugin' },
                     { label: 'Deferred plugin', slug: 'vue/examples/deferred-plugin' },
+                    { label: 'Trendline plugin', slug: 'vue/examples/trendline-plugin' },
                   ],
                 },
                 {

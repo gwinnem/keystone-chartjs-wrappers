@@ -1123,11 +1123,24 @@ match that.
    directly under Angular's own `src/` tree) — deliberately left unsolved
    until Phase 4 actually starts.
 10. **Phase 5 (ecosystem extensions & plugins hardening, all 3
-    frameworks)** — not started. A 9th official plugin, `trendline`
-    (`chartjs-plugin-trendline`), is fully scoped and ready to start —
-    see `docs/TRENDLINE_PLUGIN_PLAN.md` for the full plan (package
-    verification, real config shape, dependency-vs-port decision,
-    step-by-step implementation, and open risks). Two further
+    frameworks)** — not started as a phase, but a 10th official plugin,
+    `trendline`, has been implemented ahead of the phase proper, at your
+    explicit request — **ported directly into `packages/core/src/
+    plugins/trendline/`** (six real files, mirroring the original
+    package's own real module split), at your explicit request,
+    specifically so `keystone-chartjs-core` depends on nothing but
+    `chart.js` itself (`annotation`/`dataLabels` remain the only two
+    real npm dependencies left). See `docs/TRENDLINE_PLUGIN_PLAN.md`
+    for the original scoping (a real npm dependency was the initial
+    recommendation — no concrete bug or unmaintained-dependency reason
+    motivated a port, unlike every other plugin ported so far) and its
+    own updated "Status: Implemented, then ported" header for the real,
+    confirmed port results: `withTrendline` in `plugins.ts` registers
+    directly and synchronously via `Chart.register(trendlinePlugin)`,
+    several real, undocumented features found only by reading the
+    source (`fillColor`, `dataset.order`, `dataset.alwaysShowTrendline`,
+    automatic ARIA labels, real legend integration), and a docs example
+    that now renders live rather than source-only. Two further
     candidates, `regression` and `waterfall`, are confirmed genuinely
     Chart.js-v2-only (not just unverified — `regression`'s own README
     states outright "does not work with <chart.js@3.x>"; `waterfall`'s

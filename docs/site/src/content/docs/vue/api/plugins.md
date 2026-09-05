@@ -14,6 +14,7 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 | Image label | locally ported, not a dependency | Draws an image on each doughnut/pie slice | `imageLabel` | Implemented |
 | Autocolors | locally ported, not a dependency | Automatically assigns a distinct color per dataset (or data point) | `autocolors` | Implemented |
 | Deferred | locally ported, not a dependency | Defers the chart's own real initial update until the canvas scrolls into the viewport | `deferred` | Implemented |
+| Trendline | locally ported, not a dependency | Fits a real linear or exponential trend line to each dataset | `trendline` | Implemented |
 
 These are chart-instance plugins, not chart types — they apply across
 whichever `type` you use them with. Each is a one-line opt-in prop on
@@ -21,8 +22,8 @@ whichever `type` you use them with. Each is a one-line opt-in prop on
 manual `Chart.register()` call in consumer code — the two still-
 dependency-based ones (`annotation`, `dataLabels`) are dynamically
 imported and registered automatically, the first time the prop is used
-(`zoom`/`gradient`/`imageLabel`/`autocolors`/`deferred` are local code
-instead — see their own sections below).
+(`zoom`/`gradient`/`imageLabel`/`autocolors`/`deferred`/`trendline` are
+local code instead — see their own sections below).
 
 `zoom`/`dataLabels` accept either `true` (apply with no extra config) or a
 config object merged into `options.plugins.zoom`/`options.plugins.datalabels`
@@ -39,7 +40,7 @@ with at least one entry under `annotations`.
 `options.plugins.zoom`, same as before the port — its own config shape
 is unchanged. What changed is where its logic lives: originally
 `chartjs-plugin-zoom`, now ported directly into `keystone-chartjs-core`
-(`src/zoomPlugin.ts`), never registered via `Chart.register(...)`,
+(`src/plugins/zoom/zoomPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
 instead (the same mechanism `gradient`/`imageLabel` below use).
 
@@ -117,13 +118,13 @@ existing `data` prop:
 Unlike `timestack`/`hierarchical` below, `gradient` isn't a dependency
 on a third-party package at all — its logic (originally
 `chartjs-plugin-gradient`) is ported directly into `keystone-chartjs-core`
-(`src/gradientPlugin.ts`), never registered via `Chart.register(...)`,
+(`src/plugins/gradient/gradientPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
 instead (the same mechanism `zoom`/`imageLabel` use). Being local code
-rather than a dynamic import also means this is one of six plugins on
+rather than a dynamic import also means this is one of seven plugins on
 this project's docs site (alongside `zoom`, `imageLabel`, `hierarchical`,
-`autocolors`, and `deferred`) whose own example renders genuinely live
-rather than source-only.
+`autocolors`, `deferred`, and `trendline`) whose own example renders
+genuinely live rather than source-only.
 
 See the [Gradient plugin example](/vue/examples/gradient-plugin) for the
 full version, and
@@ -172,7 +173,7 @@ Like `gradient`/`imageLabel`, it isn't a dependency on a third-party
 package at all — its logic (a real `CategoryScale` subclass plus a
 companion drawing/interaction plugin, dissected from the original
 package's own real TypeScript source) is ported directly into
-`keystone-chartjs-core` (`src/hierarchicalScale.ts`). Boolean only, like
+`keystone-chartjs-core` (`src/plugins/hierarchical/hierarchicalScale.ts`). Boolean only, like
 `gradient`/`timestack` — no plugin-level config to merge, used via
 `options.scales.<id>.type = 'hierarchical'`:
 
@@ -205,10 +206,10 @@ in this project accepts — confirmed directly from the real package's
 own type declarations, dissected into this project's own
 `HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
 `keystone-chartjs-core`). Being local code rather than a dynamic import
-also means this is one of six plugins/scales on this project's docs
-site (alongside `zoom`, `gradient`, `imageLabel`, `autocolors`, and
-`deferred`) whose own example renders genuinely live rather than
-source-only — click a category's own box below the axis to expand/
+also means this is one of seven plugins/scales on this project's docs
+site (alongside `zoom`, `gradient`, `imageLabel`, `autocolors`,
+`deferred`, and `trendline`) whose own example renders genuinely live
+rather than source-only — click a category's own box below the axis to expand/
 collapse it, or the small dot on a fully-expanded group to zoom in/out,
 right on the example page. See the
 [Hierarchical scale example](/vue/examples/hierarchical-scale) for the
@@ -239,7 +240,7 @@ sensible empty default (same reasoning as `annotation`):
 ```
 
 Its logic (originally `chartjs-plugin-image-label`) is ported directly
-into `keystone-chartjs-core` (`src/imageLabelPlugin.ts`), fixing two
+into `keystone-chartjs-core` (`src/plugins/imageLabel/imageLabelPlugin.ts`), fixing two
 bugs found in the original along the way: it now draws labels for every
 dataset (not just the first), and positions each image using Chart.js's
 own already-computed arc geometry instead of recomputing slice angles
@@ -293,10 +294,10 @@ agreed-upon definition, not any bespoke logic of the plugin's own)
 while carrying over every real piece of the plugin's own actual color-
 *selection* logic (the hue-stepping generator, mode branching, the
 "don't overwrite an already-set color" merge behavior) unchanged. Being
-local code rather than a dynamic import also means this is one of six
+local code rather than a dynamic import also means this is one of seven
 plugins/scales on this project's docs site (alongside `zoom`,
-`gradient`, `hierarchical`, `imageLabel`, and `deferred`) whose own
-example renders genuinely live rather than source-only. See the
+`gradient`, `hierarchical`, `imageLabel`, `deferred`, and `trendline`)
+whose own example renders genuinely live rather than source-only. See the
 [Autocolors plugin example](/vue/examples/autocolors-plugin) for the
 full version.
 
@@ -340,18 +341,91 @@ fixed during the port**, the identical class already found in
 `destroy`, but Chart.js's own real `Plugin` interface has no such hook
 at all — renamed to `afterDestroy`, the correct real hook name. Zero
 runtime dependencies of its own. Being local code rather than a dynamic
-import also means this is one of six plugins/scales on this project's
+import also means this is one of seven plugins/scales on this project's
 docs site (alongside `zoom`, `gradient`, `hierarchical`, `imageLabel`,
-and `autocolors`) whose own example renders genuinely live rather than
-source-only. See the [Deferred plugin example](/vue/examples/deferred-plugin)
+`autocolors`, and `trendline`) whose own example renders genuinely live
+rather than source-only. See the [Deferred plugin example](/vue/examples/deferred-plugin)
 for the full version.
+
+## Trendline — a local port, not a dependency, config lives on the dataset
+
+`trendline` draws on a local port of `chartjs-plugin-trendline` (v3.2.12,
+MIT, by Marcus Alsterfjord). Genuinely different motivation from every
+other port above: there was no concrete bug or unmaintained-dependency
+reason for this one — the real package is actively maintained with zero
+runtime dependencies of its own and no known bugs found during
+dissection. Ported anyway, at your explicit request, specifically so
+`keystone-chartjs-core` depends on nothing but `chart.js` itself —
+`annotation`/`dataLabels` remain the only two real npm dependencies left
+in this project.
+
+Like `gradient`, `trendline` is **boolean only** — it has no
+plugin-level config of its own to merge into `options.plugins.
+trendline` at all. Its real config lives on each **dataset** instead
+(`dataset.trendlineLinear`/`dataset.trendlineExponential`), which
+already reaches Chart.js untouched via the existing `data` prop:
+
+```vue
+<Chart
+  type="line"
+  trendline
+  :data="{
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+    datasets: [{
+      label: 'Revenue',
+      data: [12, 19, 15, 24, 30],
+      trendlineLinear: { colorMin: 'red', colorMax: 'red', lineStyle: 'dotted', width: 2 },
+    }],
+  }"
+/>
+```
+
+Use `trendlineExponential` instead of `trendlineLinear` to fit
+`y = a × e^(b×x)` — works best with positive y-values, per the real
+package's own documented caveat. Both accept the identical set of
+styling options (`colorMin`/`colorMax`, `lineStyle`, `width`,
+`xAxisKey`/`yAxisKey`, `projection`, `trendoffset`, `label`, `legend`).
+
+**Real, undocumented features found only by reading the real, installed
+package's own source directly** — neither its README nor `MIGRATION.md`
+mentions any of these:
+- **`fillColor`** on the trendline config — fills the area between the
+  trendline and the chart's own bottom edge.
+- **`dataset.order`** — trendlines draw in ascending order, except
+  order-`0` datasets (Chart.js's own real default when unset), which
+  draw *last*, on top of every other trendline.
+- **`dataset.alwaysShowTrendline`** — draws the trendline even when the
+  dataset itself is currently hidden via the legend.
+- **Automatic ARIA-label generation** — the chart canvas's own
+  `aria-label` is updated automatically with a generated description of
+  each dataset's own trendline, customizable per dataset via
+  `accessibility.description`/`.label`.
+- **Legend integration** — a `legend` sub-config on the trendline adds a
+  real, additional legend entry for it (`text`, `strokeStyle`,
+  `fillStyle`, `lineCap`, `lineDash`, `lineWidth`), alongside Chart.js's
+  own default-generated entries — confirmed via a real, direct patch of
+  the chart's own `legend.options.labels.generateLabels`, additive to
+  whatever Chart.js itself already generates.
+
+**No type declarations shipped by the real package at all** — a
+genuine, confirmed gap unlike `annotation`/`dataLabels`, both of which
+ship real `.d.ts` files of their own — irrelevant to this port itself
+(no dependency left to lack types for), but worth knowing if you ever
+compare against the original package directly.
+
+Being local code rather than a dynamic import also means this is one of
+seven plugins/scales on this project's docs site (alongside `zoom`,
+`gradient`, `hierarchical`, `imageLabel`, `autocolors`, and `deferred`)
+whose own example renders genuinely live rather than source-only. See
+the [Trendline plugin example](/vue/examples/trendline-plugin) for the
+full version.
 
 ## Custom, inline plugins
 
 Chart.js's own `ChartConfiguration.plugins` field — inline, per-chart-instance
-custom plugin objects, distinct from these 9 officially-supported plugins —
+custom plugin objects, distinct from these 10 officially-supported plugins —
 is also implemented, via the `plugins` prop. Use it for any custom plugin
-you write yourself, or any community plugin outside the 9 above. See
+you write yourself, or any community plugin outside the 10 above. See
 [Props → Custom, inline plugins](/vue/components/props#custom-inline-plugins)
 for the full guide, including a real update-behavior difference worth
 knowing (a `plugins` change forces a destroy-and-reconstruct, unlike

@@ -16,6 +16,7 @@ export {
   withHierarchical,
   withImageLabel,
   withTimestack,
+  withTrendline,
   withZoom,
 } from './plugins.js';
 
@@ -32,6 +33,7 @@ export type {
   DataLabelsPluginOptions,
   DeferredPluginOptions,
   ImageLabelPluginOptions,
+  TrendlineConfig,
 } from './types.js';
 export type { GradientDatasetConfig } from './plugins/gradient/gradientPlugin.js';
 export type {

@@ -22,6 +22,10 @@ vi.mock('chart.js', () => ({
 // module mock the way it used to.
 vi.mock('chartjs-plugin-annotation', () => ({ default: { id: 'annotation' } }));
 vi.mock('chartjs-plugin-datalabels', () => ({ default: { id: 'datalabels' } }));
+// No mock for chartjs-plugin-trendline — it's no longer a dependency at
+// all. Its logic was ported directly into plugins/trendline/
+// trendlinePlugin.ts (a real, local plugin object, statically
+// imported), so withTrendline needs no module mock the way it used to.
 // No mock for chartjs-plugin-deferred — it's no longer a dependency at
 // all. Its logic was ported directly into deferredPlugin.ts (a real,
 // local plugin object, statically imported), so withDeferred needs no
@@ -61,6 +65,7 @@ import {
   withHierarchical,
   withImageLabel,
   withTimestack,
+  withTrendline,
   withZoom,
 } from '../../src/plugins.js';
 
@@ -156,6 +161,33 @@ describe('cross-plugin isolation', () => {
     expect(registerMock).toHaveBeenCalledTimes(1);
     await withDataLabels({});
     expect(registerMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('withTrendline', () => {
+  it('returns options completely unchanged — there is no plugin-level config to merge (config lives on each dataset)', async () => {
+    const input = { plugins: { legend: { display: true } } };
+    const result = await withTrendline(input);
+
+    expect(result).toEqual(input);
+  });
+
+  it('registers via a direct Chart.register(trendlinePlugin) call, the real local plugin object, not a dynamically-imported module', async () => {
+    // As of the local port, trendlinePlugin is imported directly from
+    // plugins/trendline/trendlinePlugin.ts — the same real object
+    // reference is what gets passed to Chart.register, no dynamic
+    // import or mod.default ?? mod fallback involved at all anymore
+    // (matching withAutocolors's/withDeferred's own identical
+    // registration mechanism).
+    await withTrendline({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'chartjs-plugin-trendline' }));
+  });
+
+  it('registers the plugin exactly once no matter how many times it is called', async () => {
+    await withTrendline({});
+    await withTrendline({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
   });
 });
 

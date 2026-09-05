@@ -4,6 +4,7 @@ import { deferredPlugin } from './plugins/deferred/deferredPlugin.js';
 import { gradientPlugin } from './plugins/gradient/gradientPlugin.js';
 import { HierarchicalScale } from './plugins/hierarchical/hierarchicalScale.js';
 import { imageLabelPlugin } from './plugins/imageLabel/imageLabelPlugin.js';
+import { trendlinePlugin } from './plugins/trendline/trendlinePlugin.js';
 import { zoomPlugin, type ZoomPluginOptions } from './plugins/zoom/zoomPlugin.js';
 import type {
   AnnotationPluginOptions,
@@ -25,6 +26,7 @@ let timestackRegistered = false;
 let hierarchicalRegistered = false;
 let autocolorsRegistered = false;
 let deferredRegistered = false;
+let trendlineRegistered = false;
 
 type Options = NonNullable<ChartConfiguration['options']>;
 
@@ -362,7 +364,36 @@ export async function withDeferred(options: Options, deferredOptions: DeferredPl
 }
 
 /**
- * Test-only: resets the remaining six registration flags so tests can
+ * Registers a local port of `chartjs-plugin-trendline` (once), via this
+ * project's own {@link trendlinePlugin} — see `trendlinePlugin.ts`'s own
+ * header comment for the full port rationale. Unlike every other
+ * plugin this project has actually ported, there was no concrete bug
+ * or unmaintained-dependency reason motivating this one — ported
+ * anyway, at your explicit request, specifically so
+ * `keystone-chartjs-core` depends on nothing but `chart.js` itself.
+ * `Chart.register(...)` is called directly and synchronously (no
+ * dynamic `import()` at all, unlike this function's own prior,
+ * still-a-dependency version) — kept `async` regardless, purely so
+ * `useChartController.ts`'s own `await withTrendline(opts)` call site
+ * needed no changes.
+ *
+ * Like `withGradient`/`withTimestack`/`withHierarchical`, there is no
+ * plugin-level config of its own to merge into `options` here — its
+ * real config (`TrendlineConfig`, see types.ts) lives on each
+ * *dataset* instead (`dataset.trendlineLinear`/`dataset.
+ * trendlineExponential`), which already reaches Chart.js untouched via
+ * the existing `data` prop. `options` is returned unchanged.
+ */
+export async function withTrendline(options: Options): Promise<Options> {
+  if (!trendlineRegistered) {
+    Chart.register(trendlinePlugin);
+    trendlineRegistered = true;
+  }
+  return options;
+}
+
+/**
+ * Test-only: resets the remaining seven registration flags so tests can
  * verify register-once behavior from a known-unregistered state. Not
  * part of the package's public entry point — import directly from
  * './plugins.js' in tests. (`withZoom`/`withGradient`/`withImageLabel`
@@ -377,4 +408,5 @@ export function __resetPluginsForTests(): void {
   hierarchicalRegistered = false;
   autocolorsRegistered = false;
   deferredRegistered = false;
+  trendlineRegistered = false;
 }

@@ -41,15 +41,16 @@ const config = {
   // Each locally-ported plugin now lives in its own subdirectory under
   // src/plugins/<name>/, mirrored under tests/unit/plugins/<name>/ —
   // imageLabelPlugin.ts, gradientPlugin.ts, zoomPlugin.ts,
-  // hierarchicalScale.ts, autocolorsPlugin.ts, and deferredPlugin.ts:
-  // real, non-trivial ported logic (see each file's own header
-  // comment), each with its own dedicated test file (tests/unit/
-  // plugins/imageLabel/imageLabelPlugin.spec.ts, tests/unit/plugins/
-  // gradient/gradientPlugin.spec.ts, tests/unit/plugins/zoom/
-  // zoomPlugin.spec.ts, tests/unit/plugins/hierarchical/
+  // hierarchicalScale.ts, autocolorsPlugin.ts, deferredPlugin.ts, and
+  // (as of the trendline port) the five real files under
+  // plugins/trendline/: real, non-trivial ported logic (see each
+  // file's own header comment), each with its own dedicated test file
+  // (tests/unit/plugins/imageLabel/imageLabelPlugin.spec.ts, tests/
+  // unit/plugins/gradient/gradientPlugin.spec.ts, tests/unit/plugins/
+  // zoom/zoomPlugin.spec.ts, tests/unit/plugins/hierarchical/
   // hierarchicalScale.spec.ts, tests/unit/plugins/autocolors/
   // autocolorsPlugin.spec.ts, tests/unit/plugins/deferred/
-  // deferredPlugin.spec.ts).
+  // deferredPlugin.spec.ts, tests/unit/plugins/trendline/*.spec.ts).
   mutate: [
     'src/registry.ts',
     'src/controller.ts',
@@ -60,6 +61,12 @@ const config = {
     'src/plugins/hierarchical/hierarchicalScale.ts',
     'src/plugins/autocolors/autocolorsPlugin.ts',
     'src/plugins/deferred/deferredPlugin.ts',
+    'src/plugins/trendline/fitters.ts',
+    'src/plugins/trendline/drawing.ts',
+    'src/plugins/trendline/label.ts',
+    'src/plugins/trendline/accessibility.ts',
+    'src/plugins/trendline/trendlineCore.ts',
+    'src/plugins/trendline/trendlinePlugin.ts',
   ],
 
   vitest: {

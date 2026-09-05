@@ -79,10 +79,10 @@ under `options.plugins.<id>`), not chart *types* — they apply across whichever
 kinds the consumer uses them with. The wrapper's job is to (a) make registering
 them a one-line opt-in per framework, and (b) surface typed `options.plugins.*`
 shapes for each, rather than leaving consumers to hand-type against the plugins'
-own (often looser) option interfaces. Six more were added after v1
+own (often looser) option interfaces. Seven more were added after v1
 kickoff (`gradient`/`timestack`/`hierarchical`/`image-label`/
-`autocolors`/`deferred` — see their own sections below), bringing the
-real total this project ships to 9.
+`autocolors`/`deferred`/`trendline` — see their own sections below),
+bringing the real total this project ships to 10.
 
 ### Zoom/pan — later locally ported, not a dependency
 
@@ -216,12 +216,12 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — one of six of this project's
+varying by each bar's own height — one of seven of this project's
 plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`,
-`autocolors`, and `deferred`) that renders live on the docs site rather
-than source-only, for the identical reason: local, static code has no
-dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
+`autocolors`, `deferred`, and `trendline`) that renders live on the
+docs site rather than source-only, for the identical reason: local,
+static code has no dynamic `import()` for the docs-site hydration gap
+(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 ### Added after v1 kickoff: Timestack
 
@@ -335,12 +335,12 @@ structure (`{ label, children }` / `{ value, children }`), not the flat
 arrays every other kind or plugin in this project accepts.
 
 **Confirmed live in a real browser after the port**, including the real
-click-to-expand/collapse/zoom-in/zoom-out interaction — one of six of
+click-to-expand/collapse/zoom-in/zoom-out interaction — one of seven of
 this project's plugins/scales (alongside `zoom`, `gradient`,
-`imageLabel`, `autocolors`, and `deferred`) that renders live on the
-docs site rather than source-only, for the identical reason: local,
-static code has no dynamic `import()` for the docs-site hydration gap
-(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+`imageLabel`, `autocolors`, `deferred`, and `trendline`) that renders
+live on the docs site rather than source-only, for the identical
+reason: local, static code has no dynamic `import()` for the docs-site
+hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: grew to 87 dedicated tests across
 several rounds (55 from the initial port, then a coverage-hardening
@@ -392,9 +392,9 @@ to resolve when the importing file is served from outside the docs
 site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this, `gradient`, `zoom`, `hierarchical`, `autocolors`, and
-`deferred` are six of the nine plugin/scale examples on the docs site
-that render live rather than source-only.
+assumed: this, `gradient`, `zoom`, `hierarchical`, `autocolors`,
+`deferred`, and `trendline` are seven of the ten plugin/scale examples
+on the docs site that render live rather than source-only.
 
 **Genuinely distinct registration shape, same as `withGradient`’s and
 `withZoom`’s own local ports — different from `withTimestack`/
@@ -473,12 +473,12 @@ needing an async dynamic import to register.
 
 **Confirmed live in a real browser after the port**: three datasets on
 a line chart, each automatically assigned a distinct, generated color
-with no `backgroundColor`/`borderColor` set on any of them — one of six
-of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, and `deferred`) that renders live on the
-docs site rather than source-only, for the identical reason: local,
-static code has no dynamic `import()` for the docs-site hydration gap
-(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+with no `backgroundColor`/`borderColor` set on any of them — one of
+seven of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, `deferred`, and `trendline`) that renders
+live on the docs site rather than source-only, for the identical
+reason: local, static code has no dynamic `import()` for the docs-site
+hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
@@ -499,8 +499,8 @@ version (2.0.0), MIT license, by the official Chart.js team
 (simonbrunel) — the same organization behind `annotation`/`datalabels`
 in the original v1 scope above.
 
-**Later ported directly into `packages/core/src/deferredPlugin.ts`, at
-your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
+**Later ported directly into `packages/core/src/plugins/deferred/
+deferredPlugin.ts`, at your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
 plugin-gradient`/`chartjs-plugin-image-label`/`chartjs-plugin-
 hierarchical`/`chartjs-plugin-autocolors` were** — it is not, and is no
 longer, a real npm dependency of this project. The package ships real,
@@ -565,12 +565,13 @@ its own to merge into `options.plugins.deferred` (matching
 **Confirmed live in a real browser after the port**: a Playwright e2e
 test starting the canvas below the fold (via a tall spacer element),
 confirming it scrolls into view and renders real, non-blank pixels
-once a real `scroll` event and the configured delay elapse — one of six
-of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, and `autocolors`) that renders live on
-the docs site rather than source-only, for the identical reason: local,
-static code has no dynamic `import()` for the docs-site hydration gap
-(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+once a real `scroll` event and the configured delay elapse — one of
+seven of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, `autocolors`, and `trendline`) that
+renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/deferredPlugin.spec.ts` (17 tests) covering in-viewport-at-
@@ -587,6 +588,117 @@ and `afterDestroy` cleanup — 96.1% statements/lines, 91.37% branches,
 file's own real call graph, the same class of accepted gap as
 `controller.ts`'s/`hierarchicalScale.ts`'s own already-documented
 survivors) — confirmed via a real `test:coverage` run, not assumed.
+
+### Added after v1 kickoff: Trendline (later locally ported, not a dependency)
+
+| Plugin | Package surveyed | Confirmed version at time of dissection | Purpose |
+|---|---|---|---|
+| Trendline | `chartjs-plugin-trendline` | `3.2.12` | Fits and draws a real linear or exponential trend line through each dataset's own data. |
+
+Also added later, at your explicit request, after being surveyed in
+`docs/CHARTJS_AWESOME_PLUGINS.md` and fully scoped ahead of time in
+`docs/TRENDLINE_PLUGIN_PLAN.md`. Verified the same way: current version
+(3.2.12), MIT license, by Marcus Alsterfjord, real Chart.js v4
+compatibility confirmed directly from the package's own README ("Made
+for Chart.js > 4.0", tested against real Chart.js 4.4.9/4.5.0 in its
+own published examples), zero runtime dependencies of its own
+(confirmed directly from its own installed `package.json`).
+
+**Genuinely different motivation from every other port above**: unlike
+`zoom` (an unmaintained Hammer.js dependency), `gradient`/`image-label`
+(a real, fixable bug found during dissection), `hierarchical` (zero
+dependencies of its own), `autocolors` (avoiding a new `@kurkle/color`
+dependency), or `deferred` (a real, confirmed hook-name bug) — there
+was no concrete bug or unmaintained-dependency reason for this one at
+all. **Ported anyway, at your explicit request, specifically so
+`keystone-chartjs-core` depends on nothing but `chart.js` itself** —
+`annotation`/`dataLabels` remain the only two real npm dependencies
+left in this project.
+
+**Later ported directly into `packages/core/src/plugins/trendline/`
+(six real files — `fitters.ts`, `drawing.ts`, `label.ts`,
+`accessibility.ts`, `trendlineCore.ts`, `trendlinePlugin.ts` — mirroring
+the original's own real module split), at your explicit request** — it
+is not, and is no longer, a real npm dependency of this project. The
+package ships real, readable source of its own
+(`src/core/plugin.js`, `src/components/{trendline,label}.js`,
+`src/utils/{baseFitter,lineFitter,exponentialFitter,drawing,
+accessibility}.js`, not just a minified bundle), which was dissected
+and carried over largely unchanged.
+
+**Real, undocumented features found only by reading the source —
+neither the real package's own README nor its `MIGRATION.md` mentions
+any of these**: (1) `fillColor` on the trendline config, filling the
+area between the trendline and the chart's own bottom edge; (2)
+`dataset.order` — trendlines draw in ascending order, except order-`0`
+datasets (Chart.js's own real default when unset), which draw *last*,
+on top of every other trendline; (3) `dataset.alwaysShowTrendline` —
+draws the trendline even when the dataset itself is currently hidden
+via the legend; (4) a full automatic-ARIA-label system, generating a
+real, descriptive `aria-label` for the chart canvas from each dataset's
+own trendline config (customizable per dataset via
+`accessibility.description`/`.label`); (5) real legend integration — a
+`legend` sub-config on the trendline adds a real, additional legend
+entry for it, via a direct patch of the chart's own real
+`legend.options.labels.generateLabels`, additive to whatever Chart.js
+itself already generates.
+
+**A real, deliberate omission from the original's own real logic, not
+a simplification of anything a real consumer needs**: the original's
+own `ExponentialFitter` also tracks every real data point and computes
+an R-squared `correlation()` from them — but nothing in the original's
+own real `plugin.js`/`trendline.js`/`label.js` ever reads that value,
+and `generateTrendlineDescription` (a second, separate accessibility
+function the original also exports, computing a slope/intercept-based
+description directly from a fitter) is likewise never called by
+anything in the original's own real source — both confirmed genuinely
+dead code in the original itself, not this port's own simplification.
+Neither was ported, to avoid carrying over dead weight (and, for
+`correlation()` specifically, a real unused-state violation under this
+project's own strict TypeScript config).
+
+**No real bug found during dissection**, unlike every prior port — the
+original's own real hook names (`afterDatasetsDraw`, `afterInit`,
+`afterUpdate`, `beforeInit`) are all genuine, valid Chart.js v4 lifecycle
+hooks, confirmed directly against `chart.js`'s own installed type
+declarations, so there was no `destroy`-vs-`afterDestroy`-class mistake
+to find here the way there was in `gradient`'s/`deferred`'s own ports.
+
+**Genuinely distinct registration shape**: like `withAnnotation`/
+`withDataLabels` before this port, needs a real `Chart.register(...)`
+call (confirmed directly from the real package's own README:
+"Chart.register(ChartJSTrendline)") — now direct and synchronous, no
+dynamic `import()` at all, matching `withAutocolors`'s/`withDeferred`'s
+own mechanism. Like `gradient`, there is no plugin-level config of its
+own to merge into `options.plugins.trendline` at all — its real config
+lives on each *dataset* instead (`dataset.trendlineLinear`/`dataset.
+trendlineExponential`), which already reaches Chart.js untouched via
+this project's own `data` passthrough. `trendline` is therefore
+boolean-only.
+
+**Confirmed live in a real browser after the port**: a line chart with
+a genuine upward trend in its data, a real `trendlineLinear` config
+fitting a visibly distinct dotted red line against it — one of seven of
+this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, `autocolors`, and `deferred`) that
+renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to. Also confirmed working end-to-end via a real Playwright e2e
+test (`trendline-plugin.spec.ts`).
+
+**Comprehensive unit test coverage**: a new, dedicated test file per
+real source module (`fitters.spec.ts`, `drawing.spec.ts`,
+`label.spec.ts`, `accessibility.spec.ts`, `trendlineCore.spec.ts`,
+`trendlinePlugin.spec.ts`) covering the real least-squares math for
+both curve types, the Liang-Barsky line-clipping algorithm, the real
+near-zero-slope relative-threshold fallback, canvas drawing/fallback
+paths, and the plugin's own real dataset-ordering/legend/accessibility
+features — confirmed via a real `test:coverage` run, not assumed: 97.83%
+statements/lines, 87.55% branches, 100% functions across the six real
+files — within the same range every other local port in this project
+has settled at (gradient 99.05% branch, zoom/autocolors ~98%,
+hierarchical/deferred ~91%).
 
 ## 5. What's explicitly out of scope for v1
 

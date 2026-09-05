@@ -36,6 +36,7 @@
     "image-label",
     "autocolors",
     "deferred",
+    "trendline",
     "framework-agnostic",
     "monorepo"
   ],

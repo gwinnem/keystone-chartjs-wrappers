@@ -19,6 +19,7 @@ const withHierarchical = vi.fn();
 const withImageLabel = vi.fn();
 const withAutocolors = vi.fn();
 const withDeferred = vi.fn();
+const withTrendline = vi.fn();
 
 vi.mock('keystone-chartjs-core', () => ({
   createChartController: (...args: unknown[]) => createChartController(...args),
@@ -31,6 +32,7 @@ vi.mock('keystone-chartjs-core', () => ({
   withImageLabel: (...args: unknown[]) => withImageLabel(...args),
   withAutocolors: (...args: unknown[]) => withAutocolors(...args),
   withDeferred: (...args: unknown[]) => withDeferred(...args),
+  withTrendline: (...args: unknown[]) => withTrendline(...args),
 }));
 
 // eslint-disable-next-line import/first -- must follow vi.mock, same
@@ -66,6 +68,7 @@ beforeEach(() => {
   withImageLabel.mockReset();
   withAutocolors.mockReset();
   withDeferred.mockReset();
+  withTrendline.mockReset();
 
   // Mirror core's own real merge behavior closely enough that
   // assertions on the final `options` object passed to
@@ -131,6 +134,12 @@ beforeEach(() => {
     ...opts,
     plugins: { ...(opts.plugins as object), deferred: deferredOptions ?? {} },
   }));
+  // withTrendline: identical shape to withGradient/withTimestack/
+  // withHierarchical — no config to merge, options returned unchanged.
+  // Registered via a real Chart.register(...) call inside core itself
+  // (a real npm dependency, matching withDataLabels/withAnnotation's
+  // own mechanism), not the inline plugins array.
+  withTrendline.mockImplementation(async (opts: Record<string, unknown>) => opts);
 });
 
 const ALL_KINDS: ChartKind[] = [
@@ -312,6 +321,7 @@ describe('Chart — plugin opt-ins', () => {
     expect(withImageLabel).not.toHaveBeenCalled();
     expect(withAutocolors).not.toHaveBeenCalled();
     expect(withDeferred).not.toHaveBeenCalled();
+    expect(withTrendline).not.toHaveBeenCalled();
   });
 
   it('applies zoom with no extra config when the prop is `true`', async () => {
@@ -509,6 +519,16 @@ describe('Chart — plugin opt-ins', () => {
     await flushPromises();
 
     expect(withDeferred).toHaveBeenCalledWith({}, deferredConfig);
+  });
+
+  it('applies trendline when the prop is `true` — boolean only, no config-object form, same shape as gradient/timestack/hierarchical', async () => {
+    const handle = makeHandle();
+    createChartController.mockResolvedValue(handle);
+
+    mount(Chart, { props: { type: 'bar', data: { datasets: [] }, trendline: true } });
+    await flushPromises();
+
+    expect(withTrendline).toHaveBeenCalledWith({});
   });
 
   it('reuses the same merged plugins array reference across two separate unrelated updates, rather than rebuilding a fresh one each time', async () => {

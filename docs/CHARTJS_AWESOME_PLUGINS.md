@@ -5,24 +5,24 @@ Filtered to plugins marked v4-compatible in that list's own support column
 (this project only targets Chart.js v4) — v2/v3-only plugins are excluded
 entirely, not just deprioritized. A reference for Phase 5 (ecosystem
 extensions & plugins hardening) when deciding whether any of these are
-worth adding as a 10th+ official opt-in prop, alongside the 9 this project
-now ships (zoom, annotation, dataLabels, gradient, timestack,
-hierarchical, image-label, autocolors, deferred — all nine already appear
-in this same "awesome" list, confirming they were reasonable picks; each
-of the last six started as one of the rows below and was promoted to
-implemented — see their own notes under Styling/Features/Interactions.
-`zoom`, `gradient`, `hierarchical`, `image-label`, `autocolors`, and
-`deferred` are all partial exceptions among the nine: each was later
+worth adding as an 11th+ official opt-in prop, alongside the 10 this
+project now ships (zoom, annotation, dataLabels, gradient, timestack,
+hierarchical, image-label, autocolors, deferred, trendline — all ten
+already appear in this same "awesome" list, confirming they were
+reasonable picks; each of the last seven started as one of the rows
+below and was promoted to implemented — see their own notes under
+Styling/Features/Interactions. `zoom`, `gradient`, `hierarchical`,
+`image-label`, `autocolors`, `deferred`, and `trendline` are all
 ported directly into this project's own source rather than kept as a
 real dependency — see `CHARTJS_ANALYSIS.md` §4's own "Zoom/pan"/"Added
 after v1 kickoff: Gradient"/"...Hierarchical"/"...Image label"/
-"...Autocolors"/"...Deferred" sections.
+"...Autocolors"/"...Deferred"/"...Trendline" sections.
 
 Confidence: this list states what the "awesome" list itself claims
 (name, repo, one-line description, v4-support badge) — none of these
 remaining packages' own current maintenance status, real API shape, or
 actual Chart.js v4 compatibility has been independently verified the way
-the 9 official plugins' real config shapes were in `CHARTJS_ANALYSIS.md`
+the 10 official plugins' real config shapes were in `CHARTJS_ANALYSIS.md`
 §4. Treat every remaining row here as "worth investigating," not
 "confirmed to work."
 
@@ -35,7 +35,7 @@ real package's own README ("This plugin requires Chart.js 3.0.0 or
 later"), by the same maintainer already behind `gradient`/`zoom`. Its
 real, published dist output (the package ships no real `src/`) was
 dissected and ported directly into
-`packages/core/src/autocolorsPlugin.ts`, reimplementing the original's
+`packages/core/src/plugins/autocolors/autocolorsPlugin.ts`, reimplementing the original's
 own two small `@kurkle/color`-dependent color-conversion utility
 functions locally (standard, textbook algorithms, not any bespoke logic
 of the plugin's own) rather than adding that package as a new
@@ -55,7 +55,7 @@ explicit request. `timestack` remains a real npm dependency (confirmed
 version 1.0.1, MIT, real Chart.js v4 compatibility confirmed). `gradient`
 was originally added as a dependency the same way (confirmed version
 0.6.1, MIT) but was later ported directly into
-`packages/core/src/gradientPlugin.ts`, the same way `image-label` was —
+`packages/core/src/plugins/gradient/gradientPlugin.ts`, the same way `image-label` was —
 it is no longer a real npm dependency of this project. See
 `CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff" sections for the
 full verification, and `docs/site/src/content/docs/vue/examples/
@@ -65,17 +65,29 @@ above.
 
 ## Features
 
-| Plugin | Repo | Description |
-|---|---|---|
-| trendline | Makanz/chartjs-plugin-trendline | Draw trend lines |
-
-**trendline is fully scoped, not yet implemented** — confirmed version
+**trendline (Makanz/chartjs-plugin-trendline) has been implemented**,
+at your explicit request — but not as a dependency: confirmed version
 3.2.12, MIT, real Chart.js v4 compatibility confirmed directly ("Made
-for Chart.js > 4.0", tested against 4.4.9), by Marcus Alsterfjord. See
-`docs/TRENDLINE_PLUGIN_PLAN.md` for the full package verification, real
-config shape (config lives on each dataset, like `gradient`), the
-dependency-vs-local-port decision, and a step-by-step implementation
-plan — ready to start whenever this becomes the priority.
+for Chart.js > 4.0", tested against 4.4.9/4.5.0), by Marcus
+Alsterfjord, zero runtime dependencies of its own. Unlike every other
+plugin this project has ported, there was no concrete bug or
+unmaintained-dependency reason to port this one — it's actively
+maintained with no known bugs found during dissection. Ported anyway,
+at your explicit request, specifically so `keystone-chartjs-core`
+depends on nothing but `chart.js` itself. Its real, published source
+(the package ships real `.js` source, not just a minified bundle) was
+dissected and ported directly into `packages/core/src/plugins/
+trendline/` (six real files, mirroring the original's own real module
+split). Its real config lives on each dataset (`dataset.trendlineLinear`/
+`dataset.trendlineExponential`), like `gradient`. See `CHARTJS_
+ANALYSIS.md` §4's own "Added after v1 kickoff: Trendline" section for
+the full verification (including several genuine, undocumented
+features found only by reading the source — `fillColor`, `dataset.
+order`, `dataset.alwaysShowTrendline`, automatic ARIA labels, and real
+legend integration), and `docs/site/src/content/docs/vue/examples/
+trendline-plugin.mdx` for the docs-site example. No longer a survey
+candidate — removed from the table above (this section's own table is
+now empty).
 
 (`annotation`/`datalabels` also appear in this list's own "Features"
 category — already this project's own official plugins, not new
@@ -93,10 +105,10 @@ above.
 **image-label (yunusemrejs/chartjs-image-label) has also been
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
-directly into `packages/core/src/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. One of six of this
-project's own 9 official plugins/scales (alongside `gradient`, `zoom`,
-`hierarchical`, `autocolors`, and `deferred`) that renders live on the
+directly into `packages/core/src/plugins/imageLabel/imageLabelPlugin.ts`, fixing two real
+bugs found in the original along the way. One of seven of this
+project's own 10 official plugins/scales (alongside `gradient`, `zoom`,
+`hierarchical`, `autocolors`, `deferred`, and `trendline`) that renders live on the
 docs site rather than source-only, since local code has no dynamic
 import for the known docs-site hydration gap to apply to. See
 `CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff: Image label"
@@ -121,16 +133,16 @@ Chart.js team (simonbrunel), real Chart.js v3/v4 compatibility
 confirmed directly from the real package's own README ("Requires
 Chart.js 3.x") and its own real-world use against Chart.js 4.x.
 **Initially added as a real npm dependency, then later ported directly
-into `packages/core/src/deferredPlugin.ts` in the same work session, at
+into `packages/core/src/plugins/deferred/deferredPlugin.ts` in the same work session, at
 your explicit request** — it is not, and is no longer, a real npm
 dependency of this project. The package ships real, readable source
 (not just a minified bundle), which was dissected and carried over
 largely unchanged — including fixing a real bug (a `destroy` teardown
 hook name Chart.js's own real `Plugin` interface doesn't recognize;
 renamed to `afterDestroy`), the identical class of bug already found in
-`gradient`'s own port. One of six of this project's own 9 official
+`gradient`'s own port. One of seven of this project's own 10 official
 plugins/scales (alongside `gradient`, `zoom`, `hierarchical`, `image-
-label`, and `autocolors`) that renders live on the docs site rather
+label`, `autocolors`, and `trendline`) that renders live on the docs site rather
 than source-only. See `CHARTJS_ANALYSIS.md` §4's own "Added after v1
 kickoff: Deferred" section for the full verification, and
 `docs/site/src/content/docs/vue/examples/deferred-plugin.mdx` for the
@@ -139,7 +151,7 @@ table above.
 
 (`zoom` also appears in this list's own "Interactions" category —
 already this project's own official plugin, not a new candidate.
-**Later ported directly into `packages/core/src/zoomPlugin.ts`, at your
+**Later ported directly into `packages/core/src/plugins/zoom/zoomPlugin.ts`, at your
 explicit request** — it is no longer a real npm dependency of this
 project, dropping every Hammer.js-dependent code path (pinch-zoom,
 gesture-driven pan) along the way, which also resolves the Hammer.js
@@ -183,11 +195,11 @@ step-by-step plan.
 
 - None of these remaining packages' own real current maintenance status,
   exact config shape, or genuine Chart.js v4 compatibility has been
-  independently verified yet — do that before committing to any one as a
-  10th official opt-in prop, matching the real verification `CHARTJS_
+  independently verified yet — do that before committing to any one as an
+  11th official opt-in prop, matching the real verification `CHARTJS_
   ANALYSIS.md` §4 already did for zoom/annotation/dataLabels/gradient/
-  timestack/hierarchical/image-label/autocolors/deferred.
-- Decide whether adding a 10th+ official plugin is even the right model
+  timestack/hierarchical/image-label/autocolors/deferred/trendline.
+- Decide whether adding an 11th+ official plugin is even the right model
   going forward, versus resolving the inline-`plugins`-array gap first
   (already resolved — see "Current status & open issues" item #6, now
   marked `[Resolved]`) — that fix means a consumer can already use any

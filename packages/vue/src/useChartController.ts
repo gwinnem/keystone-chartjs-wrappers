@@ -9,6 +9,7 @@ import {
   withHierarchical,
   withImageLabel,
   withTimestack,
+  withTrendline,
   withZoom,
 } from 'keystone-chartjs-core';
 import type {
@@ -153,6 +154,20 @@ export interface UseChartControllerProps {
    */
   deferred?: DeferredPluginOptions | boolean;
   /**
+   * Opt-in to `chartjs-plugin-trendline` — boolean only, like
+   * `gradient`/`timestack`/`hierarchical`: this plugin has no
+   * plugin-level config of its own to merge into
+   * `options.plugins.trendline` at all. Its real config
+   * (`TrendlineConfig`, exported from `keystone-chartjs-core`) lives on
+   * each *dataset* instead (`dataset.trendlineLinear`/`dataset.
+   * trendlineExponential`), which already reaches Chart.js untouched
+   * via the existing `data` prop — this prop only registers the
+   * plugin so that per-dataset config takes effect. A real npm
+   * dependency, registered once via `Chart.register(...)` — the same
+   * mechanism `dataLabels`/`annotation` use, unlike `gradient`'s own
+   * local port. */
+  trendline?: boolean;
+  /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct
    * from the `zoom`/`annotation`/`dataLabels` props above, which register
@@ -240,6 +255,9 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
     }
     if (props.deferred) {
       opts = await withDeferred(opts, typeof props.deferred === 'object' ? props.deferred : undefined);
+    }
+    if (props.trendline) {
+      opts = await withTrendline(opts);
     }
     // Effective plugins array starts as whatever the consumer supplied
     // via the `plugins` prop directly — `withZoom`'s, `withGradient`'s,
@@ -355,6 +373,7 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       props.imageLabel,
       props.autocolors,
       props.deferred,
+      props.trendline,
       props.plugins,
     ],
     () => {

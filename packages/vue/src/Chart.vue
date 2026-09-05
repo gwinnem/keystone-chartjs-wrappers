@@ -122,6 +122,17 @@ const props = defineProps<{
    */
   deferred?: DeferredPluginOptions | boolean;
   /**
+   * Opt-in to `chartjs-plugin-trendline` — boolean only, like
+   * `gradient`/`timestack`/`hierarchical`: no plugin-level config of
+   * its own to merge into `options.plugins.trendline`. Its real config
+   * (`TrendlineConfig`) lives on each *dataset* instead
+   * (`dataset.trendlineLinear`/`dataset.trendlineExponential`), which
+   * already reaches Chart.js untouched via the `data` prop. A real npm
+   * dependency, registered once via `Chart.register(...)` — the same
+   * mechanism `dataLabels`/`annotation` use.
+   */
+  trendline?: boolean;
+  /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct
    * from the `zoom`/`annotation`/`dataLabels` props above, which register
