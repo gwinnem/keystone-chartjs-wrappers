@@ -7,6 +7,17 @@ from that same table). **Not yet started** — written to capture the real
 scope/decisions found while investigating this, so the work can be picked
 up later without re-deriving any of it.
 
+**`regression`'s own real plan has moved** to
+`docs/REGRESSION_PLUGIN_REFACTOR_PLAN.md`, once its real, confirmed
+module structure (`types.ts`/`MetaData.ts`/`MetaSection.ts`/
+`regression-plugin.ts`, pulled directly from the published package's own
+compiled output) made a dedicated, more detailed plan worthwhile. This
+document's own regression-specific sections below are kept as a
+historical record of the earlier, README-only scoping pass — read the
+dedicated plan for anything current. This document's own `waterfall`
+sections remain fully current; that plugin hasn't had its own dedicated
+plan written yet.
+
 ## Why this is a different kind of task from every prior port
 
 Every plugin this project has ported so far (`zoom`, `gradient`,

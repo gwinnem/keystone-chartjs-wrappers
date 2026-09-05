@@ -1,10 +1,10 @@
 import { Chart, type ChartConfiguration } from 'chart.js';
-import { autocolorPlugin } from './autocolorsPlugin.js';
-import { deferredPlugin } from './deferredPlugin.js';
-import { gradientPlugin } from './gradientPlugin.js';
-import { HierarchicalScale } from './hierarchicalScale.js';
-import { imageLabelPlugin } from './imageLabelPlugin.js';
-import { zoomPlugin, type ZoomPluginOptions } from './zoomPlugin.js';
+import { autocolorPlugin } from './plugins/autocolors/autocolorsPlugin.js';
+import { deferredPlugin } from './plugins/deferred/deferredPlugin.js';
+import { gradientPlugin } from './plugins/gradient/gradientPlugin.js';
+import { HierarchicalScale } from './plugins/hierarchical/hierarchicalScale.js';
+import { imageLabelPlugin } from './plugins/imageLabel/imageLabelPlugin.js';
+import { zoomPlugin, type ZoomPluginOptions } from './plugins/zoom/zoomPlugin.js';
 import type {
   AnnotationPluginOptions,
   AutocolorsPluginOptions,

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deferredPlugin } from '../../src/deferredPlugin.js';
+import { deferredPlugin } from '../../../../src/plugins/deferred/deferredPlugin.js';
 
 // Testing the real scroll-event-driven defer logic directly (dissected
 // from the real, installed package's own real source — it ships real,

@@ -33,11 +33,11 @@ export type {
   DeferredPluginOptions,
   ImageLabelPluginOptions,
 } from './types.js';
-export type { GradientDatasetConfig } from './gradientPlugin.js';
+export type { GradientDatasetConfig } from './plugins/gradient/gradientPlugin.js';
 export type {
   HierarchicalLabelNode,
   HierarchicalRawLabelNode,
   HierarchicalScaleOptions,
   HierarchicalValueNode,
-} from './hierarchicalScale.js';
-export type { ZoomPluginOptions } from './zoomPlugin.js';
+} from './plugins/hierarchical/hierarchicalScale.js';
+export type { ZoomPluginOptions } from './plugins/zoom/zoomPlugin.js';

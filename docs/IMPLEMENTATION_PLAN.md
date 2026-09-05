@@ -1074,6 +1074,38 @@ match that.
     3/4); the core-level `deferredPlugin.ts`/`withDeferred` already
     cover them.
 
+23. **Not yet started.** `chartjs-plugin-annotation` — at your explicit
+    request, scoped for a local port the same way `zoom`/`gradient`/
+    `hierarchical`/`image-label`/`autocolors`/`deferred` were. Real
+    scope analysis, the real six-annotation-type architecture (line,
+    box, ellipse, point, label, polygon, plus a `doughnutLabel` special
+    case), the identical `destroy`-vs-`afterDestroy` hook-name bug
+    already found in `gradientPlugin.ts`'s/`deferredPlugin.ts`'s own
+    ports (confirmed present here too), and a full step-by-step plan
+    were written up in `docs/ANNOTATION_PLUGIN_PORT_PLAN.md` before
+    implementation started — confirmed, via the real installed dist
+    size (91 KB) and the real, multi-file `src/` structure on GitHub,
+    to be a bigger undertaking than any port done so far, `zoom`
+    included. Two real open decisions flagged in that plan, not yet
+    made: whether to port all six types plus `doughnutLabel` in one
+    pass or a smaller first slice (line/box first), and whether to
+    model `AnnotationPluginOptions` precisely now or keep it loose.
+
+24. **Not yet started.** `chartjs-plugin-datalabels` — at your explicit
+    request, scoped for a local port the same way `annotation` (item
+    #23) was. Real scope analysis (at least 4 real files: `plugin.js`,
+    `label.js`, `positioners.js`, `utils.js`, plus an unconfirmed
+    layout/collision-lookup module), the real `enter`/`leave`/`click`
+    interaction system, the real per-element-type positioning math
+    (arc/bar/point), and a full step-by-step plan were written up in
+    `docs/DATALABELS_PLUGIN_PORT_PLAN.md` before implementation started
+    — confirmed, via the real installed dist size (32 KB), to sit
+    between `hierarchical`/`gradient`-sized work and `annotation`-sized
+    work. Not yet confirmed whether the same `destroy`-vs-`afterDestroy`
+    hook-name bug already found twice (`gradient`, `deferred`) is
+    present here too — flagged as the first thing to check once the
+    real source is read in full.
+
 ### Deferred until Vue is genuinely complete (per your stated priority)
 
 8. **Phase 3 (React)** — not started. Placeholder `Chart.tsx` still calls
@@ -1102,9 +1134,15 @@ match that.
     latest npm release is 7 years old) — refactoring either into a real
     v4-native implementation is a materially bigger task than any prior
     plugin addition, since the *integration layer* has to be written
-    fresh rather than dissected from working source. See
-    `docs/REGRESSION_WATERFALL_REFACTOR_PLAN.md` for the full scope
-    analysis, real documented config shapes, and step-by-step plan.
+    fresh rather than dissected from working source. `regression` now
+    has its own dedicated, more detailed plan —
+    `docs/REGRESSION_PLUGIN_REFACTOR_PLAN.md` — written once its real,
+    confirmed module structure (`types.ts`/`MetaData.ts`/
+    `MetaSection.ts`/`regression-plugin.ts`, pulled directly from the
+    published package's own compiled output, not just its README) made
+    a more detailed plan worthwhile. `waterfall` still only has the
+    original, README-only scoping in
+    `docs/REGRESSION_WATERFALL_REFACTOR_PLAN.md`.
 11. **Phase 6 (docs site)** — React/Angular sections not started; SEO/meta
     parity (OG/Twitter tags, JSON-LD) not done.
 12. **Phase 7 (release)** — semantic-release not set up; the Angular

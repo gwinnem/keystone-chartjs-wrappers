@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { autocolorPlugin } from '../../src/autocolorsPlugin.js';
+import { autocolorPlugin } from '../../../../src/plugins/autocolors/autocolorsPlugin.js';
 
 // Testing the real color-selection logic directly (dissected from the
 // real package's own installed dist file, see autocolorsPlugin.ts's

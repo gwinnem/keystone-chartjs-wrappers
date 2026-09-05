@@ -29,7 +29,7 @@ import {
   isHierarchicalValueNode,
   type HierarchicalLabelNode,
   type HierarchicalRawLabelNode,
-} from '../../src/hierarchicalScale.js';
+} from '../../../../src/plugins/hierarchical/hierarchicalScale.js';
 
 function makeCtx() {
   return {

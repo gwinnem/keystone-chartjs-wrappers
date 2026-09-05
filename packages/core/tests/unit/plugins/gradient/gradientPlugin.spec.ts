@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { color } from 'chart.js/helpers';
-import { gradientPlugin } from '../../src/gradientPlugin.js';
+import { gradientPlugin } from '../../../../src/plugins/gradient/gradientPlugin.js';
 
 // Testing the real gradient-computation logic directly (dissected from
 // the real package's own dist file, see gradientPlugin.ts's own header

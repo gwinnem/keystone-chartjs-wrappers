@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { zoomPlugin } from '../../src/zoomPlugin.js';
+import { zoomPlugin } from '../../../../src/plugins/zoom/zoomPlugin.js';
 
 // Testing the real zoom/pan/drag logic directly (dissected from the
 // real package's own dist file, see zoomPlugin.ts's own header comment

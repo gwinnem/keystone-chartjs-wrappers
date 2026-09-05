@@ -37,7 +37,7 @@
  */
 import { Chart, type ChartMeta, type ChartType, type LegendItem, type Plugin, type RadialLinearScale, type Scale } from 'chart.js';
 import { color, defined, isNumber } from 'chart.js/helpers';
-import type { ChartConfigDataset } from './types.js';
+import type { ChartConfigDataset } from '../../types.js';
 
 interface RGBAColor {
   r: number;

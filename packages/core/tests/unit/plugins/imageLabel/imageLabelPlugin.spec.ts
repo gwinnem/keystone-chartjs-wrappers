@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArcElement } from 'chart.js';
-import { imageLabelPlugin } from '../../src/imageLabelPlugin.js';
+import { imageLabelPlugin } from '../../../../src/plugins/imageLabel/imageLabelPlugin.js';
 
 // Testing the real drawing logic directly (dissected from the real
 // package's own dist file, see imageLabelPlugin.ts's own header comment
@@ -280,7 +280,7 @@ describe('imageLabelPlugin', () => {
     // this file's own top-level import, which this test's own arc
     // mocks are built from, making every arc silently fail that check.
     vi.resetModules();
-    const { imageLabelPlugin: freshPlugin } = await import('../../src/imageLabelPlugin.js');
+    const { imageLabelPlugin: freshPlugin } = await import('../../../../src/plugins/imageLabel/imageLabelPlugin.js');
     const { ArcElement: FreshArcElement } = await import('chart.js');
 
     function makeFreshArc() {

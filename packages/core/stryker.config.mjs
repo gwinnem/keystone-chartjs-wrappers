@@ -38,23 +38,28 @@ const config = {
   // nothing for Stryker to mutate there), not index.ts (a barrel
   // re-export with no logic of its own), and not test-utils.ts (trivial
   // DOM-fixture helpers with no branches/conditionals worth mutating).
+  // Each locally-ported plugin now lives in its own subdirectory under
+  // src/plugins/<name>/, mirrored under tests/unit/plugins/<name>/ —
   // imageLabelPlugin.ts, gradientPlugin.ts, zoomPlugin.ts,
-  // hierarchicalScale.ts, autocolorsPlugin.ts, and deferredPlugin.ts
-  // added: real, non-trivial ported logic (see each file's own header
+  // hierarchicalScale.ts, autocolorsPlugin.ts, and deferredPlugin.ts:
+  // real, non-trivial ported logic (see each file's own header
   // comment), each with its own dedicated test file (tests/unit/
-  // imageLabelPlugin.spec.ts, tests/unit/gradientPlugin.spec.ts,
-  // tests/unit/zoomPlugin.spec.ts, tests/unit/hierarchicalScale.spec.ts,
-  // tests/unit/autocolorsPlugin.spec.ts, tests/unit/deferredPlugin.spec.ts).
+  // plugins/imageLabel/imageLabelPlugin.spec.ts, tests/unit/plugins/
+  // gradient/gradientPlugin.spec.ts, tests/unit/plugins/zoom/
+  // zoomPlugin.spec.ts, tests/unit/plugins/hierarchical/
+  // hierarchicalScale.spec.ts, tests/unit/plugins/autocolors/
+  // autocolorsPlugin.spec.ts, tests/unit/plugins/deferred/
+  // deferredPlugin.spec.ts).
   mutate: [
     'src/registry.ts',
     'src/controller.ts',
     'src/plugins.ts',
-    'src/imageLabelPlugin.ts',
-    'src/gradientPlugin.ts',
-    'src/zoomPlugin.ts',
-    'src/hierarchicalScale.ts',
-    'src/autocolorsPlugin.ts',
-    'src/deferredPlugin.ts',
+    'src/plugins/imageLabel/imageLabelPlugin.ts',
+    'src/plugins/gradient/gradientPlugin.ts',
+    'src/plugins/zoom/zoomPlugin.ts',
+    'src/plugins/hierarchical/hierarchicalScale.ts',
+    'src/plugins/autocolors/autocolorsPlugin.ts',
+    'src/plugins/deferred/deferredPlugin.ts',
   ],
 
   vitest: {

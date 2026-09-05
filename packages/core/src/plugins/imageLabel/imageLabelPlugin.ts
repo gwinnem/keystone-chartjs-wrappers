@@ -19,7 +19,7 @@
  *   testable functions instead of one large nested closure.
  */
 import { ArcElement, type Chart, type ChartType, type Plugin } from 'chart.js';
-import type { ImageLabelPluginOptions } from './types.js';
+import type { ImageLabelPluginOptions } from '../../types.js';
 
 const MAX_CACHED_IMAGES = 200;
 

@@ -64,7 +64,7 @@
  */
 import { getStyle, requestAnimFrame } from 'chart.js/helpers';
 import type { Chart, Plugin } from 'chart.js';
-import type { DeferredPluginOptions } from './types.js';
+import type { DeferredPluginOptions } from '../../types.js';
 
 /** This plugin's own real per-chart bookkeeping \u2014 whether the canvas
  * has ever appeared in the viewport, whether its own delayed update is
