@@ -39,12 +39,12 @@ const config = {
   // re-export with no logic of its own), and not test-utils.ts (trivial
   // DOM-fixture helpers with no branches/conditionals worth mutating).
   // imageLabelPlugin.ts, gradientPlugin.ts, zoomPlugin.ts,
-  // hierarchicalScale.ts, and autocolorsPlugin.ts added: real,
-  // non-trivial ported logic (see each file's own header comment),
-  // each with its own dedicated test file (tests/unit/
+  // hierarchicalScale.ts, autocolorsPlugin.ts, and deferredPlugin.ts
+  // added: real, non-trivial ported logic (see each file's own header
+  // comment), each with its own dedicated test file (tests/unit/
   // imageLabelPlugin.spec.ts, tests/unit/gradientPlugin.spec.ts,
   // tests/unit/zoomPlugin.spec.ts, tests/unit/hierarchicalScale.spec.ts,
-  // tests/unit/autocolorsPlugin.spec.ts).
+  // tests/unit/autocolorsPlugin.spec.ts, tests/unit/deferredPlugin.spec.ts).
   mutate: [
     'src/registry.ts',
     'src/controller.ts',
@@ -54,6 +54,7 @@ const config = {
     'src/zoomPlugin.ts',
     'src/hierarchicalScale.ts',
     'src/autocolorsPlugin.ts',
+    'src/deferredPlugin.ts',
   ],
 
   vitest: {

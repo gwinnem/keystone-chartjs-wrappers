@@ -13,6 +13,7 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 | Hierarchical | locally ported, not a dependency | Collapsible, tree-like categorical axis | `hierarchical` | Implemented |
 | Image label | locally ported, not a dependency | Draws an image on each doughnut/pie slice | `imageLabel` | Implemented |
 | Autocolors | locally ported, not a dependency | Automatically assigns a distinct color per dataset (or data point) | `autocolors` | Implemented |
+| Deferred | locally ported, not a dependency | Defers the chart's own real initial update until the canvas scrolls into the viewport | `deferred` | Implemented |
 
 These are chart-instance plugins, not chart types — they apply across
 whichever `type` you use them with. Each is a one-line opt-in prop on
@@ -20,8 +21,8 @@ whichever `type` you use them with. Each is a one-line opt-in prop on
 manual `Chart.register()` call in consumer code — the two still-
 dependency-based ones (`annotation`, `dataLabels`) are dynamically
 imported and registered automatically, the first time the prop is used
-(`zoom`/`gradient`/`imageLabel`/`autocolors` are local code instead —
-see their own sections below).
+(`zoom`/`gradient`/`imageLabel`/`autocolors`/`deferred` are local code
+instead — see their own sections below).
 
 `zoom`/`dataLabels` accept either `true` (apply with no extra config) or a
 config object merged into `options.plugins.zoom`/`options.plugins.datalabels`
@@ -119,10 +120,10 @@ on a third-party package at all — its logic (originally
 (`src/gradientPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
 instead (the same mechanism `zoom`/`imageLabel` use). Being local code
-rather than a dynamic import also means this is one of five plugins on
+rather than a dynamic import also means this is one of six plugins on
 this project's docs site (alongside `zoom`, `imageLabel`, `hierarchical`,
-and `autocolors`) whose own example renders genuinely live rather than
-source-only.
+`autocolors`, and `deferred`) whose own example renders genuinely live
+rather than source-only.
 
 See the [Gradient plugin example](/vue/examples/gradient-plugin) for the
 full version, and
@@ -204,19 +205,19 @@ in this project accepts — confirmed directly from the real package's
 own type declarations, dissected into this project's own
 `HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
 `keystone-chartjs-core`). Being local code rather than a dynamic import
-also means this is one of five plugins/scales on this project's docs
-site (alongside `zoom`, `gradient`, `imageLabel`, and `autocolors`)
-whose own example renders genuinely live rather than source-only —
-click a category's own box below the axis to expand/collapse it, or
-the small dot on a fully-expanded group to zoom in/out, right on the
-example page. See the
+also means this is one of six plugins/scales on this project's docs
+site (alongside `zoom`, `gradient`, `imageLabel`, `autocolors`, and
+`deferred`) whose own example renders genuinely live rather than
+source-only — click a category's own box below the axis to expand/
+collapse it, or the small dot on a fully-expanded group to zoom in/out,
+right on the example page. See the
 [Hierarchical scale example](/vue/examples/hierarchical-scale) for the
 full version.
 
 ## Image label — a local port, not a dependency, doughnut/pie only
 
-Genuinely different mechanism from `annotation`/`dataLabels` (the only
-two still-dependency-based plugins left): `imageLabel` is never
+Genuinely different mechanism from `annotation`/`dataLabels` (the two
+still-dependency-based plugins left): `imageLabel` is never
 registered globally via `Chart.register(...)` at all — it's supplied
 per-chart-instance, via Chart.js's own real inline `plugins` array, the
 same mechanism the `plugins` prop below already exposes for
@@ -292,19 +293,65 @@ agreed-upon definition, not any bespoke logic of the plugin's own)
 while carrying over every real piece of the plugin's own actual color-
 *selection* logic (the hue-stepping generator, mode branching, the
 "don't overwrite an already-set color" merge behavior) unchanged. Being
-local code rather than a dynamic import also means this is one of five
+local code rather than a dynamic import also means this is one of six
 plugins/scales on this project's docs site (alongside `zoom`,
-`gradient`, `hierarchical`, and `imageLabel`) whose own example renders
-genuinely live rather than source-only. See the
+`gradient`, `hierarchical`, `imageLabel`, and `deferred`) whose own
+example renders genuinely live rather than source-only. See the
 [Autocolors plugin example](/vue/examples/autocolors-plugin) for the
 full version.
+
+## Deferred — a local port, not a dependency, config lives in options.plugins
+
+`deferred` draws on a local port of `chartjs-plugin-deferred`
+(originally by the official Chart.js team). Genuinely different
+registration nuance from the original package's own v1.x behavior:
+confirmed directly from its own README/migration guide, as of v2.x this
+plugin "no longer registers itself automatically" — needs an explicit
+`Chart.register(...)` call, which this port's own `withDeferred`
+supplies directly and synchronously (matching `withAutocolors`'s own
+mechanism: a real `Chart.register(...)` call AND real plugin-level
+config merged into `options.plugins.deferred`).
+
+```vue
+<Chart
+  type="bar"
+  :deferred="{ xOffset: 150, yOffset: '50%', delay: 500 }"
+  :data="data"
+/>
+```
+
+Defers the chart's own real initial update — and thus its initial-
+render animations (bars growing, lines drawing in) — until the canvas
+actually scrolls into the viewport, plus an optional extra `delay` in
+milliseconds after that. Useful for charts far down a long page that
+would otherwise animate in unseen before the user ever scrolls to them.
+Accepts either `true` (apply with the real defaults) or a config object:
+`xOffset`/`yOffset` (pixels, or a percentage string like `'50%'`, of the
+canvas's own width/height that must already be showing) and `delay`,
+all defaulting to `0`.
+
+**Real mechanism, confirmed directly from the original's own real
+source during the port**: scroll-event-based, not `IntersectionObserver`-
+based — it walks up from the canvas's own parent chain for the nearest
+scrollable ancestor (falling back to the whole page if none is found)
+and listens for a real `scroll` event there. **A real bug found and
+fixed during the port**, the identical class already found in
+`gradientPlugin.ts`'s own port: the original names its teardown hook
+`destroy`, but Chart.js's own real `Plugin` interface has no such hook
+at all — renamed to `afterDestroy`, the correct real hook name. Zero
+runtime dependencies of its own. Being local code rather than a dynamic
+import also means this is one of six plugins/scales on this project's
+docs site (alongside `zoom`, `gradient`, `hierarchical`, `imageLabel`,
+and `autocolors`) whose own example renders genuinely live rather than
+source-only. See the [Deferred plugin example](/vue/examples/deferred-plugin)
+for the full version.
 
 ## Custom, inline plugins
 
 Chart.js's own `ChartConfiguration.plugins` field — inline, per-chart-instance
-custom plugin objects, distinct from these 8 officially-supported plugins —
+custom plugin objects, distinct from these 9 officially-supported plugins —
 is also implemented, via the `plugins` prop. Use it for any custom plugin
-you write yourself, or any community plugin outside the 8 above. See
+you write yourself, or any community plugin outside the 9 above. See
 [Props → Custom, inline plugins](/vue/components/props#custom-inline-plugins)
 for the full guide, including a real update-behavior difference worth
 knowing (a `plugins` change forces a destroy-and-reconstruct, unlike

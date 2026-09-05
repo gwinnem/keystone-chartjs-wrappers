@@ -15,6 +15,7 @@ import type {
   ChartConfiguration,
   ChartKind,
   DataLabelsPluginOptions,
+  DeferredPluginOptions,
   ImageLabelPluginOptions,
   ZoomPluginOptions,
 } from 'keystone-chartjs-core';
@@ -109,6 +110,17 @@ const props = defineProps<{
    * config merged into `options.plugins.autocolors`.
    */
   autocolors?: AutocolorsPluginOptions | boolean;
+  /**
+   * Opt-in to `chartjs-plugin-deferred` — `true` applies it with no
+   * extra config, an object applies it with that config (`xOffset`,
+   * `yOffset`, `delay`). Defers the chart's own real initial update
+   * (and its initial-render animations) until the canvas actually
+   * scrolls into the viewport. Same registration shape as `dataLabels`/
+   * `annotation`: a real npm dependency, registered once via
+   * `Chart.register(...)`, its own config merged into
+   * `options.plugins.deferred`.
+   */
+  deferred?: DeferredPluginOptions | boolean;
   /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct

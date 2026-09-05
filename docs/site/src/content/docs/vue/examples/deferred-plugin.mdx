@@ -1,0 +1,55 @@
+---
+title: Deferred plugin
+description: A local, ported implementation of chartjs-plugin-deferred, supplied via the deferred prop — defers a chart's own real initial update until the canvas scrolls into the viewport.
+---
+import DeferredPlugin from '../../../../components/examples/deferred-plugin.vue';
+import DeferredPluginSource from '../../../../components/examples/deferred-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `deferred` prop draws on a local port of `chartjs-plugin-deferred`
+(originally by the official Chart.js team). Like
+[gradient](/vue/examples/gradient-plugin)/[image label](/vue/examples/image-label-plugin),
+it isn't a dependency on a third-party package at all — its logic is
+ported directly into `keystone-chartjs-core` (`src/deferredPlugin.ts`).
+Chart.js's own initial-render animations (bars growing, lines drawing
+in) normally run the instant a chart mounts — for a chart far down a
+long page, that means the animation plays out unseen before the user
+ever scrolls to it. This plugin defers the chart's own real initial
+update until the canvas actually scrolls into the viewport, so the
+animation plays when the user is actually looking at it.
+
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site — unlike
+[annotation](/vue/examples/annotation-plugin)/
+[data labels](/vue/examples/data-labels-plugin)/
+[timestack](/vue/examples/timestack-scale), which still hit a
+docs-site build-pipeline gap around dynamic imports.
+
+<ExampleTryIt code={DeferredPluginSource} filename="deferred-plugin.vue" live={true}>
+  <DeferredPlugin client:visible />
+</ExampleTryIt>
+
+Scroll this example out of view (e.g. navigate away and back, or resize
+your window) and back in to see it animate in again on re-entry.
+
+:::tip[Accepts either `true` or a config object, like `zoom`/`dataLabels`]
+```js
+deferred: {
+  xOffset: 150,   // how many pixels of the canvas's own width must already be showing
+  yOffset: '50%', // how much of the canvas's own height must already be showing (as a percentage)
+  delay: 500,     // extra delay, in ms, after the canvas is considered inside the viewport
+}
+```
+All three default to `0` — with no config at all, the chart defers its
+first real update until *any* part of the canvas is inside the
+viewport, with no extra delay. See [Plugins](/vue/api/plugins) for the
+full prop reference.
+:::
+
+:::note[Real mechanism: scroll events, not IntersectionObserver]
+Confirmed directly from the original package's own real source during
+the port: this plugin walks up from the canvas's own parent chain
+looking for the nearest scrollable ancestor (falling back to the whole
+page if none is found), and listens for a real `scroll` event there —
+not an `IntersectionObserver`.
+:::

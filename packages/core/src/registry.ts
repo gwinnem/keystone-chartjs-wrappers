@@ -206,7 +206,7 @@ export async function ensureChartKindRegistered(kind: ChartKind): Promise<void> 
 
   const exportsToRegister = entry.exportNames.map((exportName) => {
     const exported = mod[exportName];
-    if (!exported) {
+    if (!exported) {pnpm typecheck
       throw new Error(
         `keystone-chartjs-core: expected "${entry.packageName}" to export "${exportName}" ` +
           `for chart kind "${kind}", but it did not. The installed version of that package ` +

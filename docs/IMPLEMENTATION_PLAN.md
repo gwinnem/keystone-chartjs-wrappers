@@ -978,6 +978,102 @@ match that.
     3/4); the core-level `withAutocolors`/`autocolorsPlugin.ts` already
     cover them.
 
+21. **[Resolved]** Added a 9th official plugin, `chartjs-plugin-
+    deferred` — at your explicit request. Confirmed version 2.0.0,
+    MIT, by the official Chart.js team (simonbrunel) — the same
+    organization behind `annotation`/`dataLabels` in the original v1
+    scope. **Initially added as a real npm dependency** (identical
+    mechanism to `withDataLabels`), **then later ported directly into
+    `packages/core/src/deferredPlugin.ts` in the same work session, at
+    your explicit request** — see item #22 below for the full port.
+    It is not, and is no longer, a real npm dependency of this project.
+
+22. **[Resolved]** Ported `chartjs-plugin-deferred` directly into
+    `packages/core/src/deferredPlugin.ts`, the same way `chartjs-
+    plugin-zoom`/`chartjs-plugin-gradient`/`chartjs-plugin-image-
+    label`/`chartjs-plugin-hierarchical`/`chartjs-plugin-autocolors`
+    were — at your explicit request, immediately after item #21 first
+    added it as a real dependency. The package ships real, readable
+    source (`node_modules/chartjs-plugin-deferred/src/plugin.js`, not
+    just a minified bundle), which was dissected and carried over
+    largely unchanged.
+    **A real bug found and fixed during the port, the identical class
+    already found in `gradientPlugin.ts`'s own port**: the original
+    names its teardown hook `destroy`, but Chart.js's own real
+    `Plugin` interface has no such hook at all — confirmed directly
+    against `chart.js`'s own installed type declarations. Renamed to
+    `afterDestroy`, the correct real hook name; the original's own
+    `destroy` handler (removing its own `scroll` listener and clearing
+    per-chart bookkeeping) likely never actually ran in real Chart.js,
+    silently leaking one `scroll` listener per destroyed chart that
+    hadn't yet appeared in the viewport.
+    **A real, confirmed finding about the original's own real
+    mechanism, not assumed from its own README/marketing copy**: this
+    plugin is scroll-event-based, not `IntersectionObserver`-based — it
+    walks up from the canvas's own `parentElement` chain for the
+    nearest scrollable ancestor (falling back to the whole `document`
+    if none is found) and listens for a real `scroll` event there,
+    checking `getBoundingClientRect()` against the viewport on every
+    scroll (throttled via `requestAnimationFrame`, or `delay` ms via
+    `setTimeout`).
+    **Real config defaults, confirmed directly from the installed
+    source's own `defaults` object, not the README's own example
+    values** (which show `xOffset: 150, yOffset: '50%', delay: 500` as
+    illustrative numbers, not the real shipped defaults): `{ xOffset:
+    0, yOffset: 0, delay: 0 }`.
+    **A real, deliberate design improvement over the original's own
+    approach**: the original stores its own bookkeeping as ad-hoc
+    properties monkey-patched directly onto the chart instance and DOM
+    elements themselves (`chart.$deferred`, `element.$chartjs_deferred`)
+    — this port uses two module-level `WeakMap`s instead, keyed by the
+    real chart/element object, garbage-collected automatically. Same
+    real algorithm and observable behavior, confirmed by directly
+    comparing the port's own logic against the real installed source
+    line-by-line.
+    **Genuinely distinct registration shape, matching `withAutocolors`'s
+    own shape exactly**: registers directly via a real, synchronous
+    `Chart.register(...)` call (matching `withHierarchical`'s own
+    mechanism) AND has real plugin-level config of its own to merge
+    into `options.plugins.deferred` (matching `withAnnotation`/
+    `withDataLabels`'s own config-merging shape).
+    **Comprehensive unit test coverage**: a new, dedicated
+    `tests/unit/deferredPlugin.spec.ts` (17 tests) covering in-
+    viewport-at-mount, delayed updates (including a destroyed-chart-
+    during-delay guard), blocking a second update while one is pending,
+    outside-viewport-at-mount with a real scroll event revealing the
+    canvas, `xOffset`/`yOffset` (fixed and percentage), an unparseable-
+    offset fallback, a `display: none` canvas, scrollable-ancestor
+    detection, scroll-event throttling, two charts sharing one
+    scrollable ancestor, and `afterDestroy` cleanup — confirmed: 434
+    core unit tests passing, 96.1% statements/lines, 91.37% branches,
+    100% functions on the new file, with three accepted, individually-
+    documented survivors (each a defensive guard confirmed structurally
+    unreachable given the file's own real call graph). A real, own-
+    mistake bug found while writing these tests, not the plugin's own:
+    an early draft of the `xOffset` test had the offset's own real
+    semantics backwards (assumed a larger offset was more lenient;
+    it's actually stricter, requiring *more* of the canvas to already
+    be showing) — caught by the test's own failure, not silently
+    shipped.
+    The `deferred` prop's own type signature is unchanged
+    (`DeferredPluginOptions | boolean`) — no Vue-side changes needed.
+    Docs updated across the board: `deferred-plugin.mdx` switched from
+    source-only (`live={false}`) to genuinely live (`live={true}`,
+    since local code has no dynamic-import hydration gap to hit),
+    `api/plugins.md`'s own "Deferred" section rewritten for the port
+    (dependency-based-plugin count corrected back down from 3 to 2),
+    `CHARTJS_ANALYSIS.md` §4's own "Deferred" section rewritten, every
+    "one of five/six live plugins" cross-reference elsewhere in that
+    file updated, and the e2e test/fixture's own comments corrected
+    (an earlier draft incorrectly described the mechanism as
+    `IntersectionObserver`-based before the real source was dissected).
+    Confirmed via a real e2e rerun: 81/81 passing, no regression from
+    the port.
+    **Vue-only so far** — React/Angular need the identical mechanical
+    prop addition once their own real components are built (Phases
+    3/4); the core-level `deferredPlugin.ts`/`withDeferred` already
+    cover them.
+
 ### Deferred until Vue is genuinely complete (per your stated priority)
 
 8. **Phase 3 (React)** — not started. Placeholder `Chart.tsx` still calls
@@ -995,7 +1091,20 @@ match that.
    directly under Angular's own `src/` tree) — deliberately left unsolved
    until Phase 4 actually starts.
 10. **Phase 5 (ecosystem extensions & plugins hardening, all 3
-    frameworks)** — not started.
+    frameworks)** — not started. A 9th official plugin, `trendline`
+    (`chartjs-plugin-trendline`), is fully scoped and ready to start —
+    see `docs/TRENDLINE_PLUGIN_PLAN.md` for the full plan (package
+    verification, real config shape, dependency-vs-port decision,
+    step-by-step implementation, and open risks). Two further
+    candidates, `regression` and `waterfall`, are confirmed genuinely
+    Chart.js-v2-only (not just unverified — `regression`'s own README
+    states outright "does not work with <chart.js@3.x>"; `waterfall`'s
+    latest npm release is 7 years old) — refactoring either into a real
+    v4-native implementation is a materially bigger task than any prior
+    plugin addition, since the *integration layer* has to be written
+    fresh rather than dissected from working source. See
+    `docs/REGRESSION_WATERFALL_REFACTOR_PLAN.md` for the full scope
+    analysis, real documented config shapes, and step-by-step plan.
 11. **Phase 6 (docs site)** — React/Angular sections not started; SEO/meta
     parity (OG/Twitter tags, JSON-LD) not done.
 12. **Phase 7 (release)** — semantic-release not set up; the Angular
@@ -2390,23 +2499,37 @@ Same API-mismatch note as Phase 2 applies here too — the placeholder
       evaluating specifically against that gap rather than as generic
       candidates, since both could close real accessibility ground
       without this project building ARIA/fallback-content support from
-      scratch. **Three entries have since been implemented**: `gradient`
+      scratch. **Five entries have since been implemented**: `gradient`
       (kurkle/chartjs-plugin-gradient), `timestack`
-      (jkmnt/chartjs-scale-timestack), and `hierarchical`
-      (sgratzl/chartjs-plugin-hierarchical), each as an official opt-in
-      prop (see "Current status & open issues" items #13–#15 and this
-      doc's own Phase 1/2 entries for the full implementation) — all
-      three removed from the survey tables, no longer candidates. None
-      of the remaining packages' own real current maintenance status,
-      config shape, or genuine v4 compatibility has been independently
-      verified yet, unlike the real verification `CHARTJS_ANALYSIS.md`
-      §4 already did for zoom/annotation/dataLabels/gradient/timestack/
-      hierarchical — that's real work still ahead of adding any of these
-      as a 7th+ official opt-in prop. Also worth deciding: whether
-      resolving item #6 (the inline `plugins`-array gap, already
-      resolved) makes a dedicated opt-in prop unnecessary for some of
-      these, since a consumer can already use any of them directly
-      without this project shipping bespoke support for each one.
+      (jkmnt/chartjs-scale-timestack), `hierarchical`
+      (sgratzl/chartjs-plugin-hierarchical), `image-label`
+      (yunusemrejs/chartjs-image-label), and `autocolors`
+      (kurkle/chartjs-plugin-autocolors), each as an official opt-in
+      prop (see "Current status & open issues" items #13–#16/#20 and
+      this doc's own Phase 1/2 entries for the full implementation) —
+      all five removed from the survey tables, no longer candidates.
+      Two candidates surveyed alongside `autocolors` in the same
+      "Styling" category (`colorschemes`, `style`) were explicitly
+      confirmed excluded, not just skipped — both genuinely Chart.js-
+      v2/v3-era with no verified v4-compatible official release.
+      **A 9th candidate is now fully scoped and ready to start**:
+      `trendline` (Makanz/chartjs-plugin-trendline, from the
+      "Features" category) — the one remaining v4-compatible,
+      not-yet-implemented entry in that category (`crosshair`/
+      `doughnutlabel`/`piechart-outlabels`/`regression`/`waterfall` are
+      all confirmed v2/v3-only and stay excluded). See
+      `docs/TRENDLINE_PLUGIN_PLAN.md` for the full package verification,
+      real config shape, dependency-vs-port decision, and step-by-step
+      implementation plan. None of the remaining packages' own real
+      current maintenance status, config shape, or genuine v4
+      compatibility has been independently verified yet, unlike the real
+      verification `CHARTJS_ANALYSIS.md` §4 already did for the plugins
+      above — that's real work still ahead of adding any of these as a
+      10th+ official opt-in prop. Also worth deciding: whether resolving
+      item #6 (the inline `plugins`-array gap, already resolved) makes a
+      dedicated opt-in prop unnecessary for some of these, since a
+      consumer can already use any of them directly without this project
+      shipping bespoke support for each one.
 
 ## Phase 6 — Documentation site (`docs/site`, Astro + Starlight)
 

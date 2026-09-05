@@ -4,6 +4,7 @@ import {
   withAnnotation,
   withAutocolors,
   withDataLabels,
+  withDeferred,
   withGradient,
   withHierarchical,
   withImageLabel,
@@ -19,6 +20,7 @@ import type {
   ChartJs,
   ChartKind,
   DataLabelsPluginOptions,
+  DeferredPluginOptions,
   ImageLabelPluginOptions,
   ZoomPluginOptions,
 } from 'keystone-chartjs-core';
@@ -139,6 +141,18 @@ export interface UseChartControllerProps {
    */
   autocolors?: AutocolorsPluginOptions | boolean;
   /**
+   * Opt-in to `chartjs-plugin-deferred` — `true` applies it with no
+   * extra config, an object applies it with that config (`xOffset`,
+   * `yOffset`, `delay`). Defers the chart's own real initial update
+   * (and thus its initial-render animations) until the canvas actually
+   * scrolls into the viewport — useful for charts far down a long page
+   * that would otherwise animate in unseen. Same registration shape as
+   * `dataLabels`/`annotation`: a real npm dependency, registered once
+   * via `Chart.register(...)`, its own config merged into
+   * `options.plugins.deferred`.
+   */
+  deferred?: DeferredPluginOptions | boolean;
+  /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct
    * from the `zoom`/`annotation`/`dataLabels` props above, which register
@@ -223,6 +237,9 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
     }
     if (props.autocolors) {
       opts = await withAutocolors(opts, typeof props.autocolors === 'object' ? props.autocolors : undefined);
+    }
+    if (props.deferred) {
+      opts = await withDeferred(opts, typeof props.deferred === 'object' ? props.deferred : undefined);
     }
     // Effective plugins array starts as whatever the consumer supplied
     // via the `plugins` prop directly — `withZoom`'s, `withGradient`'s,
@@ -337,6 +354,7 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       props.hierarchical,
       props.imageLabel,
       props.autocolors,
+      props.deferred,
       props.plugins,
     ],
     () => {

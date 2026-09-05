@@ -38,7 +38,7 @@ tiers.
 
 All four tiers are real and confirmed, not placeholder scaffolding:
 
-- **Unit** (core): 409 tests. **100% coverage on every metric except one
+- **Unit** (core): 414 tests. **100% coverage on every metric except one
   file**: `hierarchicalScale.ts` sits at 98.2% statements/lines, 90.93%
   branches, 98% functions — every other file (`controller.ts`,
   `gradientPlugin.ts`, `imageLabelPlugin.ts`, `autocolorsPlugin.ts`,
@@ -50,9 +50,9 @@ All four tiers are real and confirmed, not placeholder scaffolding:
   edge cases (a handful of jsdom-style unreachable branches), the same
   class of accepted gap `zoomPlugin.ts`/`gradientPlugin.ts` already
   carry.
-- **Component** (this package): 46 tests, 100% coverage on every metric.
-- **End-to-end**: **78/78 passing** across all 3 browsers — every chart
-  kind, all 8 plugins, and resize behavior pass on every browser. No
+- **Component** (this package): 48 tests, 100% coverage on every metric.
+- **End-to-end**: **81/81 passing** across all 3 browsers — every chart
+  kind, all 9 plugins, and resize behavior pass on every browser. No
   known limitations remain.
 - **Mutation**: 93.55% for core (`plugins.ts` alone: 88.14%, with 7
   accepted survivors, all tracing to one root cause — see that file's

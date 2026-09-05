@@ -22,6 +22,10 @@ vi.mock('chart.js', () => ({
 // module mock the way it used to.
 vi.mock('chartjs-plugin-annotation', () => ({ default: { id: 'annotation' } }));
 vi.mock('chartjs-plugin-datalabels', () => ({ default: { id: 'datalabels' } }));
+// No mock for chartjs-plugin-deferred — it's no longer a dependency at
+// all. Its logic was ported directly into deferredPlugin.ts (a real,
+// local plugin object, statically imported), so withDeferred needs no
+// module mock the way it used to.
 // No mock for chartjs-plugin-autocolors — it's no longer a dependency
 // at all. Its logic was ported directly into autocolorsPlugin.ts (a
 // real, local plugin object, statically imported), so withAutocolors
@@ -52,6 +56,7 @@ import {
   withAnnotation,
   withAutocolors,
   withDataLabels,
+  withDeferred,
   withGradient,
   withHierarchical,
   withImageLabel,
@@ -151,6 +156,42 @@ describe('cross-plugin isolation', () => {
     expect(registerMock).toHaveBeenCalledTimes(1);
     await withDataLabels({});
     expect(registerMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('withDeferred', () => {
+  it('merges options into options.plugins.deferred without touching other plugins entries', async () => {
+    const result = await withDeferred(
+      { plugins: { legend: { display: true } } },
+      { xOffset: 200, delay: 300 },
+    );
+
+    expect(result.plugins).toEqual({
+      legend: { display: true },
+      deferred: { xOffset: 200, delay: 300 },
+    });
+  });
+
+  it('defaults to an empty deferred config when none is given', async () => {
+    const result = await withDeferred({});
+    expect(result.plugins).toEqual({ deferred: {} });
+  });
+
+  it('registers via a direct Chart.register(deferredPlugin) call, the real local plugin object, not a dynamically-imported module', async () => {
+    // As of the local port, deferredPlugin is imported directly from
+    // deferredPlugin.ts — the same real object reference is what gets
+    // passed to Chart.register, no dynamic import or mod.default ?? mod
+    // fallback involved at all anymore (matching withAutocolors's own
+    // identical registration mechanism).
+    await withDeferred({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'deferred' }));
+  });
+
+  it('registers the plugin exactly once no matter how many times it is called', async () => {
+    await withDeferred({});
+    await withDeferred({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
   });
 });
 

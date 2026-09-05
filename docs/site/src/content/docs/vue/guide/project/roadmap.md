@@ -18,8 +18,8 @@ it applies to this package specifically.
   ecosystem bug forced this switch — not a local config choice).
 - **Phase 1 — Core engine** (`keystone-chartjs-core`) — chart lifecycle
   (construct, diffed update, destroy), lazy chart-kind registration, the
-  eight official-plugin helpers, resize handling, the theme
-  re-application hook, and inline-plugin support. 409 unit tests. 100%
+  nine official-plugin helpers, resize handling, the theme
+  re-application hook, and inline-plugin support. 414 unit tests. 100%
   coverage on every metric except one file: `hierarchicalScale.ts` sits
   at 98.2% statements/lines, 90.93% branches, 98% functions (every
   other core file is a clean 100%) — every file individually clears
@@ -29,14 +29,14 @@ it applies to this package specifically.
   for the full explanation; `controller.ts`/`registry.ts` both
   unaffected, at 98.08%/100% respectively).
 - **Phase 2 — This package** — the real `<Chart>` component: all 15 chart
-  kinds, all 8 official plugins as opt-in props, reactive updates
+  kinds, all 9 official plugins as opt-in props, reactive updates
   (diffed on top-level `type` and the `plugins` array's own reference,
   not a blanket destroy/recreate), automatic resize, an exposed
   chart-instance ref, and mixed-chart support (see
-  [Mixed charts](/vue/guide/concepts/mixed-charts)). 46 unit/component
-  tests, 100% coverage, 97.73% mutation score. End-to-end: **78/78
+  [Mixed charts](/vue/guide/concepts/mixed-charts)). 48 unit/component
+  tests, 100% coverage, 97.73% mutation score. End-to-end: **81/81
   passing** across Chromium/Firefox/WebKit — every one of the 15 chart
-  kinds, all 8 plugins, and resize behavior render/behave correctly on
+  kinds, all 9 plugins, and resize behavior render/behave correctly on
   every browser. (An earlier state of this suite sat at 51/57, with 6
   extension kinds failing for a fully diagnosed reason — a
   variable-specifier dynamic import in `registry.ts`'s own
@@ -50,7 +50,7 @@ it applies to this package specifically.
   for real fallback content (also confirmed via a dedicated test). See
   [Accessibility](/vue/guide/concepts/accessibility) for the full guide.
 - **Inline, custom Chart.js plugins** — Chart.js's own
-  `ChartConfiguration.plugins` field, distinct from this package's 8
+  `ChartConfiguration.plugins` field, distinct from this package's 9
   official opt-in props, via a `plugins` prop. Unlike `data`/`options`,
   a changed `plugins` reference forces a destroy-and-reconstruct, since
   Chart.js only reads this field at construction time. See
@@ -93,6 +93,14 @@ it applies to this package specifically.
   `options.plugins.autocolors` (matching `dataLabels`'s own
   config-merging shape). Confirmed via a real e2e test
   (`packages/vue/tests/e2e/autocolors-plugin.spec.ts`). See
+  [API → Plugins](/vue/api/plugins) for the full guide.
+- **Deferred plugin** — a real npm dependency, `chartjs-plugin-
+  deferred` (the official Chart.js team), via a boolean-or-config-
+  object `deferred` prop (same shape as `dataLabels`). Defers a chart's
+  own real initial update — and its initial-render animations — until
+  the canvas actually scrolls into the viewport. Confirmed via a real
+  e2e test (`packages/vue/tests/e2e/deferred-plugin.spec.ts`) that
+  scrolls a canvas starting below the fold into view mid-test. See
   [API → Plugins](/vue/api/plugins) for the full guide.
 
 ## Open, real gaps (not just "not started yet")

@@ -240,3 +240,26 @@ export interface AutocolorsPluginOptions {
    * replacing it outright. */
   customize?: (context: { colors: { background: string; border: string } }) => { background: string; border: string };
 }
+
+/**
+ * `chartjs-plugin-deferred`'s real config, confirmed directly from the
+ * real package's own README (github.com/chartjs/chartjs-plugin-deferred)
+ * — modeled precisely rather than loosely, since the package's own real
+ * surface is small and fully documented (same approach as
+ * `ImageLabelPluginOptions`/`AutocolorsPluginOptions` above). Lives
+ * under `options.plugins.deferred`.
+ */
+export interface DeferredPluginOptions {
+  /** How many pixels (or, as a percentage string, what fraction) of the
+   * canvas's own width must already be inside the viewport before the
+   * chart's real initial update runs.
+   * @default 150 */
+  xOffset?: number | string;
+  /** Same as `xOffset`, for the canvas's own height.
+   * @default 150 */
+  yOffset?: number | string;
+  /** Extra delay, in milliseconds, after the canvas is considered
+   * inside the viewport before the real initial update actually runs.
+   * @default 500 */
+  delay?: number;
+}

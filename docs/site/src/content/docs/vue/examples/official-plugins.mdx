@@ -1,9 +1,9 @@
 ---
 title: Official plugins
-description: The 8 plugins keystone-chartjs-vue implements and ships support for, as opt-in props.
+description: The 9 plugins keystone-chartjs-vue implements and ships support for, as opt-in props.
 ---
 
-These 8 plugins are fully **implemented** in this library — each one is
+These 9 plugins are fully **implemented** in this library — each one is
 wired in directly, registered automatically the first time its own
 opt-in prop is used, and covered by this project's own real test suite
 (unit, component, and end-to-end). This is different from Chart.js's
@@ -23,6 +23,7 @@ support — via the separate `plugins` prop.
 | Hierarchical scale | `hierarchical` | Local port (`keystone-chartjs-core/src/hierarchicalScale.ts`) |
 | Image label | `imageLabel` | Local port (`keystone-chartjs-core/src/imageLabelPlugin.ts`) |
 | Autocolors | `autocolors` | Local port (`keystone-chartjs-core/src/autocolorsPlugin.ts`) |
+| Deferred | `deferred` | `chartjs-plugin-deferred` |
 
 Five of these (zoom, gradient, hierarchical, image label, autocolors)
 are ported directly into `keystone-chartjs-core` rather than kept as

@@ -11,6 +11,7 @@ export {
   withAnnotation,
   withAutocolors,
   withDataLabels,
+  withDeferred,
   withGradient,
   withHierarchical,
   withImageLabel,
@@ -29,6 +30,7 @@ export type {
   ChartKind,
   ChartUpdatePayload,
   DataLabelsPluginOptions,
+  DeferredPluginOptions,
   ImageLabelPluginOptions,
 } from './types.js';
 export type { GradientDatasetConfig } from './gradientPlugin.js';

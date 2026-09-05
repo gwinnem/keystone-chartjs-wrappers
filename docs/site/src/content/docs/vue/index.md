@@ -63,7 +63,7 @@ This package's core feature set is implemented and tested — see
 [Features](/vue/features) for the full, current status table (100% test
 coverage across the board except one core file just above the
 project's own 90% floor, 97.73% mutation score, real browser
-end-to-end tests across Chromium/Firefox/WebKit — 78/78 passing).
+end-to-end tests across Chromium/Firefox/WebKit — 81/81 passing).
 Development continues on React/Angular parity and one remaining
 tracked gap for this package (Vue-native lifecycle events) — see the
 [Roadmap](/vue/guide/project/roadmap) for what's open.

@@ -79,10 +79,10 @@ under `options.plugins.<id>`), not chart *types* — they apply across whichever
 kinds the consumer uses them with. The wrapper's job is to (a) make registering
 them a one-line opt-in per framework, and (b) surface typed `options.plugins.*`
 shapes for each, rather than leaving consumers to hand-type against the plugins'
-own (often looser) option interfaces. Five more were added after v1
+own (often looser) option interfaces. Six more were added after v1
 kickoff (`gradient`/`timestack`/`hierarchical`/`image-label`/
-`autocolors` — see their own sections below), bringing the real total
-this project ships to 8.
+`autocolors`/`deferred` — see their own sections below), bringing the
+real total this project ships to 9.
 
 ### Zoom/pan — later locally ported, not a dependency
 
@@ -216,10 +216,10 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — one of five of this project's
-plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`, and
-`autocolors`) that renders live on the docs site rather than
-source-only, for the identical reason: local, static code has no
+varying by each bar's own height — one of six of this project's
+plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`,
+`autocolors`, and `deferred`) that renders live on the docs site rather
+than source-only, for the identical reason: local, static code has no
 dynamic `import()` for the docs-site hydration gap (item #4 in
 `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
@@ -335,12 +335,12 @@ structure (`{ label, children }` / `{ value, children }`), not the flat
 arrays every other kind or plugin in this project accepts.
 
 **Confirmed live in a real browser after the port**, including the real
-click-to-expand/collapse/zoom-in/zoom-out interaction — one of five of
+click-to-expand/collapse/zoom-in/zoom-out interaction — one of six of
 this project's plugins/scales (alongside `zoom`, `gradient`,
-`imageLabel`, and `autocolors`) that renders live on the docs site
-rather than source-only, for the identical reason: local, static code
-has no dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
+`imageLabel`, `autocolors`, and `deferred`) that renders live on the
+docs site rather than source-only, for the identical reason: local,
+static code has no dynamic `import()` for the docs-site hydration gap
+(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: grew to 87 dedicated tests across
 several rounds (55 from the initial port, then a coverage-hardening
@@ -392,9 +392,9 @@ to resolve when the importing file is served from outside the docs
 site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this, `gradient`, `zoom`, `hierarchical`, and, later,
-`autocolors` are five of the eight plugin/scale examples on the docs
-site that render live rather than source-only.
+assumed: this, `gradient`, `zoom`, `hierarchical`, `autocolors`, and
+`deferred` are six of the nine plugin/scale examples on the docs site
+that render live rather than source-only.
 
 **Genuinely distinct registration shape, same as `withGradient`’s and
 `withZoom`’s own local ports — different from `withTimestack`/
@@ -473,12 +473,12 @@ needing an async dynamic import to register.
 
 **Confirmed live in a real browser after the port**: three datasets on
 a line chart, each automatically assigned a distinct, generated color
-with no `backgroundColor`/`borderColor` set on any of them — one of
-five of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, and `imageLabel`) that renders live on the docs site
-rather than source-only, for the identical reason: local, static code
-has no dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
+with no `backgroundColor`/`borderColor` set on any of them — one of six
+of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, and `deferred`) that renders live on the
+docs site rather than source-only, for the identical reason: local,
+static code has no dynamic `import()` for the docs-site hydration gap
+(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
@@ -486,6 +486,107 @@ has no dynamic `import()` for the docs-site hydration gap (item #4 in
 merge behavior, `offset`/`repeat`/`customize` config handling, and the
 real, distinct rgba color format each generated color produces —
 confirmed via a real `test:unit` run, not assumed.
+
+### Added after v1 kickoff: Deferred (later locally ported, not a dependency)
+
+| Plugin | Package surveyed | Confirmed version at time of dissection | Purpose |
+|---|---|---|---|
+| Deferred | `chartjs-plugin-deferred` | `2.0.0` | Defers a chart's own real initial update (and its initial-render animations) until the canvas actually scrolls into the viewport. |
+
+Also added later, at your explicit request, after being surveyed in
+`docs/CHARTJS_AWESOME_PLUGINS.md`. Verified the same way: current
+version (2.0.0), MIT license, by the official Chart.js team
+(simonbrunel) — the same organization behind `annotation`/`datalabels`
+in the original v1 scope above.
+
+**Later ported directly into `packages/core/src/deferredPlugin.ts`, at
+your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
+plugin-gradient`/`chartjs-plugin-image-label`/`chartjs-plugin-
+hierarchical`/`chartjs-plugin-autocolors` were** — it is not, and is no
+longer, a real npm dependency of this project. The package ships real,
+readable source (`node_modules/chartjs-plugin-deferred/src/plugin.js`,
+not just a minified bundle), which was dissected and carried over
+largely unchanged.
+
+**A real bug found and fixed during the port, the identical class
+already found in `gradientPlugin.ts`'s own port**: the original names
+its teardown hook `destroy`, but Chart.js's own real `Plugin`
+interface (v3/v4 alike) has no such hook at all — confirmed directly
+against `chart.js`'s own installed type declarations. The real hook
+for chart teardown is `afterDestroy`; a hook name Chart.js's own
+plugin system doesn't recognize is simply never invoked, so the
+original's own `destroy` handler — whose only job is removing this
+plugin's own `scroll` event listener(s) and clearing its per-chart
+bookkeeping — likely never actually ran in real Chart.js, silently
+leaking one `scroll` listener (on whichever scrollable ancestor, or the
+`document`, the chart was still watching) per destroyed chart that
+hadn't yet appeared in the viewport. Renamed to `afterDestroy` in this
+port, the correct real hook name.
+
+**A real, confirmed finding about the original's own real mechanism,
+not assumed from its own README/marketing copy**: this plugin is
+scroll-event-based, not `IntersectionObserver`-based — it walks up from
+the canvas's own `parentElement` chain looking for the nearest
+scrollable ancestor (`overflow-x`/`overflow-y` of `auto`/`scroll`),
+falling back to the whole `document` if none is found, and listens for
+a real `scroll` event there, checking the canvas's own
+`getBoundingClientRect()` against the viewport on every scroll
+(throttled via `requestAnimationFrame`, or `delay` ms via `setTimeout`
+if configured).
+
+**A real, deliberate design improvement over the original's own
+approach, not a behavior change**: the original stores its own
+per-chart/per-element bookkeeping as ad-hoc properties monkey-patched
+directly onto the chart instance and DOM elements themselves
+(`chart.$deferred`, `element.$chartjs_deferred`) — this port uses two
+module-level `WeakMap`s instead, keyed by the real chart/element
+object, with entries garbage-collected automatically once the chart/
+element itself is. Same real algorithm and observable behavior,
+confirmed by directly comparing the port's own logic against the real
+installed source line-by-line — only the storage mechanism differs.
+
+**Real config defaults, confirmed directly from the installed source's
+own `defaults` object, not the README's own example values** (which
+show `xOffset: 150, yOffset: '50%', delay: 500` as illustrative
+numbers, not the plugin's own real shipped defaults): `{ xOffset: 0,
+yOffset: 0, delay: 0 }` — meaning with no config at all, the chart
+defers its first real update until *any* part of the canvas is inside
+the viewport, with no extra delay. Accepts either `true` (apply with
+the real defaults) or a config object, the same boolean-or-config-
+object shape as `zoom`/`dataLabels`/`autocolors`.
+
+**Genuinely distinct registration shape from every other local port so
+far, matching `withAutocolors`'s own shape exactly**: registers
+directly via a real, synchronous `Chart.register(...)` call (matching
+`withHierarchical`'s own mechanism) AND has real plugin-level config of
+its own to merge into `options.plugins.deferred` (matching
+`withAnnotation`/`withDataLabels`'s own config-merging shape).
+
+**Confirmed live in a real browser after the port**: a Playwright e2e
+test starting the canvas below the fold (via a tall spacer element),
+confirming it scrolls into view and renders real, non-blank pixels
+once a real `scroll` event and the configured delay elapse — one of six
+of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, and `autocolors`) that renders live on
+the docs site rather than source-only, for the identical reason: local,
+static code has no dynamic `import()` for the docs-site hydration gap
+(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+
+**Comprehensive unit test coverage**: a new, dedicated
+`tests/unit/deferredPlugin.spec.ts` (17 tests) covering in-viewport-at-
+mount, delayed updates (including a destroyed-chart-during-delay
+guard), blocking a second update while a delayed one is pending,
+outside-viewport-at-mount with a real scroll event revealing the
+canvas, `xOffset`/`yOffset` (fixed-number and percentage), an
+unparseable-offset fallback to 0, a `display: none` canvas, scrollable-
+ancestor detection (`overflow-y: scroll` and `overflow-x: auto`),
+scroll-event throttling, two charts sharing one scrollable ancestor,
+and `afterDestroy` cleanup — 96.1% statements/lines, 91.37% branches,
+100% functions, with three accepted, individually-documented survivors
+(each a defensive guard confirmed structurally unreachable given this
+file's own real call graph, the same class of accepted gap as
+`controller.ts`'s/`hierarchicalScale.ts`'s own already-documented
+survivors) — confirmed via a real `test:coverage` run, not assumed.
 
 ## 5. What's explicitly out of scope for v1
 

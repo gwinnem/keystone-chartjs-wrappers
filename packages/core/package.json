@@ -35,6 +35,7 @@
     "hierarchical",
     "image-label",
     "autocolors",
+    "deferred",
     "framework-agnostic",
     "monorepo"
   ],

@@ -210,6 +210,7 @@ export default defineConfig({
                     { label: 'Hierarchical scale', slug: 'vue/examples/hierarchical-scale' },
                     { label: 'Image label plugin', slug: 'vue/examples/image-label-plugin' },
                     { label: 'Autocolors plugin', slug: 'vue/examples/autocolors-plugin' },
+                    { label: 'Deferred plugin', slug: 'vue/examples/deferred-plugin' },
                   ],
                 },
                 {

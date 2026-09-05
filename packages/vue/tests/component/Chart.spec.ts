@@ -18,6 +18,7 @@ const withTimestack = vi.fn();
 const withHierarchical = vi.fn();
 const withImageLabel = vi.fn();
 const withAutocolors = vi.fn();
+const withDeferred = vi.fn();
 
 vi.mock('keystone-chartjs-core', () => ({
   createChartController: (...args: unknown[]) => createChartController(...args),
@@ -29,6 +30,7 @@ vi.mock('keystone-chartjs-core', () => ({
   withHierarchical: (...args: unknown[]) => withHierarchical(...args),
   withImageLabel: (...args: unknown[]) => withImageLabel(...args),
   withAutocolors: (...args: unknown[]) => withAutocolors(...args),
+  withDeferred: (...args: unknown[]) => withDeferred(...args),
 }));
 
 // eslint-disable-next-line import/first -- must follow vi.mock, same
@@ -63,6 +65,7 @@ beforeEach(() => {
   withHierarchical.mockReset();
   withImageLabel.mockReset();
   withAutocolors.mockReset();
+  withDeferred.mockReset();
 
   // Mirror core's own real merge behavior closely enough that
   // assertions on the final `options` object passed to
@@ -118,6 +121,15 @@ beforeEach(() => {
   withAutocolors.mockImplementation(async (opts: Record<string, unknown>, autocolorsOptions: unknown) => ({
     ...opts,
     plugins: { ...(opts.plugins as object), autocolors: autocolorsOptions ?? {} },
+  }));
+  // withDeferred: identical shape to withDataLabels/withAutocolors —
+  // merges its own config into options.plugins.deferred, no plugin
+  // object returned (a real npm dependency, registered via a real
+  // Chart.register(...) call inside core itself, not the inline
+  // plugins array).
+  withDeferred.mockImplementation(async (opts: Record<string, unknown>, deferredOptions: unknown) => ({
+    ...opts,
+    plugins: { ...(opts.plugins as object), deferred: deferredOptions ?? {} },
   }));
 });
 
@@ -299,6 +311,7 @@ describe('Chart — plugin opt-ins', () => {
     expect(withHierarchical).not.toHaveBeenCalled();
     expect(withImageLabel).not.toHaveBeenCalled();
     expect(withAutocolors).not.toHaveBeenCalled();
+    expect(withDeferred).not.toHaveBeenCalled();
   });
 
   it('applies zoom with no extra config when the prop is `true`', async () => {
@@ -468,6 +481,34 @@ describe('Chart — plugin opt-ins', () => {
     await flushPromises();
 
     expect(withAutocolors).toHaveBeenCalledWith({}, autocolorsConfig);
+  });
+
+  it('applies deferred with no extra config when the prop is `true`', async () => {
+    const handle = makeHandle();
+    createChartController.mockResolvedValue(handle);
+
+    mount(Chart, { props: { type: 'bar', data: { datasets: [] }, deferred: true } });
+    await flushPromises();
+
+    expect(withDeferred).toHaveBeenCalledWith({}, undefined);
+    expect(createChartController).toHaveBeenCalledWith(expect.anything(), {
+      type: 'bar',
+      data: { datasets: [] },
+      options: { plugins: { deferred: {} } },
+    });
+  });
+
+  it('applies deferred with the given config object', async () => {
+    const handle = makeHandle();
+    createChartController.mockResolvedValue(handle);
+    const deferredConfig = { xOffset: 200, delay: 300 };
+
+    mount(Chart, {
+      props: { type: 'bar', data: { datasets: [] }, deferred: deferredConfig },
+    });
+    await flushPromises();
+
+    expect(withDeferred).toHaveBeenCalledWith({}, deferredConfig);
   });
 
   it('reuses the same merged plugins array reference across two separate unrelated updates, rather than rebuilding a fresh one each time', async () => {

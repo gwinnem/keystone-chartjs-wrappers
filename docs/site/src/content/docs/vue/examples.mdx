@@ -58,7 +58,7 @@ interactive too.
 
 ## Official plugins
 
-All 7 of these are fully implemented and shipped in this library — see
+All 9 of these are fully implemented and shipped in this library — see
 the [Official plugins overview](/vue/examples/official-plugins/) for
 what that means versus custom/inline plugins.
 
@@ -67,7 +67,8 @@ what that means versus custom/inline plugins.
 - **[Annotation plugin](/vue/examples/annotation-plugin/)** — `chartjs-plugin-annotation`, drawing lines, boxes, points, labels, polygons, and ellipses on the chart area. Real source shown; not yet live-embedded on this docs site (see that page's own note).
 - **[Data labels plugin](/vue/examples/data-labels-plugin/)** — `chartjs-plugin-datalabels`, rendering a label directly on each data element. Real source shown; not yet live-embedded on this docs site (see that page's own note).
 - **[Gradient plugin](/vue/examples/gradient-plugin/)** — a local port of `chartjs-plugin-gradient` with a real per-dataset gradient config. Live and interactive, for the same reason as zoom above.
-- **[Timestack scale](/vue/examples/timestack-scale/)** — `chartjs-scale-timestack`, an alternative time axis formatting time in two stacked, human-friendly rows. Real source shown; not yet live-embedded on this docs site (see that page's own note) — the one remaining plugin/scale still blocked by the dynamic-import hydration gap, since its own real `luxon` dependency can't be resolved the same way local code can.
+- **[Timestack scale](/vue/examples/timestack-scale/)** — `chartjs-scale-timestack`, an alternative time axis formatting time in two stacked, human-friendly rows. Real source shown; not yet live-embedded on this docs site (see that page's own note) — its own real `luxon` dependency can't be resolved the same way local code can.
 - **[Hierarchical scale](/vue/examples/hierarchical-scale/)** — a local port of `chartjs-plugin-hierarchical`, a collapsible tree-like categorical axis. Live and interactive, including the real click-to-expand/collapse/zoom-in/zoom-out interaction.
 - **[Image label plugin](/vue/examples/image-label-plugin/)** — a local port of `chartjs-plugin-image-label`, adding image labels to doughnut chart slices via Chart.js's own inline `plugins` array. Live and interactive, for the same reason as zoom above.
 - **[Autocolors plugin](/vue/examples/autocolors-plugin/)** — a local port of `chartjs-plugin-autocolors`, automatically assigning a distinct color per dataset. Live and interactive, for the same reason as zoom above.
+- **[Deferred plugin](/vue/examples/deferred-plugin/)** — a local port of `chartjs-plugin-deferred`, deferring a chart's own real initial update (and its initial-render animations) until the canvas scrolls into the viewport. Live and interactive, for the same reason as zoom above.

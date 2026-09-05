@@ -38,17 +38,23 @@
   real config into `options.plugins.autocolors` (matching
   `withAnnotation`/`withDataLabels`'s own config-merging shape) — the
   only helper combining both traits.
+- `withDeferred` — registers `chartjs-plugin-deferred` once, a real
+  npm dependency; identical shape to `withDataLabels` (dynamic
+  `import()`, `Chart.register(mod.default ?? mod)`, config merged into
+  `options.plugins.deferred`). As of v2.x, this package no longer
+  auto-registers itself — confirmed directly from its own README/
+  migration guide.
 - Inline, custom Chart.js plugin support (`ChartUpdatePayload.plugins`) —
   passed straight through to the real `Chart` constructor, distinct from
-  the 8 official-plugin helpers above. A changed `plugins` array reference
+  the 9 official-plugin helpers above. A changed `plugins` array reference
   forces a destroy-and-reconstruct, since Chart.js only reads this field
   at construction time.
 - Exported types: `ChartKind`, `ChartConfigData`, `ChartConfigDataset`,
   `ChartUpdatePayload`, `ChartControllerHandle`, `ChartConfiguration`,
   `ChartJs`, `ZoomPluginOptions`, `AnnotationPluginOptions`,
   `DataLabelsPluginOptions`, `ImageLabelPluginOptions`,
-  `AutocolorsPluginOptions`.
-- 409 unit tests. 100% coverage on every metric except one file:
+  `AutocolorsPluginOptions`, `DeferredPluginOptions`.
+- 414 unit tests. 100% coverage on every metric except one file:
   `hierarchicalScale.ts` sits at 98.2% statements/lines, 90.93%
   branches, 98% functions (every other file is a clean 100%,
   `zoomPlugin.ts` sits at 98.41% branches) — every file individually
