@@ -204,3 +204,39 @@ export interface ImageLabelPluginOptions {
     imageHeight: number;
   }>;
 }
+
+/**
+ * `chartjs-plugin-autocolors`'s real config, confirmed directly from
+ * the real package's own README (github.com/kurkle/chartjs-plugin-
+ * autocolors) — modeled precisely rather than loosely, since the
+ * package's own real surface is small and fully documented (same
+ * approach as `ImageLabelPluginOptions` above). Lives under
+ * `options.plugins.autocolors`.
+ */
+export interface AutocolorsPluginOptions {
+  /** Set to `false` to disable autocoloring for a chart that would
+   * otherwise pick it up from a global `Chart.register(autocolors)`
+   * call.
+   * @default true */
+  enabled?: boolean;
+  /** `'dataset'` picks one new color per dataset; `'data'` picks one
+   * per data point within each dataset; `'label'` keys the color to
+   * each data point's own label instead of its index (so the same
+   * label always gets the same color across datasets). `'dataset'`
+   * mode doesn't work properly for doughnut/pie charts — the real
+   * package's own docs recommend `'data'` mode for those instead.
+   * @default 'dataset' */
+  mode?: 'dataset' | 'data' | 'label';
+  /** Offsets the color generation by this many colors — useful when
+   * several charts on the same page should not start from the same
+   * first color. */
+  offset?: number;
+  /** Colors this many adjacent datasets/points the same before moving
+   * to the next color — useful for grouping related series. */
+  repeat?: number;
+  /** Called once per generated color with the real, computed
+   * `{ background, border }` pair — return a replacement pair (e.g.
+   * lightened/darkened) to customize the generated palette without
+   * replacing it outright. */
+  customize?: (context: { colors: { background: string; border: string } }) => { background: string; border: string };
+}

@@ -1,0 +1,61 @@
+---
+title: Autocolors plugin
+description: A local, ported implementation of chartjs-plugin-autocolors, supplied via the autocolors prop, automatically assigning a distinct color per dataset.
+---
+import AutocolorsPlugin from '../../../../components/examples/autocolors-plugin.vue';
+import AutocolorsPluginSource from '../../../../components/examples/autocolors-plugin.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+The `autocolors` prop draws on a local port of `chartjs-plugin-autocolors`
+(by Jukka Kurkela, the same maintainer already behind
+[gradient](/vue/examples/gradient-plugin) and
+[zoom](/vue/examples/zoom-plugin) before those two were also ported).
+It isn't a dependency on a third-party package at all \u2014 its logic is
+ported directly into `keystone-chartjs-core`
+(`src/autocolorsPlugin.ts`). Unlike `gradient`/`zoom`/`imageLabel`,
+it's registered once via a real, synchronous `Chart.register(...)`
+call \u2014 the same mechanism [hierarchical](/vue/examples/hierarchical-scale)
+uses \u2014 while still having real plugin-level config of its own to merge
+into `options.plugins.autocolors`, matching `dataLabels`'s own shape.
+
+:::note[Zero extra dependency weight, unlike Timestack]
+The original package's own real logic imports two small color-conversion
+utility functions from a separate package, `@kurkle/color` \u2014 a real,
+declared peer dependency of the original, not bundled into its own
+`dist` output. Rather than adding that package as a new dependency of
+this project, this port reimplements those two small, standard
+(HSV\u2192RGB, RGB-string formatting) functions locally: both are textbook
+color-space-conversion algorithms with one universally agreed-upon
+definition, not any bespoke logic of the plugin's own. Every real piece
+of the plugin's own actual color-*selection* logic (the hue-stepping
+generator, `dataset`/`data`/`label` mode branching, the "don't overwrite
+an already-set color" merge behavior) is carried over unchanged.
+:::
+
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site, the same as
+[zoom](/vue/examples/zoom-plugin), [gradient](/vue/examples/gradient-plugin),
+[hierarchical](/vue/examples/hierarchical-scale), and
+[image label](/vue/examples/image-label-plugin).
+
+<ExampleTryIt code={AutocolorsPluginSource} filename="autocolors-plugin.vue" live={true}>
+  <AutocolorsPlugin client:visible />
+</ExampleTryIt>
+
+:::tip[Accepts either `true` or a config object, like `zoom`/`dataLabels`]
+```js
+autocolors: {
+  mode: 'data', // 'dataset' (default), 'data', or 'label'
+  offset: 5,
+  repeat: 2,
+  customize(context) {
+    return { background: 'lightblue', border: 'darkblue' };
+  },
+}
+```
+`'dataset'` mode (the real default, used above) picks one new color per
+dataset \u2014 doesn't work properly for doughnut/pie charts, where `'data'`
+mode (one color per data point) is the real package's own documented
+recommendation instead. See [Plugins](/vue/api/plugins/) for the full
+prop reference.
+:::

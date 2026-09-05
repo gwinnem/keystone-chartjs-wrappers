@@ -38,12 +38,23 @@ const config = {
   // nothing for Stryker to mutate there), not index.ts (a barrel
   // re-export with no logic of its own), and not test-utils.ts (trivial
   // DOM-fixture helpers with no branches/conditionals worth mutating).
-  // imageLabelPlugin.ts, gradientPlugin.ts, and zoomPlugin.ts added:
-  // real, non-trivial ported logic (see each file's own header
-  // comment), each with its own dedicated test file
-  // (tests/unit/imageLabelPlugin.spec.ts, tests/unit/gradientPlugin.
-  // spec.ts, tests/unit/zoomPlugin.spec.ts).
-  mutate: ['src/registry.ts', 'src/controller.ts', 'src/plugins.ts', 'src/imageLabelPlugin.ts', 'src/gradientPlugin.ts', 'src/zoomPlugin.ts'],
+  // imageLabelPlugin.ts, gradientPlugin.ts, zoomPlugin.ts,
+  // hierarchicalScale.ts, and autocolorsPlugin.ts added: real,
+  // non-trivial ported logic (see each file's own header comment),
+  // each with its own dedicated test file (tests/unit/
+  // imageLabelPlugin.spec.ts, tests/unit/gradientPlugin.spec.ts,
+  // tests/unit/zoomPlugin.spec.ts, tests/unit/hierarchicalScale.spec.ts,
+  // tests/unit/autocolorsPlugin.spec.ts).
+  mutate: [
+    'src/registry.ts',
+    'src/controller.ts',
+    'src/plugins.ts',
+    'src/imageLabelPlugin.ts',
+    'src/gradientPlugin.ts',
+    'src/zoomPlugin.ts',
+    'src/hierarchicalScale.ts',
+    'src/autocolorsPlugin.ts',
+  ],
 
   vitest: {
     configFile: 'vitest.config.ts',

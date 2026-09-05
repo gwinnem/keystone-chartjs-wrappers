@@ -5,31 +5,48 @@ Filtered to plugins marked v4-compatible in that list's own support column
 (this project only targets Chart.js v4) — v2/v3-only plugins are excluded
 entirely, not just deprioritized. A reference for Phase 5 (ecosystem
 extensions & plugins hardening) when deciding whether any of these are
-worth adding as an 8th+ official opt-in prop, alongside the 7 this project
+worth adding as a 9th+ official opt-in prop, alongside the 8 this project
 now ships (zoom, annotation, dataLabels, gradient, timestack,
-hierarchical, image-label — all seven already appear in this same
-"awesome" list, confirming they were reasonable picks; each of the last
-four started as one of the rows below and was promoted to implemented —
-see their own notes under Styling/Features/Interactions. `zoom`,
-`gradient`, and `image-label` are all partial exceptions among the seven:
-each was later ported directly into this project's own source rather
-than kept as a real dependency — see `CHARTJS_ANALYSIS.md` §4's own
-"Zoom/pan"/"Added after v1 kickoff: Gradient"/"...Image label"
-sections).
+hierarchical, image-label, autocolors — all eight already appear in this
+same "awesome" list, confirming they were reasonable picks; each of the
+last five started as one of the rows below and was promoted to
+implemented — see their own notes under Styling/Features/Interactions.
+`zoom`, `gradient`, `hierarchical`, `image-label`, and `autocolors` are
+all partial exceptions among the eight: each was later ported directly
+into this project's own source rather than kept as a real dependency —
+see `CHARTJS_ANALYSIS.md` §4's own "Zoom/pan"/"Added after v1 kickoff:
+Gradient"/"...Hierarchical"/"...Image label"/"...Autocolors" sections).
 
 Confidence: this list states what the "awesome" list itself claims
 (name, repo, one-line description, v4-support badge) — none of these
 remaining packages' own current maintenance status, real API shape, or
 actual Chart.js v4 compatibility has been independently verified the way
-the 6 official plugins' real config shapes were in `CHARTJS_ANALYSIS.md`
+the 8 official plugins' real config shapes were in `CHARTJS_ANALYSIS.md`
 §4. Treat every remaining row here as "worth investigating," not
 "confirmed to work."
 
 ## Styling
 
-| Plugin | Repo | Description |
-|---|---|---|
-| autocolors | kurkle/chartjs-plugin-autocolors | Automatic color generation |
+**autocolors (kurkle/chartjs-plugin-autocolors) has been implemented**,
+at your explicit request — but not as a dependency: confirmed version
+0.3.1, MIT, real Chart.js v4 compatibility confirmed directly from the
+real package's own README ("This plugin requires Chart.js 3.0.0 or
+later"), by the same maintainer already behind `gradient`/`zoom`. Its
+real, published dist output (the package ships no real `src/`) was
+dissected and ported directly into
+`packages/core/src/autocolorsPlugin.ts`, reimplementing the original's
+own two small `@kurkle/color`-dependent color-conversion utility
+functions locally (standard, textbook algorithms, not any bespoke logic
+of the plugin's own) rather than adding that package as a new
+dependency of this project. See `CHARTJS_ANALYSIS.md` §4's own "Added
+after v1 kickoff: Autocolors" section for the full verification, and
+`docs/site/src/content/docs/vue/examples/autocolors-plugin.mdx` for the
+docs-site example. No longer a survey candidate — removed from the
+table above (this section's own table is now empty; `colorschemes`/
+`rough`/`style`, the other three "Styling" candidates the "awesome"
+list surveys, remain excluded entirely — see "Not included above"
+below — confirmed genuinely Chart.js-v2/v3-era with no verified
+v4-compatible official release, not merely deprioritized).
 
 **gradient (kurkle/chartjs-plugin-gradient) and timestack
 (jkmnt/chartjs-scale-timestack) have both been implemented**, at your
@@ -68,12 +85,13 @@ above.
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
 directly into `packages/core/src/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. One of three of this
-project's own 7 official plugins/scales (alongside `gradient` and
-`zoom`) that renders live on the docs site rather than source-only,
-since local code has no dynamic import for the known docs-site
-hydration gap to apply to. See `CHARTJS_ANALYSIS.md` §4's own "Added
-after v1 kickoff: Image label" section for the full verification, and
+bugs found in the original along the way. One of five of this
+project's own 8 official plugins/scales (alongside `gradient`, `zoom`,
+`hierarchical`, and `autocolors`) that renders live on the docs site
+rather than source-only, since local code has no dynamic import for
+the known docs-site hydration gap to apply to. See
+`CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff: Image label"
+section for the full verification, and
 `docs/site/src/content/docs/vue/examples/image-label-plugin.mdx` for
 the docs-site example. No longer a survey candidate — removed from the
 table above.
@@ -125,11 +143,11 @@ Sources) — every one of these is marked unsupported for Chart.js v4 in the
 
 - None of these remaining packages' own real current maintenance status,
   exact config shape, or genuine Chart.js v4 compatibility has been
-  independently verified yet — do that before committing to any one as an
-  8th official opt-in prop, matching the real verification `CHARTJS_
+  independently verified yet — do that before committing to any one as a
+  9th official opt-in prop, matching the real verification `CHARTJS_
   ANALYSIS.md` §4 already did for zoom/annotation/dataLabels/gradient/
-  timestack/hierarchical/image-label.
-- Decide whether adding an 8th+ official plugin is even the right model
+  timestack/hierarchical/image-label/autocolors.
+- Decide whether adding a 9th+ official plugin is even the right model
   going forward, versus resolving the inline-`plugins`-array gap first
   (already resolved — see "Current status & open issues" item #6, now
   marked `[Resolved]`) — that fix means a consumer can already use any

@@ -2,6 +2,7 @@ import { onMounted, onBeforeUnmount, shallowRef, watch, type Ref } from 'vue';
 import {
   createChartController,
   withAnnotation,
+  withAutocolors,
   withDataLabels,
   withGradient,
   withHierarchical,
@@ -11,6 +12,7 @@ import {
 } from 'keystone-chartjs-core';
 import type {
   AnnotationPluginOptions,
+  AutocolorsPluginOptions,
   ChartConfigData,
   ChartConfiguration,
   ChartControllerHandle,
@@ -92,15 +94,20 @@ export interface UseChartControllerProps {
    */
   timestack?: boolean;
   /**
-   * Opt-in to `chartjs-plugin-hierarchical` — boolean only, like
-   * `gradient`/`timestack`: this registers a real, distinct `hierarchical`
-   * **scale** (not a Chart.js "plugin" object) via its own confirmed named
-   * export (`HierarchicalScale`), with no plugin-level config of its own
-   * to merge here either. Use it via the standard
+   * Opt-in to a local port of `chartjs-plugin-hierarchical` — boolean
+   * only, like `gradient`/`timestack`: this registers a real, distinct
+   * `hierarchical` **scale** (not a Chart.js "plugin" object) via this
+   * project's own `HierarchicalScale` (see `hierarchicalScale.ts`'s
+   * own header comment for the full port rationale — unlike
+   * `chartjs-scale-timestack`, this one has zero runtime dependencies
+   * of its own, confirmed directly from the real package's own
+   * `package.json`), with no plugin-level config of its own to merge
+   * here either. Use it via the standard
    * `options.scales.<id>.type = 'hierarchical'`, which already reaches
    * Chart.js untouched via the existing `options` prop. Requires
    * `data.labels`/`dataset.data` in this scale's own tree-node shape
-   * (`ILabelNode`/`IValueNode`) rather than flat arrays — see the docs
+   * (`HierarchicalRawLabelNode`/`HierarchicalValueNode`, exported from
+   * `keystone-chartjs-core`) rather than flat arrays — see the docs
    * site's own example.
    */
   hierarchical?: boolean;
@@ -119,6 +126,18 @@ export interface UseChartControllerProps {
    * package's own docs (not enforced here).
    */
   imageLabel?: ImageLabelPluginOptions;
+  /**
+   * Opt-in to `chartjs-plugin-autocolors` — `true` applies it with no
+   * extra config, an object applies it with that config (`mode`,
+   * `offset`, `repeat`, `customize`). Automatically assigns a distinct
+   * color per dataset (or per data point, in `'data'`/`'label'` mode)
+   * when none is already set — useful for charts with a variable
+   * number of series where hand-picking colors isn't practical. Same
+   * registration shape as `dataLabels`/`annotation`: registered once
+   * via `Chart.register(...)`, its own config merged into
+   * `options.plugins.autocolors`.
+   */
+  autocolors?: AutocolorsPluginOptions | boolean;
   /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct
@@ -201,6 +220,9 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
     }
     if (props.hierarchical) {
       opts = await withHierarchical(opts);
+    }
+    if (props.autocolors) {
+      opts = await withAutocolors(opts, typeof props.autocolors === 'object' ? props.autocolors : undefined);
     }
     // Effective plugins array starts as whatever the consumer supplied
     // via the `plugins` prop directly — `withZoom`'s, `withGradient`'s,
@@ -314,6 +336,7 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       props.timestack,
       props.hierarchical,
       props.imageLabel,
+      props.autocolors,
       props.plugins,
     ],
     () => {

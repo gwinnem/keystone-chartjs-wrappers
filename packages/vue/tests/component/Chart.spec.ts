@@ -17,6 +17,7 @@ const withGradient = vi.fn();
 const withTimestack = vi.fn();
 const withHierarchical = vi.fn();
 const withImageLabel = vi.fn();
+const withAutocolors = vi.fn();
 
 vi.mock('keystone-chartjs-core', () => ({
   createChartController: (...args: unknown[]) => createChartController(...args),
@@ -27,6 +28,7 @@ vi.mock('keystone-chartjs-core', () => ({
   withTimestack: (...args: unknown[]) => withTimestack(...args),
   withHierarchical: (...args: unknown[]) => withHierarchical(...args),
   withImageLabel: (...args: unknown[]) => withImageLabel(...args),
+  withAutocolors: (...args: unknown[]) => withAutocolors(...args),
 }));
 
 // eslint-disable-next-line import/first -- must follow vi.mock, same
@@ -60,6 +62,7 @@ beforeEach(() => {
   withTimestack.mockReset();
   withHierarchical.mockReset();
   withImageLabel.mockReset();
+  withAutocolors.mockReset();
 
   // Mirror core's own real merge behavior closely enough that
   // assertions on the final `options` object passed to
@@ -107,6 +110,14 @@ beforeEach(() => {
   withImageLabel.mockImplementation(async (opts: Record<string, unknown>, imageLabelOptions: unknown) => ({
     options: { ...opts, plugins: { ...(opts.plugins as object), imageLabel: imageLabelOptions } },
     plugin: { id: 'image-label-plugin' },
+  }));
+  // withAutocolors: identical shape to withDataLabels — merges its own
+  // config into options.plugins.autocolors, no plugin object returned
+  // (registered via a real Chart.register(...) call inside core itself,
+  // not the inline plugins array).
+  withAutocolors.mockImplementation(async (opts: Record<string, unknown>, autocolorsOptions: unknown) => ({
+    ...opts,
+    plugins: { ...(opts.plugins as object), autocolors: autocolorsOptions ?? {} },
   }));
 });
 
@@ -287,6 +298,7 @@ describe('Chart — plugin opt-ins', () => {
     expect(withTimestack).not.toHaveBeenCalled();
     expect(withHierarchical).not.toHaveBeenCalled();
     expect(withImageLabel).not.toHaveBeenCalled();
+    expect(withAutocolors).not.toHaveBeenCalled();
   });
 
   it('applies zoom with no extra config when the prop is `true`', async () => {
@@ -428,6 +440,34 @@ describe('Chart — plugin opt-ins', () => {
       options: { plugins: { imageLabel: { imagesList: [] } } },
       plugins: [customPlugin, { id: 'image-label-plugin' }],
     });
+  });
+
+  it('applies autocolors with no extra config when the prop is `true`', async () => {
+    const handle = makeHandle();
+    createChartController.mockResolvedValue(handle);
+
+    mount(Chart, { props: { type: 'bar', data: { datasets: [] }, autocolors: true } });
+    await flushPromises();
+
+    expect(withAutocolors).toHaveBeenCalledWith({}, undefined);
+    expect(createChartController).toHaveBeenCalledWith(expect.anything(), {
+      type: 'bar',
+      data: { datasets: [] },
+      options: { plugins: { autocolors: {} } },
+    });
+  });
+
+  it('applies autocolors with the given config object', async () => {
+    const handle = makeHandle();
+    createChartController.mockResolvedValue(handle);
+    const autocolorsConfig = { mode: 'data' as const };
+
+    mount(Chart, {
+      props: { type: 'bar', data: { datasets: [] }, autocolors: autocolorsConfig },
+    });
+    await flushPromises();
+
+    expect(withAutocolors).toHaveBeenCalledWith({}, autocolorsConfig);
   });
 
   it('reuses the same merged plugins array reference across two separate unrelated updates, rather than rebuilding a fresh one each time', async () => {

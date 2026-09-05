@@ -1,0 +1,33 @@
+---
+title: Official plugins
+description: The 8 plugins keystone-chartjs-vue implements and ships support for, as opt-in props.
+---
+
+These 8 plugins are fully **implemented** in this library — each one is
+wired in directly, registered automatically the first time its own
+opt-in prop is used, and covered by this project's own real test suite
+(unit, component, and end-to-end). This is different from Chart.js's
+own [custom, inline plugins](/vue/components/props#custom-inline-plugins)
+mechanism, which lets you supply *any* Chart.js plugin object yourself —
+your own, or any community plugin this library doesn't officially
+support — via the separate `plugins` prop.
+
+| Plugin | Prop | Backing |
+|---|---|---|
+| Colors | *(none — enabled by default)* | Chart.js built-in |
+| Zoom/pan | `zoom` | Local port (`keystone-chartjs-core/src/zoomPlugin.ts`) |
+| Annotation | `annotation` | `chartjs-plugin-annotation` |
+| Data labels | `dataLabels` | `chartjs-plugin-datalabels` |
+| Gradient | `gradient` | Local port (`keystone-chartjs-core/src/gradientPlugin.ts`) |
+| Timestack scale | `timestack` | `chartjs-scale-timestack` |
+| Hierarchical scale | `hierarchical` | Local port (`keystone-chartjs-core/src/hierarchicalScale.ts`) |
+| Image label | `imageLabel` | Local port (`keystone-chartjs-core/src/imageLabelPlugin.ts`) |
+| Autocolors | `autocolors` | Local port (`keystone-chartjs-core/src/autocolorsPlugin.ts`) |
+
+Five of these (zoom, gradient, hierarchical, image label, autocolors)
+are ported directly into `keystone-chartjs-core` rather than kept as
+real npm dependencies — see each one's own example page for why, and
+[Plugins](/vue/api/plugins) for the full prop reference and config
+shape each one accepts.
+
+See each plugin's own page in this section for a real, working example.

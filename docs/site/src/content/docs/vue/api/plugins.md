@@ -10,8 +10,9 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 | Data labels | `chartjs-plugin-datalabels` | Renders a label directly on each data element | `dataLabels` | Implemented |
 | Gradient | locally ported, not a dependency | Per-dataset color gradients, keyed by axis position | `gradient` | Implemented |
 | Timestack | `chartjs-scale-timestack` | Alternative time axis, formatting time in two stacked, human-friendly rows | `timestack` | Implemented |
-| Hierarchical | `chartjs-plugin-hierarchical` | Collapsible, tree-like categorical axis | `hierarchical` | Implemented |
+| Hierarchical | locally ported, not a dependency | Collapsible, tree-like categorical axis | `hierarchical` | Implemented |
 | Image label | locally ported, not a dependency | Draws an image on each doughnut/pie slice | `imageLabel` | Implemented |
+| Autocolors | locally ported, not a dependency | Automatically assigns a distinct color per dataset (or data point) | `autocolors` | Implemented |
 
 These are chart-instance plugins, not chart types — they apply across
 whichever `type` you use them with. Each is a one-line opt-in prop on
@@ -19,8 +20,8 @@ whichever `type` you use them with. Each is a one-line opt-in prop on
 manual `Chart.register()` call in consumer code — the two still-
 dependency-based ones (`annotation`, `dataLabels`) are dynamically
 imported and registered automatically, the first time the prop is used
-(`zoom`/`gradient`/`imageLabel` are local code instead — see their own
-sections below).
+(`zoom`/`gradient`/`imageLabel`/`autocolors` are local code instead —
+see their own sections below).
 
 `zoom`/`dataLabels` accept either `true` (apply with no extra config) or a
 config object merged into `options.plugins.zoom`/`options.plugins.datalabels`
@@ -118,9 +119,10 @@ on a third-party package at all — its logic (originally
 (`src/gradientPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
 instead (the same mechanism `zoom`/`imageLabel` use). Being local code
-rather than a dynamic import also means this is one of three plugins on
-this project's docs site (alongside `zoom` and `imageLabel`) whose own
-example renders genuinely live rather than source-only.
+rather than a dynamic import also means this is one of five plugins on
+this project's docs site (alongside `zoom`, `imageLabel`, `hierarchical`,
+and `autocolors`) whose own example renders genuinely live rather than
+source-only.
 
 See the [Gradient plugin example](/vue/examples/gradient-plugin) for the
 full version, and
@@ -162,16 +164,15 @@ for its full list of documented constraints, and the
 [Timestack scale example](/vue/examples/timestack-scale) for the full
 version.
 
-## Hierarchical — another real scale, with its own real named export
+## Hierarchical — a local port, a real scale, not a Chart.js "plugin" object
 
-`hierarchical` is boolean only too, but registers differently from
-`timestack`, the other still-dependency-based scale in this file —
-confirmed directly from the real package's own README
-(github.com/sgratzl/chartjs-plugin-hierarchical): its ESM build is
-genuinely tree-shakeable with no side effects, so it needs an explicit
-`Chart.register(HierarchicalScale)` call via its own real, confirmed
-named export (unlike `timestack`'s side-effect-only import). Same
-shape otherwise — no plugin-level config to merge, used via
+`hierarchical` draws on a local port of `chartjs-plugin-hierarchical`.
+Like `gradient`/`imageLabel`, it isn't a dependency on a third-party
+package at all — its logic (a real `CategoryScale` subclass plus a
+companion drawing/interaction plugin, dissected from the original
+package's own real TypeScript source) is ported directly into
+`keystone-chartjs-core` (`src/hierarchicalScale.ts`). Boolean only, like
+`gradient`/`timestack` — no plugin-level config to merge, used via
 `options.scales.<id>.type = 'hierarchical'`:
 
 ```vue
@@ -186,11 +187,29 @@ shape otherwise — no plugin-level config to merge, used via
 />
 ```
 
+**No external runtime dependency, unlike `timestack`**: confirmed
+directly from the real package's own `package.json`
+(`peerDependencies: { "chart.js": "^4.1.0" }`, nothing else) — this
+port is fully self-contained, the same "zero extra dependency weight"
+outcome `zoom`/`gradient`/`imageLabel` already have. `Chart.register(
+HierarchicalScale)` alone registers both the scale and its own
+companion drawing/interaction plugin — the scale's own real, static
+`afterRegister()` hook registers the plugin automatically, no separate
+call needed.
+
 **Real, distinct tree-node data shape**: `data.labels`/`dataset.data`
-need this scale's own `ILabelNode`/`IValueNode` tree structure
-(`{ label, children }` / `{ value, children }`), not the flat arrays
-every other kind or plugin in this project accepts — confirmed directly
-from the real package's own type declarations. See the
+need this scale's own tree structure (`{ label, children }` /
+`{ value, children }`), not the flat arrays every other kind or plugin
+in this project accepts — confirmed directly from the real package's
+own type declarations, dissected into this project's own
+`HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
+`keystone-chartjs-core`). Being local code rather than a dynamic import
+also means this is one of five plugins/scales on this project's docs
+site (alongside `zoom`, `gradient`, `imageLabel`, and `autocolors`)
+whose own example renders genuinely live rather than source-only —
+click a category's own box below the axis to expand/collapse it, or
+the small dot on a fully-expanded group to zoom in/out, right on the
+example page. See the
 [Hierarchical scale example](/vue/examples/hierarchical-scale) for the
 full version.
 
@@ -227,12 +246,65 @@ from raw values. See the
 [Image label plugin example](/vue/examples/image-label-plugin) for the
 full version.
 
+## Autocolors — a local port, not a dependency, config lives in options.plugins
+
+`autocolors` draws on a local port of `chartjs-plugin-autocolors` (by
+Jukka Kurkela, the same maintainer already behind `gradient`/`zoom`
+before those two were also ported). Genuinely different registration
+shape from every other plugin above: it both registers via a real,
+synchronous `Chart.register(...)` call (matching `hierarchical`'s own
+mechanism) AND has real plugin-level config of its own to merge into
+`options.plugins.autocolors` (matching `dataLabels`'s own config-
+merging shape) — `hierarchical` has no config to merge (a scale, not a
+plugin with options), and `dataLabels` is still a real npm dependency
+needing an async dynamic import to register.
+
+```vue
+<Chart
+  type="line"
+  autocolors
+  :data="{
+    datasets: [
+      { label: 'Product A', data: [12, 19, 8, 15] },
+      { label: 'Product B', data: [8, 14, 20, 11] },
+    ],
+  }"
+/>
+```
+
+Accepts either `true` (apply with the real defaults — `'dataset'` mode)
+or a config object merged into `options.plugins.autocolors`:
+`mode` (`'dataset'` default, `'data'`, or `'label'` — `'dataset'` mode
+doesn't work properly for doughnut/pie charts, where `'data'` mode is
+the real package's own documented recommendation instead), `offset`/
+`repeat` (both real numbers), and `customize` (a function receiving the
+generated `{background, border}` colors plus context, returning a
+replacement pair).
+
+**Zero extra dependency weight, unlike `timestack`**: the original
+package's own real logic imports two small color-conversion utility
+functions (`hsv2rgb`, `rgbString`) from a separate package,
+`@kurkle/color` — a real, declared peer dependency of the original, not
+bundled into its own `dist` output. Rather than adding that package as a
+new dependency of this project, this port reimplements those two small,
+standard color-space-conversion functions locally (one universally
+agreed-upon definition, not any bespoke logic of the plugin's own)
+while carrying over every real piece of the plugin's own actual color-
+*selection* logic (the hue-stepping generator, mode branching, the
+"don't overwrite an already-set color" merge behavior) unchanged. Being
+local code rather than a dynamic import also means this is one of five
+plugins/scales on this project's docs site (alongside `zoom`,
+`gradient`, `hierarchical`, and `imageLabel`) whose own example renders
+genuinely live rather than source-only. See the
+[Autocolors plugin example](/vue/examples/autocolors-plugin) for the
+full version.
+
 ## Custom, inline plugins
 
 Chart.js's own `ChartConfiguration.plugins` field — inline, per-chart-instance
-custom plugin objects, distinct from these 7 officially-supported plugins —
+custom plugin objects, distinct from these 8 officially-supported plugins —
 is also implemented, via the `plugins` prop. Use it for any custom plugin
-you write yourself, or any community plugin outside the 7 above. See
+you write yourself, or any community plugin outside the 8 above. See
 [Props → Custom, inline plugins](/vue/components/props#custom-inline-plugins)
 for the full guide, including a real update-behavior difference worth
 knowing (a `plugins` change forces a destroy-and-reconstruct, unlike

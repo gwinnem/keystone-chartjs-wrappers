@@ -1,0 +1,34 @@
+---
+title: Matrix chart
+description: An ecosystem extension kind — chartjs-chart-matrix, registered lazily on first use.
+---
+import MatrixSource from '../../../../components/examples/matrix-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`matrix` is one of the 7 ecosystem extensions, not a Chart.js built-in —
+the real `chartjs-chart-matrix` package is dynamically imported and
+registered the first time any `<Chart type="matrix">` mounts, not
+eagerly bundled for every consumer regardless of whether they use it.
+
+:::caution[Not yet live-embedded on this docs site]
+This example isn't hydrated on this page yet — this docs site resolves
+`keystone-chartjs-core` from this monorepo's own workspace source, not a
+published package, and the dynamic import that lazily registers
+extension kinds like `matrix` doesn't currently resolve correctly
+across that boundary in Vite's dev server. The code below is real and
+correct — confirmed working end-to-end in this package's own Playwright
+e2e suite (`packages/vue/tests/e2e/matrix-chart.spec.ts`) — this is a
+docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
+itself. Expected to resolve once this package is built/published for
+real (Phase 7).
+:::
+
+<ExampleTryIt code={MatrixSource} filename="matrix-chart.vue" live={false} />
+
+:::tip[Data shape is `{x, y, v}` per cell]
+This is `chartjs-chart-matrix`'s own real data-point shape, not
+something `keystone-chartjs-vue` reinterprets — `v` drives both color
+and, via each dataset's own scriptable `width`/`height` functions, cell
+size. See [Chart kinds](/vue/api/chart-kinds/) for the full list of
+extension kinds and which package backs each one.
+:::

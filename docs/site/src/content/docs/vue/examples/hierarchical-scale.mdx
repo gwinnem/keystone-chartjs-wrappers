@@ -1,37 +1,41 @@
 ---
 title: Hierarchical scale
-description: chartjs-plugin-hierarchical, registered via the hierarchical prop, mimicking a collapsible tree axis.
+description: A local port of chartjs-plugin-hierarchical, registered via the hierarchical prop, a real collapsible/zoomable tree axis.
 ---
+import HierarchicalScale from '../../../../components/examples/hierarchical-scale.vue';
 import HierarchicalScaleSource from '../../../../components/examples/hierarchical-scale.vue?raw';
 import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
 
-The `hierarchical` prop opts into the real `chartjs-plugin-hierarchical`
-package, registered on first use — like `gradient`/`timestack`, it's
-boolean only: it registers a real, distinct `hierarchical` **scale**
-(not a Chart.js "plugin" object) via its own confirmed named export
-(`HierarchicalScale`), with no plugin-level config of its own to merge
-here either. Use it by setting
+The `hierarchical` prop draws on a local port of
+`chartjs-plugin-hierarchical`. Like [gradient](/vue/examples/gradient-plugin)
+and [image label](/vue/examples/image-label-plugin), it isn't a
+dependency on a third-party package at all — its logic is ported
+directly into `keystone-chartjs-core`
+(`src/hierarchicalScale.ts`). Boolean only, like `gradient`/`timestack`:
+it registers a real, distinct `hierarchical` **scale** (not a Chart.js
+"plugin" object) via this project's own `HierarchicalScale`, with no
+plugin-level config of its own to merge here either. Use it by setting
 `options.scales.<id>.type = 'hierarchical'`, which already reaches
 Chart.js untouched via the existing `options` prop.
 
-:::caution[Not yet live-embedded on this docs site]
-This example isn't hydrated on this page yet — same known gap as the
-[Zoom plugin](/vue/examples/zoom-plugin),
-[Gradient plugin](/vue/examples/gradient-plugin), and
-[Timestack scale](/vue/examples/timestack-scale) examples: this docs
-site resolves `keystone-chartjs-core` from this monorepo's own
-workspace source, not a published package, and the dynamic import that
-lazily registers plugins/scales like `chartjs-plugin-hierarchical`
-doesn't currently resolve correctly across that boundary in Vite's dev
-server. The code below is real and correct — confirmed working
-end-to-end in this package's own Playwright e2e suite
-(`packages/vue/tests/e2e/hierarchical-scale.spec.ts`) — this is a
-docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
-itself. Expected to resolve once this package is built/published for
-real (Phase 7).
+:::note[No external runtime dependency, unlike Timestack]
+Unlike [Timestack](/vue/examples/timestack-scale) (which has a real,
+hard `luxon` dependency for locale-aware time formatting), this scale
+has zero runtime dependencies of its own — confirmed directly from the
+real package's own `package.json` (only a `chart.js` peer dependency).
+This port is therefore fully self-contained, the same outcome
+`zoom`/`gradient`/`image label` already have.
 :::
 
-<ExampleTryIt code={HierarchicalScaleSource} filename="hierarchical-scale.vue" live={false} />
+Being local code rather than a dynamic import also means this example is
+genuinely live on this docs site, unlike the
+[Timestack scale](/vue/examples/timestack-scale) example, which still
+hits a docs-site build-pipeline gap around dynamic imports (its own real
+`luxon` dependency currently can't be resolved the same way).
+
+<ExampleTryIt code={HierarchicalScaleSource} filename="hierarchical-scale.vue" live={true}>
+  <HierarchicalScale client:visible />
+</ExampleTryIt>
 
 :::tip[A real, distinct tree-node data shape]
 ```js
@@ -45,7 +49,17 @@ dataset.data = [
 `label`/`children` on the labels side, `value`/`children` on the data
 side — a real, distinct shape from the flat arrays every other kind or
 plugin in this library accepts, confirmed directly from the real
-package's own type declarations
-(`ILabelNode`/`IValueNode`). See
+package's own type declarations, dissected into this project's own
+`HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
+`keystone-chartjs-core`). See
 [Plugins](/vue/api/plugins) for the full prop reference.
+:::
+
+:::tip[Click to explore the tree]
+Click a collapsed category's own box below the axis to expand it, click
+an expanded group's own box to collapse it back, or click the small dot
+on a fully-expanded group to zoom in on just that branch — click again
+on the zoomed-in view to zoom back out. All of this is real,
+interactive `chart.data` mutation handled by this scale's own companion
+plugin, not a separate example-only script.
 :::

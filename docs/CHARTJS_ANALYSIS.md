@@ -79,7 +79,10 @@ under `options.plugins.<id>`), not chart *types* — they apply across whichever
 kinds the consumer uses them with. The wrapper's job is to (a) make registering
 them a one-line opt-in per framework, and (b) surface typed `options.plugins.*`
 shapes for each, rather than leaving consumers to hand-type against the plugins'
-own (often looser) option interfaces.
+own (often looser) option interfaces. Five more were added after v1
+kickoff (`gradient`/`timestack`/`hierarchical`/`image-label`/
+`autocolors` — see their own sections below), bringing the real total
+this project ships to 8.
 
 ### Zoom/pan — later locally ported, not a dependency
 
@@ -213,11 +216,12 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — one of three of this project's
-plugins/scales (alongside `imageLabel` and, later, `zoom`) that renders
-live on the docs site rather than source-only, for the identical reason:
-local, static code has no dynamic `import()` for the docs-site hydration
-gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+varying by each bar's own height — one of five of this project's
+plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`, and
+`autocolors`) that renders live on the docs site rather than
+source-only, for the identical reason: local, static code has no
+dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 ### Added after v1 kickoff: Timestack
 
@@ -251,9 +255,9 @@ dependency-weight cost, but not the same maintenance-risk concern
 already flagged for `chartjs-plugin-zoom`'s own Hammer.js dependency in
 §6 below.
 
-### Added after v1 kickoff: Hierarchical
+### Added after v1 kickoff: Hierarchical (later locally ported, not a dependency)
 
-| Plugin | Package | Confirmed version | Purpose |
+| Plugin | Package surveyed | Confirmed version at time of dissection | Purpose |
 |---|---|---|---|
 | Hierarchical | `chartjs-plugin-hierarchical` | `^4.4.5` | Collapsible, tree-like categorical axis. |
 
@@ -266,21 +270,91 @@ actively maintained fork of the now-archived `chartjs-scale-hierarchical`
 (that original package's own npm listing states "Package no longer
 supported... There is an active fork" pointing to this exact package).
 
-**A third, distinct registration shape**: confirmed directly from the
-real package's own README (github.com/sgratzl/chartjs-plugin-
-hierarchical) — its ESM build is genuinely tree-shakeable with no side
-effects, so it needs `import { HierarchicalScale } from 'chartjs-
-plugin-hierarchical'; Chart.register(HierarchicalScale);` — a real
-named export requiring an explicit `Chart.register(...)` call, unlike
-`gradient`'s default export or `timestack`'s side-effect-only import.
-The `hierarchical` opt-in prop is still boolean-only like the other
-two, though, since it has no plugin-level config of its own either.
+**Later ported directly into `packages/core/src/hierarchicalScale.ts`, at
+your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-plugin-
+gradient`/`chartjs-plugin-image-label` were** — it is not, and is no longer,
+a real npm dependency of this project. **Real, confirmed finding that made
+this port simpler than `timestack`'s own**: unlike `chartjs-scale-
+timestack` (a hard, real `luxon` dependency), this package has zero
+runtime dependencies of its own, confirmed directly from its own
+`package.json` (`peerDependencies: { "chart.js": "^4.1.0" }`, nothing
+else) — fully self-contained, the same "zero extra dependency weight"
+outcome `zoom`/`gradient`/`imageLabel` already have.
+
+**Two things bundled into one package, ported here as one cohesive
+file**: a real `CategoryScale` subclass (`HierarchicalScale`, its own
+custom pixel/value mapping so nested tree levels get progressively
+tighter spacing) plus a companion drawing/interaction plugin, dissected
+directly from the installed package's own real TypeScript source
+(`node_modules/chartjs-plugin-hierarchical/src/{model,utils}.ts` and
+`src/{scale,plugin}/hierarchical.ts`, not the minified/bundled build
+output — the package ships its own real `.ts` sources). `Chart.register(
+HierarchicalScale)` alone registers both: the scale's own real, static
+`afterRegister()` hook calls `registry.addPlugins(hierarchicalPlugin)`
+itself, matching the original's own identical registration mechanism
+exactly, just called directly and synchronously now instead of after a
+dynamic `import()`.
+
+**A real, discovered gap in the original package's own design, not
+introduced by this port**: the companion plugin draws its own
+expand/collapse/focus indicator boxes directly below (or beside) the
+axis's own real edge, but never participates in Chart.js's own layout/
+padding calculation to reserve space for them — confirmed via a live,
+reproduced issue: without a consumer manually adding enough
+`layout.padding` themselves, those indicator boxes are drawn past the
+canvas's own visible edge entirely, invisible and unclickable. An
+attempt at fixing this port-side (a `fit()` override on the scale
+reserving its own extra space automatically) was tried and reverted: a
+live, reproduced regression showed Chart.js's own real, iterative
+layout pass calling `fit()` more than once per render, each call adding
+the same extra amount again on top of the last and collapsing the real
+plot area to near-zero height. Documented as a known, necessary
+consumer-side addition instead (see the
+[Hierarchical scale example](/vue/examples/hierarchical-scale)'s own
+`layout.padding.bottom`), matching the original's own real, identical
+behavior — not a regression this port introduced.
+
+**A real, deliberate type-system improvement over the original's own
+consumer-facing experience**: this project's own `timestack-scale.vue`
+docs example needs an `as unknown as ChartConfiguration['options']`
+cast to write `type: 'timestack'`, since that third-party package's own
+module augmentation is never statically imported anywhere in that
+file's own compile graph (only a dynamic `import()` at runtime). Because
+`hierarchicalScale.ts` is statically imported by every real consumer of
+`keystone-chartjs-core` already, its own identical `declare module
+'chart.js'` augmentation (`CartesianScaleTypeRegistry`,
+`ControllerDatasetOptions.tree`) is picked up automatically — no cast
+needed to write `options.scales.x.type = 'hierarchical'` in the docs
+example.
 
 **Real, distinct tree-node data shape**: confirmed directly from the
-real package's own type declarations — `data.labels`/`dataset.data`
-need this scale's own `ILabelNode`/`IValueNode` tree structure
-(`{ label, children }` / `{ value, children }`), not the flat arrays
-every other kind or plugin in this project accepts.
+real package's own type declarations, dissected into this project's own
+`HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
+`keystone-chartjs-core`) — `data.labels`/`dataset.data` need this tree
+structure (`{ label, children }` / `{ value, children }`), not the flat
+arrays every other kind or plugin in this project accepts.
+
+**Confirmed live in a real browser after the port**, including the real
+click-to-expand/collapse/zoom-in/zoom-out interaction — one of five of
+this project's plugins/scales (alongside `zoom`, `gradient`,
+`imageLabel`, and `autocolors`) that renders live on the docs site
+rather than source-only, for the identical reason: local, static code
+has no dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
+
+**Comprehensive unit test coverage**: grew to 87 dedicated tests across
+several rounds (55 from the initial port, then a coverage-hardening
+pass) covering the tree-flattening/visibility/span-logic utilities as
+pure functions, the scale's own tick/pixel-mapping methods, and the
+companion plugin's own beforeUpdate/beforeDatasetsDraw/beforeEvent
+hooks (collapse/expand/zoom-in/zoom-out round trips, vertical-axis
+rendering, static mode, attribute inheritance, and several genuinely
+subtle span-logic combinations) — confirmed via a real `test:coverage`
+run, not assumed: 98.2% statements/lines, 90.93% branches, 98%
+functions on this file specifically, clearing the project's own 90%
+per-file floor on every metric (every other core file sits at a clean
+100%, aside from `zoomPlugin.ts`'s own pre-existing 98.41% branch
+figure).
 
 ### Added after v1 kickoff: Image label (locally ported, not a dependency)
 
@@ -318,9 +392,9 @@ to resolve when the importing file is served from outside the docs
 site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this, `gradient`, and, later, `zoom` are the only three of the
-seven plugin/scale examples on the docs site that render live rather
-than source-only.
+assumed: this, `gradient`, `zoom`, `hierarchical`, and, later,
+`autocolors` are five of the eight plugin/scale examples on the docs
+site that render live rather than source-only.
 
 **Genuinely distinct registration shape, same as `withGradient`’s and
 `withZoom`’s own local ports — different from `withTimestack`/
@@ -333,6 +407,85 @@ via Chart.js's own real inline `plugins` array (the same mechanism this
 project's own `plugins` prop already exposes for custom/community
 plugins). `imagesList` is required — no plain-boolean opt-in form,
 matching `annotation`'s own reasoning. Doughnut/pie charts only.
+
+### Added after v1 kickoff: Autocolors (later locally ported, not a dependency)
+
+| Plugin | Package surveyed | Confirmed version at time of dissection | Purpose |
+|---|---|---|---|
+| Autocolors | `chartjs-plugin-autocolors` | `0.3.1` | Automatically assigns a distinct generated color to each dataset (or data point) that doesn't already have one set. |
+
+Also added later, at your explicit request, after being surveyed in
+`docs/CHARTJS_AWESOME_PLUGINS.md`. Verified the same way: current
+version (0.3.1), MIT license, by Jukka Kurkela — the same maintainer
+already behind `gradient`/`zoom` (before those two were also ported)
+and 3 of the 5 chart-type extensions in §3 above. Confirmed real
+Chart.js v4 compatibility directly from the real package's own README
+("This plugin requires Chart.js 3.0.0 or later"), unlike `colorschemes`/
+`style` — two other "Styling" candidates surveyed in the same document,
+both confirmed genuinely Chart.js-v2-era with no verified v4-compatible
+official release (`chartjs-plugin-colorschemes`'s own real, installed
+`package.json` pins `peerDependencies: { "chart.js": ">= 2.5.0 < 3" }`
+directly), so neither was implemented alongside this one.
+
+**Later ported directly into `packages/core/src/autocolorsPlugin.ts`,
+at your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
+plugin-gradient`/`chartjs-plugin-image-label` were** — it is not, and is
+no longer, a real npm dependency of this project. **A real, genuine
+dependency the original itself needs, unlike every other plugin ported
+so far**: the original's own real logic imports two small color-
+conversion utility functions (`hsv2rgb`, `rgbString`) from a separate
+package, `@kurkle/color` — a real, declared `peerDependency` of the
+original (confirmed directly from its own installed `package.json`),
+not bundled into its own dist output at all. Chart.js itself already
+depends on this exact package for its own internal color handling
+(confirmed directly from `chart.js`'s own real `package.json`:
+`"@kurkle/color": "^0.3.0"`), so it's already present in `node_modules`
+for any real consumer of this project regardless — but deliberately
+NOT imported directly here anyway, since doing so would mean importing
+an undeclared transitive dependency, a real, confirmed fragile pattern
+under pnpm's own strict, non-flat `node_modules` layout this monorepo
+already uses (see `stryker.config.mjs`'s own comment on an identical
+class of pnpm-specific resolution gap). Instead, both small functions
+are reimplemented locally: both are textbook, standard color-space-
+conversion algorithms with one universally agreed-upon definition, not
+any bespoke logic of the plugin's own — confirmed by directly comparing
+this port's own output against the real `@kurkle/color` package's own
+installed source for the same inputs before removing that package as a
+dependency again. Every real piece of the plugin's own actual color-
+*selection* logic (the golden-ratio-style hue-stepping generator, the
+`dataset`/`data`/`label` mode branching, the "don't overwrite an
+already-set color" merge behavior, `customize`/`offset`/`repeat`
+config handling) is carried over unchanged, dissected directly from the
+real, installed dist output (the package ships no real `src/` in its
+published files, only `dist/*` — the same "dissected from the installed
+dist output" situation `gradient`/`imageLabel` were each in, not
+`zoom`'s/`hierarchical`'s own real `src/` access).
+
+**Genuinely distinct registration shape from every other local port so
+far**: the only one that both (a) registers directly via a real,
+synchronous `Chart.register(...)` call (matching `withHierarchical`'s
+own mechanism) AND (b) has real plugin-level config of its own to merge
+into `options.plugins.autocolors` (matching `withAnnotation`/
+`withDataLabels`'s own config-merging shape) — `withHierarchical` has
+no config to merge (a scale, not a plugin with options), and
+`withAnnotation`/`withDataLabels` are still real npm dependencies
+needing an async dynamic import to register.
+
+**Confirmed live in a real browser after the port**: three datasets on
+a line chart, each automatically assigned a distinct, generated color
+with no `backgroundColor`/`borderColor` set on any of them — one of
+five of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, and `imageLabel`) that renders live on the docs site
+rather than source-only, for the identical reason: local, static code
+has no dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
+
+**Comprehensive unit test coverage**: a new, dedicated
+`tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
+`'data'`/`'label'` mode, the "don't overwrite an already-set color"
+merge behavior, `offset`/`repeat`/`customize` config handling, and the
+real, distinct rgba color format each generated color produces —
+confirmed via a real `test:unit` run, not assumed.
 
 ## 5. What's explicitly out of scope for v1
 

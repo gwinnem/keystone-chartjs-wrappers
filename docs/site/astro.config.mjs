@@ -114,6 +114,7 @@ export default defineConfig({
                 { label: 'Installation', slug: 'vue/guide/installation' },
                 {
                   label: 'Concepts',
+                  collapsed: false,
                   items: [
                     { label: 'Data structures', slug: 'vue/guide/concepts/data-structures' },
                     { label: 'Options resolution', slug: 'vue/guide/concepts/options-resolution' },
@@ -126,6 +127,7 @@ export default defineConfig({
                 },
                 {
                   label: 'Project',
+                  collapsed: false,
                   items: [
                     { label: 'Architecture', slug: 'vue/guide/project/architecture' },
                     { label: 'Testing philosophy', slug: 'vue/guide/project/testing' },
@@ -155,10 +157,12 @@ export default defineConfig({
             },
             {
               label: 'Examples',
+              collapsed: true,
               items: [
                 { label: 'Gallery', slug: 'vue/examples' },
                 {
                   label: 'Chart types',
+                  collapsed: true,
                   items: [
                     { label: 'Bar chart', slug: 'vue/examples/bar-chart' },
                     { label: 'Horizontal bar chart', slug: 'vue/examples/horizontal-bar-chart' },
@@ -169,29 +173,48 @@ export default defineConfig({
                     { label: 'Pie chart', slug: 'vue/examples/pie-chart' },
                     { label: 'Polar area chart', slug: 'vue/examples/polar-area-chart' },
                     { label: 'Radar chart', slug: 'vue/examples/radar-chart' },
+                  ],
+                },
+                {
+                  label: 'Extension chart types',
+                  collapsed: true,
+                  items: [
+                    { label: 'Candlestick chart', slug: 'vue/examples/candlestick-chart' },
+                    { label: 'OHLC chart', slug: 'vue/examples/ohlc-chart' },
+                    { label: 'Box plot chart', slug: 'vue/examples/boxplot-chart' },
+                    { label: 'Violin chart', slug: 'vue/examples/violin-chart' },
+                    { label: 'Matrix chart', slug: 'vue/examples/matrix-chart' },
                     { label: 'Sankey chart', slug: 'vue/examples/sankey' },
+                    { label: 'Treemap chart', slug: 'vue/examples/treemap-chart' },
                   ],
                 },
                 {
                   label: 'Composition',
+                  collapsed: true,
                   items: [
                     { label: 'Mixed chart', slug: 'vue/examples/mixed-chart' },
                     { label: 'Multiple axes', slug: 'vue/examples/multi-axis' },
                   ],
                 },
                 {
-                  label: 'Plugins',
+                  label: 'Official plugins',
+                  collapsed: true,
                   items: [
+                    { label: 'Overview', slug: 'vue/examples/official-plugins' },
                     { label: 'Colors plugin', slug: 'vue/examples/colors-plugin' },
                     { label: 'Zoom plugin', slug: 'vue/examples/zoom-plugin' },
+                    { label: 'Annotation plugin', slug: 'vue/examples/annotation-plugin' },
+                    { label: 'Data labels plugin', slug: 'vue/examples/data-labels-plugin' },
                     { label: 'Gradient plugin', slug: 'vue/examples/gradient-plugin' },
                     { label: 'Timestack scale', slug: 'vue/examples/timestack-scale' },
                     { label: 'Hierarchical scale', slug: 'vue/examples/hierarchical-scale' },
                     { label: 'Image label plugin', slug: 'vue/examples/image-label-plugin' },
+                    { label: 'Autocolors plugin', slug: 'vue/examples/autocolors-plugin' },
                   ],
                 },
                 {
                   label: 'Interactivity',
+                  collapsed: true,
                   items: [
                     { label: 'Chart events', slug: 'vue/examples/chart-events' },
                   ],

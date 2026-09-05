@@ -18,22 +18,25 @@ it applies to this package specifically.
   ecosystem bug forced this switch — not a local config choice).
 - **Phase 1 — Core engine** (`keystone-chartjs-core`) — chart lifecycle
   (construct, diffed update, destroy), lazy chart-kind registration, the
-  six official-plugin helpers, resize handling, the theme
-  re-application hook, and inline-plugin support. 62 unit tests, 100%
-  coverage on every metric, 93.55% mutation score overall (`plugins.ts`
-  alone: 88.14%, with 7 accepted survivors, all one root cause — see
-  that file's own doc comment on `withTimestack` for the full
-  explanation; `controller.ts`/`registry.ts` both unaffected, at
-  98.08%/100% respectively).
+  eight official-plugin helpers, resize handling, the theme
+  re-application hook, and inline-plugin support. 409 unit tests. 100%
+  coverage on every metric except one file: `hierarchicalScale.ts` sits
+  at 98.2% statements/lines, 90.93% branches, 98% functions (every
+  other core file is a clean 100%) — every file individually clears
+  the project's own 90% floor on every metric. 93.55% mutation score
+  overall (`plugins.ts` alone: 88.14%, with 7 accepted survivors, all
+  one root cause — see that file's own doc comment on `withTimestack`
+  for the full explanation; `controller.ts`/`registry.ts` both
+  unaffected, at 98.08%/100% respectively).
 - **Phase 2 — This package** — the real `<Chart>` component: all 15 chart
-  kinds, all 6 official plugins as opt-in props, reactive updates
+  kinds, all 8 official plugins as opt-in props, reactive updates
   (diffed on top-level `type` and the `plugins` array's own reference,
   not a blanket destroy/recreate), automatic resize, an exposed
   chart-instance ref, and mixed-chart support (see
-  [Mixed charts](/vue/guide/concepts/mixed-charts)). 40 unit/component
-  tests, 100% coverage, 97.73% mutation score. End-to-end: **69/69
+  [Mixed charts](/vue/guide/concepts/mixed-charts)). 46 unit/component
+  tests, 100% coverage, 97.73% mutation score. End-to-end: **78/78
   passing** across Chromium/Firefox/WebKit — every one of the 15 chart
-  kinds, all 6 plugins, and resize behavior render/behave correctly on
+  kinds, all 8 plugins, and resize behavior render/behave correctly on
   every browser. (An earlier state of this suite sat at 51/57, with 6
   extension kinds failing for a fully diagnosed reason — a
   variable-specifier dynamic import in `registry.ts`'s own
@@ -47,7 +50,7 @@ it applies to this package specifically.
   for real fallback content (also confirmed via a dedicated test). See
   [Accessibility](/vue/guide/concepts/accessibility) for the full guide.
 - **Inline, custom Chart.js plugins** — Chart.js's own
-  `ChartConfiguration.plugins` field, distinct from this package's 6
+  `ChartConfiguration.plugins` field, distinct from this package's 8
   official opt-in props, via a `plugins` prop. Unlike `data`/`options`,
   a changed `plugins` reference forces a destroy-and-reconstruct, since
   Chart.js only reads this field at construction time. See
@@ -65,13 +68,31 @@ it applies to this package specifically.
   (`packages/vue/tests/e2e/timestack-scale.spec.ts`). See
   [API → Plugins](/vue/api/plugins) for the full guide, including the
   real, hard dependency on Luxon worth knowing about.
-- **Hierarchical scale** — `chartjs-plugin-hierarchical`, via a
-  boolean-only `hierarchical` prop — a third, distinct registration
-  shape (a real named export, `HierarchicalScale`, with an explicit
-  `Chart.register(...)` call). Requires data in this scale's own real
-  tree-node shape (`ILabelNode`/`IValueNode`), not the flat arrays every
-  other kind/plugin accepts. Confirmed via a real e2e test
-  (`packages/vue/tests/e2e/hierarchical-scale.spec.ts`). See
+- **Hierarchical scale** — later ported directly into
+  `keystone-chartjs-core` (no longer a real npm dependency), via a
+  boolean-only `hierarchical` prop. Requires data in this scale's own
+  real tree-node shape (`HierarchicalRawLabelNode`/`HierarchicalValueNode`),
+  not the flat arrays every other kind/plugin accepts. Confirmed via a
+  real e2e test (`packages/vue/tests/e2e/hierarchical-scale.spec.ts`),
+  including a real click-to-expand/collapse/zoom-in/zoom-out
+  interaction. See [API → Plugins](/vue/api/plugins) for the full guide.
+- **Image label plugin** — later ported directly into
+  `keystone-chartjs-core` (no longer a real npm dependency), via a
+  required-config-object `imageLabel` prop (no plain-boolean form,
+  since `imagesList` has no sensible empty default). Fixed two real
+  bugs found in the original along the way. Confirmed via a real e2e
+  test (`packages/vue/tests/e2e/image-label-plugin.spec.ts`). See
+  [API → Plugins](/vue/api/plugins) for the full guide.
+- **Autocolors plugin** — later ported directly into
+  `keystone-chartjs-core` (no longer a real npm dependency), via a
+  boolean-or-config-object `autocolors` prop (same shape as
+  `dataLabels`). Genuinely distinct registration shape from every other
+  local port: registers via a real, synchronous `Chart.register(...)`
+  call (matching `hierarchical`'s own mechanism) AND has real
+  plugin-level config of its own to merge into
+  `options.plugins.autocolors` (matching `dataLabels`'s own
+  config-merging shape). Confirmed via a real e2e test
+  (`packages/vue/tests/e2e/autocolors-plugin.spec.ts`). See
   [API → Plugins](/vue/api/plugins) for the full guide.
 
 ## Open, real gaps (not just "not started yet")

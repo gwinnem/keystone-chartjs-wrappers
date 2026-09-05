@@ -38,13 +38,16 @@ standalone — it is bundled into each framework package's own dist output.
   per-type component imports.
 - **15 chart kinds out of the box** — all 8 Chart.js built-ins plus
   candlestick, ohlc, boxplot, violin, matrix, sankey, and treemap.
-- **6 official plugins** — zoom/pan, annotation, data labels, gradient,
-  timestack (an alternative time scale), and hierarchical (a
-  collapsible tree-like scale), each an opt-in prop (`zoom`,
-  `annotation`, `dataLabels`, `gradient`, `timestack`, `hierarchical`).
+- **8 official plugins** — zoom/pan, annotation, data labels, gradient,
+  timestack (an alternative time scale), hierarchical (a
+  collapsible tree-like scale), image label (draws an image on each
+  doughnut/pie slice), and autocolors (automatically assigns a distinct
+  color per dataset), each an opt-in prop (`zoom`, `annotation`,
+  `dataLabels`, `gradient`, `timestack`, `hierarchical`, `imageLabel`,
+  `autocolors`).
 - **Custom, inline plugins** — Chart.js's own `ChartConfiguration.plugins`
   field is fully supported via a `plugins` prop, for any plugin outside the
-  6 official ones above.
+  8 official ones above.
 - **Zero manual registration** — built-ins are registered eagerly; extension
   kinds and plugins are registered lazily, automatically, on first use.
   You never call `Chart.register(...)` yourself.

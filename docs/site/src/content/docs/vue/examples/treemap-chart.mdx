@@ -1,0 +1,35 @@
+---
+title: Treemap chart
+description: An ecosystem extension kind — chartjs-chart-treemap, registered lazily on first use.
+---
+import TreemapSource from '../../../../components/examples/treemap-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+`treemap` is one of the 7 ecosystem extensions, not a Chart.js built-in —
+the real `chartjs-chart-treemap` package is dynamically imported and
+registered the first time any `<Chart type="treemap">` mounts, not
+eagerly bundled for every consumer regardless of whether they use it.
+
+:::caution[Not yet live-embedded on this docs site]
+This example isn't hydrated on this page yet — this docs site resolves
+`keystone-chartjs-core` from this monorepo's own workspace source, not a
+published package, and the dynamic import that lazily registers
+extension kinds like `treemap` doesn't currently resolve correctly
+across that boundary in Vite's dev server. The code below is real and
+correct — confirmed working end-to-end in this package's own Playwright
+e2e suite (`packages/vue/tests/e2e/treemap-chart.spec.ts`) — this is a
+docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
+itself. Expected to resolve once this package is built/published for
+real (Phase 7).
+:::
+
+<ExampleTryIt code={TreemapSource} filename="treemap-chart.vue" live={false} />
+
+:::tip[Data shape is a flat `number[]`, for the simplest case]
+No `tree`/`key`/`groups` needed at all for a single-level treemap like
+this one — `chartjs-chart-treemap` also supports pre-grouped hierarchical
+data, but a flat array of numbers alongside a matching `labels` array is
+its own simplest supported shape. See
+[Chart kinds](/vue/api/chart-kinds/) for the full list of extension
+kinds and which package backs each one.
+:::

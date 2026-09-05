@@ -34,6 +34,7 @@
     "time-scale",
     "hierarchical",
     "image-label",
+    "autocolors",
     "framework-agnostic",
     "monorepo"
   ],
@@ -73,8 +74,7 @@
     "chartjs-plugin-annotation": "^3.1.0",
     "chartjs-plugin-datalabels": "^2.2.0",
     "chartjs-scale-timestack": "^1.0.1",
-    "luxon": "^3.7.2",
-    "chartjs-plugin-hierarchical": "^4.4.5"
+    "luxon": "^3.7.2"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^8.7.1",

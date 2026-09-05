@@ -80,6 +80,8 @@ const options = { responsive: true };
 | `gradient` | `boolean` | — | Opt in to chartjs-plugin-gradient (config lives on each dataset) |
 | `timestack` | `boolean` | — | Opt in to chartjs-scale-timestack (alternative time axis) |
 | `hierarchical` | `boolean` | — | Opt in to chartjs-plugin-hierarchical (collapsible tree axis) |
+| `imageLabel` | `ImageLabelPluginOptions` | — | Opt in to chartjs-plugin-image-label (draws an image on each doughnut/pie slice) |
+| `autocolors` | `AutocolorsPluginOptions \| boolean` | — | Opt in to chartjs-plugin-autocolors (automatically assigns a distinct color per dataset) |
 | `plugins` | `ChartConfiguration['plugins']` | — | Inline, custom Chart.js plugin objects |
 
 Any attribute that isn't a declared prop (including `aria-label`, `role`,
@@ -132,7 +134,13 @@ const chartRef = ref<InstanceType<typeof Chart> | null>(null);
 <!-- Hierarchical (boolean only — requires this scale's own tree-node data shape) -->
 <Chart type="bar" hierarchical :data="{ labels: [{ label: '2024', children: ['Q1', 'Q2'] }], datasets: [{ data: [{ value: 100, children: [40, 60] }] }] }" :options="{ scales: { x: { type: 'hierarchical' } } }" />
 
-<!-- Custom, inline plugins (any plugin outside the 6 official ones above) -->
+<!-- Image label (imagesList is required — no plain-boolean form) -->
+<Chart type="doughnut" :image-label="{ imagesList: [{ imageUrl: 'chrome.png', imageWidth: 32, imageHeight: 32 }] }" :data="data" />
+
+<!-- Autocolors (accepts true or a config object, like zoom/dataLabels) -->
+<Chart type="line" autocolors :data="data" />
+
+<!-- Custom, inline plugins (any plugin outside the 8 official ones above) -->
 <Chart type="bar" :data="data" :plugins="[customPlugin]" />
 ```
 

@@ -10,6 +10,7 @@
 import { ref } from 'vue';
 import type {
   AnnotationPluginOptions,
+  AutocolorsPluginOptions,
   ChartConfigData,
   ChartConfiguration,
   ChartKind,
@@ -70,12 +71,19 @@ const props = defineProps<{
    */
   timestack?: boolean;
   /**
-   * Opt-in to `chartjs-plugin-hierarchical` — boolean only, registering a
-   * real, distinct `hierarchical` **scale** via its own confirmed named
-   * export. Use it via `options.scales.<id>.type = 'hierarchical'`, which
-   * already reaches Chart.js untouched via the `options` prop. Requires
-   * `data.labels`/`dataset.data` in this scale's own tree-node shape
-   * (`ILabelNode`/`IValueNode`) rather than flat arrays.
+   * Opt-in to a local port of `chartjs-plugin-hierarchical` — boolean
+   * only, like `gradient`: registers a real, distinct `hierarchical`
+   * **scale** (not a Chart.js "plugin" object) via this project's own
+   * `HierarchicalScale` (see `hierarchicalScale.ts`'s own header
+   * comment for the full port rationale — unlike `chartjs-scale-
+   * timestack`, this one has zero runtime dependencies of its own),
+   * with no plugin-level config of its own to merge here either. Use
+   * it via the standard `options.scales.<id>.type = 'hierarchical'`,
+   * which already reaches Chart.js untouched via the existing
+   * `options` prop. Requires `data.labels`/`dataset.data` in this
+   * scale's own tree-node shape (`HierarchicalRawLabelNode`/
+   * `HierarchicalValueNode`) rather than flat arrays — see the docs
+   * site's own example.
    */
   hierarchical?: boolean;
   /**
@@ -91,6 +99,16 @@ const props = defineProps<{
    * only, per the real package's own docs.
    */
   imageLabel?: ImageLabelPluginOptions;
+  /**
+   * Opt-in to `chartjs-plugin-autocolors` — `true` applies it with no
+   * extra config, an object applies it with that config (`mode`,
+   * `offset`, `repeat`, `customize`). Automatically assigns a distinct
+   * color per dataset (or per data point, in `'data'`/`'label'` mode)
+   * when none is already set. Same registration shape as `dataLabels`/
+   * `annotation`: registered once via `Chart.register(...)`, its own
+   * config merged into `options.plugins.autocolors`.
+   */
+  autocolors?: AutocolorsPluginOptions | boolean;
   /**
    * Inline, per-chart-instance Chart.js plugin objects — passed straight
    * through to Chart.js's own `ChartConfiguration.plugins` field. Distinct

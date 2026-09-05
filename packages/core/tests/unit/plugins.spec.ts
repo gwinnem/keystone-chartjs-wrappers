@@ -1,12 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('chart.js', () => ({ Chart: { register: vi.fn() }, registerables: [] }));
+vi.mock('chart.js', () => ({
+  Chart: { register: vi.fn() },
+  registerables: [],
+  // hierarchicalScale.ts (statically imported via plugins.ts as of the
+  // local port) needs a real, extendable CategoryScale to subclass,
+  // plus `defaults`/`registry` for its own static afterRegister()/
+  // beforeDatasetsDraw() logic — minimal stubs are enough here, since
+  // this file's own withHierarchical tests only assert that
+  // Chart.register was called with the real HierarchicalScale class
+  // itself, not on any of CategoryScale's own real behavior.
+  CategoryScale: class CategoryScale {
+    static defaults = {};
+  },
+  defaults: { color: '#666' },
+  registry: { addPlugins: vi.fn() },
+}));
 // No mock for chartjs-plugin-zoom — it's no longer a dependency at all.
 // Its logic was ported directly into zoomPlugin.ts (a plain, local,
 // static plugin object with no dynamic import), so withZoom needs no
 // module mock the way it used to.
 vi.mock('chartjs-plugin-annotation', () => ({ default: { id: 'annotation' } }));
 vi.mock('chartjs-plugin-datalabels', () => ({ default: { id: 'datalabels' } }));
+// No mock for chartjs-plugin-autocolors — it's no longer a dependency
+// at all. Its logic was ported directly into autocolorsPlugin.ts (a
+// real, local plugin object, statically imported), so withAutocolors
+// needs no module mock the way it used to.
 // No mock for chartjs-plugin-gradient — it's no longer a dependency at
 // all. Its logic was ported directly into gradientPlugin.ts (a plain,
 // local, static plugin object with no dynamic import), so withGradient
@@ -17,7 +36,10 @@ vi.mock('chartjs-plugin-datalabels', () => ({ default: { id: 'datalabels' } }));
 // is enough to let the dynamic import resolve successfully in tests
 // without pulling in the real, luxon-dependent package.
 vi.mock('chartjs-scale-timestack', () => ({}));
-vi.mock('chartjs-plugin-hierarchical', () => ({ HierarchicalScale: { id: 'hierarchical' } }));
+// No mock for chartjs-plugin-hierarchical — it's no longer a dependency
+// at all. Its logic was ported directly into hierarchicalScale.ts (a
+// real HierarchicalScale class, statically imported), so withHierarchical
+// needs no module mock the way it used to.
 // No mock for chartjs-plugin-image-label — it's no longer a dependency at
 // all. Its logic was ported directly into plugins.ts's own
 // imageLabelPluginObject (a plain, local, static object with no dynamic
@@ -28,6 +50,7 @@ import { Chart } from 'chart.js';
 import {
   __resetPluginsForTests,
   withAnnotation,
+  withAutocolors,
   withDataLabels,
   withGradient,
   withHierarchical,
@@ -131,6 +154,43 @@ describe('cross-plugin isolation', () => {
   });
 });
 
+describe('withAutocolors', () => {
+  it('merges options into options.plugins.autocolors without touching other plugins entries', async () => {
+    const result = await withAutocolors(
+      { plugins: { legend: { display: true } } },
+      { mode: 'data' },
+    );
+
+    expect(result.plugins).toEqual({
+      legend: { display: true },
+      autocolors: { mode: 'data' },
+    });
+  });
+
+  it('defaults to an empty autocolors config when none is given', async () => {
+    const result = await withAutocolors({});
+    expect(result.plugins).toEqual({ autocolors: {} });
+  });
+
+  it('registers via a direct Chart.register(autocolorPlugin) call, the real local plugin object, not a dynamically-imported module', async () => {
+    // As of the local port, autocolorPlugin is imported directly from
+    // autocolorsPlugin.ts — the same real object reference is what gets
+    // passed to Chart.register, no dynamic import or mod.default ?? mod
+    // fallback involved at all anymore (matching withHierarchical's own
+    // identical registration mechanism).
+    await withAutocolors({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'autocolors' }));
+  });
+
+  it('registers the plugin exactly once no matter how many times it is called', async () => {
+    await withAutocolors({});
+    await withAutocolors({});
+    await withAutocolors({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('withGradient', () => {
   it('returns options completely unchanged — there is no plugin-level config to merge', async () => {
     const input = { plugins: { legend: { display: true } } };
@@ -187,16 +247,14 @@ describe('withHierarchical', () => {
     expect(result).toEqual(input);
   });
 
-  it('registers via its own real, confirmed named export (HierarchicalScale), not mod.default ?? mod', async () => {
-    // Confirmed directly from the real package's own README
-    // (github.com/sgratzl/chartjs-plugin-hierarchical): the ESM build is
-    // genuinely tree-shakeable with no side effects, so this is the one
-    // helper in this file that both calls Chart.register AND has no
-    // `mod.default ?? mod` fallback — the named export is the whole,
-    // real, confirmed API surface, not a defensive guess.
+  it('registers via a direct Chart.register(HierarchicalScale) call, the real local class, not a dynamically-imported module', async () => {
+    // As of the local port, HierarchicalScale is imported directly from
+    // hierarchicalScale.ts — the same real class reference is what gets
+    // passed to Chart.register, no dynamic import or mod.default ??
+    // mod fallback involved at all anymore.
     await withHierarchical({});
     expect(registerMock).toHaveBeenCalledTimes(1);
-    expect(registerMock).toHaveBeenCalledWith({ id: 'hierarchical' });
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'hierarchical' }));
   });
 
   it('registers the scale exactly once no matter how many times it is called', async () => {
@@ -248,32 +306,6 @@ describe('mod.default ?? mod fallback (a plugin package with no default export)'
     await freshPlugins.withDataLabels({});
 
     expect(freshChart.Chart.register).toHaveBeenCalledWith({ default: undefined, id: 'datalabels-named-only' });
-  });
-});
-
-describe('withHierarchical — fresh-module registration (kills the initial-flag-value mutant)', () => {
-  // withHierarchical has no `mod.default ?? mod` fallback (see its own
-  // describe block above for why), so it doesn't belong in the describe
-  // block above — but it needs the identical `vi.resetModules()` + fresh
-  // import technique for a different reason: a real mutation run showed
-  // `hierarchicalRegistered`'s own initial `= false` value (mutated to
-  // `= true`) surviving. That's invisible to every other test in this
-  // file, since `beforeEach`'s own `__resetPluginsForTests()` always
-  // resets the flag on the *already-imported* module before any test
-  // body runs, regardless of what its initial value was — the only way
-  // to observe the real, un-reset initial value is a genuinely fresh
-  // module instance, imported after `vi.resetModules()`, exactly as the
-  // `mod.default ?? mod` fallback tests above already do for the other
-  // four plugins.
-  it('registers on the very first call against a freshly-imported module instance', async () => {
-    vi.resetModules();
-    vi.doMock('chartjs-plugin-hierarchical', () => ({ HierarchicalScale: { id: 'hierarchical-fresh' } }));
-    const freshChart = await import('chart.js');
-    const freshPlugins = await import('../../src/plugins.js');
-
-    await freshPlugins.withHierarchical({});
-
-    expect(freshChart.Chart.register).toHaveBeenCalledWith({ id: 'hierarchical-fresh' });
   });
 });
 

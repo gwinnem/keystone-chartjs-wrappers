@@ -38,15 +38,27 @@ tiers.
 
 All four tiers are real and confirmed, not placeholder scaffolding:
 
-- **Unit** (core): 62 tests, 100% coverage on every metric.
-- **Component** (this package): 40 tests, 100% coverage on every metric.
-- **End-to-end**: **69/69 passing** across all 3 browsers — every chart
-  kind, all 6 plugins, and resize behavior pass on every browser. No
+- **Unit** (core): 409 tests. **100% coverage on every metric except one
+  file**: `hierarchicalScale.ts` sits at 98.2% statements/lines, 90.93%
+  branches, 98% functions — every other file (`controller.ts`,
+  `gradientPlugin.ts`, `imageLabelPlugin.ts`, `autocolorsPlugin.ts`,
+  `index.ts`, `plugins.ts`, `registry.ts`, `test-utils.ts`) is a clean
+  100% across the board, and `zoomPlugin.ts` sits at 98.41% branches
+  (its own pre-existing, documented gap). Every file individually
+  clears the project's own 90% floor on every metric —
+  `hierarchicalScale.ts`'s own remaining gaps are narrow, defensive
+  edge cases (a handful of jsdom-style unreachable branches), the same
+  class of accepted gap `zoomPlugin.ts`/`gradientPlugin.ts` already
+  carry.
+- **Component** (this package): 46 tests, 100% coverage on every metric.
+- **End-to-end**: **78/78 passing** across all 3 browsers — every chart
+  kind, all 8 plugins, and resize behavior pass on every browser. No
   known limitations remain.
 - **Mutation**: 93.55% for core (`plugins.ts` alone: 88.14%, with 7
   accepted survivors, all tracing to one root cause — see that file's
   own doc comment on `withTimestack`), 97.73% for this package (one
-  accepted survivor).
+  accepted survivor). `hierarchicalScale.ts` has not yet had its own
+  dedicated mutation-hardening pass.
 
 See [docs/IMPLEMENTATION_PLAN.md](https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/docs/IMPLEMENTATION_PLAN.md)
 for the full history — including every real bug this testing process

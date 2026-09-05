@@ -9,6 +9,7 @@ export { createChartController } from './controller.js';
 export { CHART_TYPE_REGISTRY, ensureChartKindRegistered } from './registry.js';
 export {
   withAnnotation,
+  withAutocolors,
   withDataLabels,
   withGradient,
   withHierarchical,
@@ -19,6 +20,7 @@ export {
 
 export type {
   AnnotationPluginOptions,
+  AutocolorsPluginOptions,
   ChartConfigData,
   ChartConfigDataset,
   ChartConfiguration,
@@ -30,4 +32,10 @@ export type {
   ImageLabelPluginOptions,
 } from './types.js';
 export type { GradientDatasetConfig } from './gradientPlugin.js';
+export type {
+  HierarchicalLabelNode,
+  HierarchicalRawLabelNode,
+  HierarchicalScaleOptions,
+  HierarchicalValueNode,
+} from './hierarchicalScale.js';
 export type { ZoomPluginOptions } from './zoomPlugin.js';

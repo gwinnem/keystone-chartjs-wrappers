@@ -1,8 +1,10 @@
 import { Chart, type ChartConfiguration } from 'chart.js';
+import { autocolorPlugin } from './autocolorsPlugin.js';
 import { gradientPlugin } from './gradientPlugin.js';
+import { HierarchicalScale } from './hierarchicalScale.js';
 import { imageLabelPlugin } from './imageLabelPlugin.js';
 import { zoomPlugin, type ZoomPluginOptions } from './zoomPlugin.js';
-import type { AnnotationPluginOptions, DataLabelsPluginOptions, ImageLabelPluginOptions } from './types.js';
+import type { AnnotationPluginOptions, AutocolorsPluginOptions, DataLabelsPluginOptions, ImageLabelPluginOptions } from './types.js';
 
 /**
  * One registration flag per plugin (not a shared cache like registry.ts's
@@ -14,6 +16,7 @@ let annotationRegistered = false;
 let dataLabelsRegistered = false;
 let timestackRegistered = false;
 let hierarchicalRegistered = false;
+let autocolorsRegistered = false;
 
 type Options = NonNullable<ChartConfiguration['options']>;
 
@@ -193,18 +196,14 @@ export async function withTimestack(options: Options): Promise<Options> {
 }
 
 /**
- * Registers `chartjs-plugin-hierarchical` (once) via its own real,
- * confirmed named export (`HierarchicalScale`) — a *third*, distinct
- * registration shape in this file, not matching either `withZoom`'s own
- * `mod.default ?? mod` fallback pattern or `withTimestack`'s own
- * side-effect-only import. Confirmed directly from the real package's
- * own README (github.com/sgratzl/chartjs-plugin-hierarchical): its ESM
- * build is genuinely tree-shakeable with no side effects, so an
- * explicit `Chart.register(HierarchicalScale)` call is required —
- * unlike `chartjs-scale-timestack`, which registers itself just by
- * being imported. No `mod.default ?? mod` fallback needed either: the
- * named export is the whole, real, confirmed API surface, not a
- * defensive guess.
+ * Registers a local port of `chartjs-plugin-hierarchical` (once), via
+ * this project's own {@link HierarchicalScale} — see `hierarchicalScale.ts`'s
+ * own header comment for the full port rationale. As of the port,
+ * `Chart.register(...)` is called directly and synchronously (no
+ * dynamic `import()` at all, unlike this function's own prior,
+ * still-a-dependency version) — kept `async` regardless, purely so
+ * `useChartController.ts`'s own `await withHierarchical(opts)` call
+ * site needed no changes.
  *
  * Like `withGradient`/`withTimestack`, there is no plugin-level config
  * of its own to merge into `options` here — it's a real, distinct
@@ -217,19 +216,16 @@ export async function withTimestack(options: Options): Promise<Options> {
  *
  * Real, non-trivial data-shape requirement worth knowing: this scale
  * needs `data.labels`/`dataset.data` in its own tree-node shape
- * (`ILabelNode`/`IValueNode`, confirmed directly from the real
- * package's own type declarations) rather than the flat arrays every
- * other kind/plugin in this project accepts — already reaches Chart.js
+ * (`HierarchicalRawLabelNode`/`HierarchicalValueNode`, exported from
+ * `hierarchicalScale.ts`) rather than the flat arrays every other
+ * kind/plugin in this project accepts — already reaches Chart.js
  * untouched via the existing `data` prop, no type change needed here
  * either, but a real, meaningfully different shape a consumer needs to
  * know about (see the docs site's own example).
  */
 export async function withHierarchical(options: Options): Promise<Options> {
   if (!hierarchicalRegistered) {
-    // Stryker disable next-line StringLiteral: see withZoom's own comment
-    // above for the full reasoning — same issue, same fix.
-    const mod = await import(/* @vite-ignore */ 'chartjs-plugin-hierarchical');
-    Chart.register(mod.HierarchicalScale);
+    Chart.register(HierarchicalScale);
     hierarchicalRegistered = true;
   }
   return options;
@@ -274,7 +270,51 @@ export async function withImageLabel(
 }
 
 /**
- * Test-only: resets the remaining four registration flags so tests can
+ * Registers a local port of `chartjs-plugin-autocolors` (once), via
+ * this project's own {@link autocolorPlugin} — see
+ * `autocolorsPlugin.ts`'s own header comment for the full port
+ * rationale (a real, faithful port of the original's own color-
+ * selection logic; only its own two small, standard color-conversion
+ * utility functions are reimplemented locally, to avoid a new
+ * dependency on `@kurkle/color`). As of the port, `Chart.register(...)`
+ * is called directly and synchronously (no dynamic `import()` at all,
+ * unlike this function's own prior, still-a-dependency version) —
+ * kept `async` regardless, purely so `useChartController.ts`'s own
+ * `await withAutocolors(opts, ...)` call site needed no changes.
+ *
+ * Genuinely different shape from every other helper in this file: the
+ * only one that both (a) registers a local port directly via a real,
+ * synchronous `Chart.register(...)` call (matching `withHierarchical`'s
+ * own registration mechanism) AND (b) has real plugin-level config of
+ * its own to merge into `options.plugins.autocolors` (matching
+ * `withAnnotation`/`withDataLabels`'s own config-merging shape) —
+ * `withHierarchical` has no config to merge (a scale, not a plugin
+ * with options), and `withAnnotation`/`withDataLabels` are still real
+ * npm dependencies needing an async dynamic import to register.
+ */
+export async function withAutocolors(options: Options, autocolorsOptions: AutocolorsPluginOptions = {}): Promise<Options> {
+  if (!autocolorsRegistered) {
+    Chart.register(autocolorPlugin);
+    autocolorsRegistered = true;
+  }
+  return {
+    ...options,
+    plugins: {
+      ...options.plugins,
+      // Cast needed: Chart.js's own `PluginOptionsByType` has no
+      // knowledge of `autocolors` as a valid key at all — this is a
+      // local plugin, not one with any type augmentation to Chart.js's
+      // own types. Safe at runtime: Chart.js itself does no
+      // compile-time shape checking, only reads whatever object is
+      // actually passed — autocolorsPlugin.ts's own `beforeUpdate` reads
+      // this key directly.
+      autocolors: autocolorsOptions,
+    } as Options['plugins'],
+  };
+}
+
+/**
+ * Test-only: resets the remaining five registration flags so tests can
  * verify register-once behavior from a known-unregistered state. Not
  * part of the package's public entry point — import directly from
  * './plugins.js' in tests. (`withZoom`/`withGradient`/`withImageLabel`
@@ -287,4 +327,5 @@ export function __resetPluginsForTests(): void {
   dataLabelsRegistered = false;
   timestackRegistered = false;
   hierarchicalRegistered = false;
+  autocolorsRegistered = false;
 }

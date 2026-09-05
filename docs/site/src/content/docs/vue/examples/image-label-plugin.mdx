@@ -17,10 +17,9 @@ slice angles from raw values.
 
 Being local code rather than a dynamic import also means this example
 is genuinely live on this docs site — unlike the
-[zoom](/vue/examples/zoom-plugin), [gradient](/vue/examples/gradient-plugin),
-[timestack](/vue/examples/timestack-scale), and
-[hierarchical](/vue/examples/hierarchical-scale) examples, which still
-hit a docs-site build-pipeline gap around dynamic imports.
+[timestack](/vue/examples/timestack-scale) example, which still hits a
+docs-site build-pipeline gap around dynamic imports (its own real
+`luxon` dependency currently can't be resolved the same way).
 
 It's supplied per-chart-instance, via Chart.js's own real inline
 `plugins` array (the same mechanism the [`plugins` prop](/vue/components/props)

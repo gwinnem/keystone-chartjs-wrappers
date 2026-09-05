@@ -28,9 +28,9 @@ pan buttons below), just with no built-in drag gesture wired to it.
 
 Being local code rather than a dynamic import also means this example is
 genuinely live on this docs site — unlike the
-[timestack](/vue/examples/timestack-scale) and
-[hierarchical](/vue/examples/hierarchical-scale) examples, which still
-hit a docs-site build-pipeline gap around dynamic imports.
+[timestack](/vue/examples/timestack-scale) example, which still hits a
+docs-site build-pipeline gap around dynamic imports (its own real
+`luxon` dependency currently can't be resolved the same way).
 
 <ExampleTryIt code={ZoomPluginSource} filename="zoom-plugin.vue" live={true}>
   <ZoomPlugin client:visible />

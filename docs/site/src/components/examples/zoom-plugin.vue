@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Chart } from 'keystone-chartjs-vue';
 
 const data = {
@@ -48,6 +48,29 @@ const zoomConfig = {
 };
 
 const chartRef = ref<InstanceType<typeof Chart> | null>(null);
+
+// Starts partially zoomed in (days 6-15 of 20) rather than showing the
+// full range from the very start — confirmed directly (not assumed)
+// that panning from a fully-zoomed-out view is a real, correct no-op:
+// zoomPlugin.ts's own panCategoryScale clamps a pan request to nothing
+// once the chart already shows every category, since there's nowhere
+// left to pan to. Left at that starting state, the pan buttons below
+// (and reset, which would have nothing to restore from) would look
+// broken on first load. `zoomScale` needs the real chart instance,
+// which the child Chart component only creates asynchronously (after
+// this component's own onMounted already ran), so this polls via
+// requestAnimationFrame until chartRef.value.chart genuinely exists.
+onMounted(() => {
+  const trySetInitialZoom = () => {
+    const chart = chartRef.value?.chart as any;
+    if (chart) {
+      chart.zoomScale('x', { min: 5, max: 14 });
+    } else {
+      requestAnimationFrame(trySetInitialZoom);
+    }
+  };
+  trySetInitialZoom();
+});
 
 // `chart` is exposed from Chart.vue via `defineExpose({ chart })` as a
 // `shallowRef` internally, but accessing it through a parent's own

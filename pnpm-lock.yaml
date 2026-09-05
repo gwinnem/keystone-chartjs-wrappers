@@ -147,9 +147,6 @@ importers:
       chartjs-plugin-datalabels:
         specifier: ^2.2.0
         version: 2.2.0(chart.js@4.5.1)
-      chartjs-plugin-hierarchical:
-        specifier: ^4.4.5
-        version: 4.4.5(chart.js@4.5.1)
       chartjs-scale-timestack:
         specifier: ^1.0.1
         version: 1.0.1(chart.js@4.5.1)
@@ -3721,11 +3718,6 @@ packages:
     resolution: {integrity: sha512-14ZU30lH7n89oq+A4bWaJPnAG8a7ZTk7dKf48YAzMvJjQtjrgg5Dpk9f+LbjCF6bpx3RAGTeL13IXpKQYyRvlw==}
     peerDependencies:
       chart.js: '>=3.0.0'
-
-  chartjs-plugin-hierarchical@4.4.5:
-    resolution: {integrity: sha512-QCRRBEl6kZucP39oA5NRrFcn3lzOU006jN2KmjLkovaPeBpgw8e+152qjFqluZoHXq1shE9ouFcykuFKnQQwDA==}
-    peerDependencies:
-      chart.js: ^4.1.0
 
   chartjs-scale-timestack@1.0.1:
     resolution: {integrity: sha512-Nzi3BVNqoboo8534ecFIY1XojfdbQ9xfjdFsNxcGbYeAVrRthzmxlixelVtfAPqUExINH1LA1L3tfBYCeobp3w==}
@@ -11155,10 +11147,6 @@ snapshots:
       chart.js: 4.5.1
 
   chartjs-plugin-datalabels@2.2.0(chart.js@4.5.1):
-    dependencies:
-      chart.js: 4.5.1
-
-  chartjs-plugin-hierarchical@4.4.5(chart.js@4.5.1):
     dependencies:
       chart.js: 4.5.1
 
