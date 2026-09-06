@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "HierarchicalValueNode"
+description: "The raw, consumer-authored shape passed in as each dataset's own `data` (via the `tree` field the plugin populates on first use) — either a plain leaf…"
 ---
 
 The raw, consumer-authored shape passed in as each dataset's own

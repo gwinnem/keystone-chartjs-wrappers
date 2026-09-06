@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withGradient"
+description: "Merges the given config into `options.plugins.gradient` (this plugin's own real, documented option path) and returns the local plugin object (defined in…"
 ---
 
 > **withGradient**(`options`): `Promise`\<\{ `options`: `Options`; `plugin`: `unknown`; \}\>

@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withImageLabel"
+description: "Merges the given config into `options.plugins.imageLabel` (this plugin's own real, documented option path) and returns the local plugin object (defined in…"
 ---
 
 > **withImageLabel**(`options`, `imageLabelOptions`): `Promise`\<\{ `options`: `Options`; `plugin`: `unknown`; \}\>
@@ -27,7 +28,7 @@ Doughnut/pie charts only (enforced in imageLabelPlugin.ts's own
 
 ### imageLabelOptions
 
-[`ImageLabelPluginOptions`](../interfaces/ImageLabelPluginOptions.md)
+[`ImageLabelPluginOptions`](/core/api/reference/interfaces/imagelabelpluginoptions/)
 
 ## Returns
 

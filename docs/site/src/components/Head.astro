@@ -1,13 +1,22 @@
 ---
-// Overrides Starlight's default Head to inject one page-specific CSS
-// tweak: /vue/features gets a wider content column, at your explicit
-// request — its own Feature/Status table wraps awkwardly at Starlight's
-// default reading width. `--sl-content-width` (this project's real,
-// installed default: 45rem — confirmed directly from
-// node_modules/@astrojs/starlight/style/props.css, not assumed) is
-// Starlight's own variable controlling exactly this; overridden here to
-// `45rem + 150px`, scoped to this one route via Astro.url.pathname
-// rather than changed site-wide.
+// Overrides Starlight's default Head to inject:
+// 1. One page-specific CSS tweak: /vue/features gets a wider content
+//    column, at your explicit request — its own Feature/Status table
+//    wraps awkwardly at Starlight's default reading width.
+// 2. A section-specific Open Graph / Twitter preview image (Vue pages
+//    get one badged "Vue", Core pages one badged "Core", everything
+//    else the plain site-wide default) — real per-section identity
+//    for shared links, rather than one identical static image on every
+//    page regardless of section.
+// 3. Real, contextual JSON-LD structured data — a `TechArticle` using
+//    each hand-written page's own real title/description (from
+//    `Astro.props`, the same real frontmatter Starlight's own default
+//    Head.astro reads) for guide/concept/example pages, a
+//    `SoftwareSourceCode` block only on the three top-level overview
+//    pages, and nothing extra at all on the auto-generated API
+//    reference pages (`/core/api/reference/**` — thin, mostly a name
+//    and a type signature, not worth describing with a generic schema
+//    that adds nothing page-specific).
 //
 // Reads `Astro.props`, not `Astro.locals.starlightRoute` — same reason
 // as this project's other overrides (Sidebar.astro): the actual
@@ -18,6 +27,42 @@
 import Default from '@astrojs/starlight/components/Head.astro';
 
 const isVueFeaturesPage = Astro.url.pathname === `/vue/features`;
+
+const SITE = 'https://kcw.winnem.tech';
+const { entry } = Astro.props;
+const pageData = entry?.data;
+const pathname = Astro.url.pathname;
+
+const isVueSection = pathname.startsWith('/vue');
+const isCoreSection = pathname.startsWith('/core');
+const ogImage = isVueSection ? `${SITE}/og-image-vue.png` : isCoreSection ? `${SITE}/og-image-core.png` : `${SITE}/og-image.png`;
+
+const isOverviewPage = pathname === '/vue/' || pathname === '/core/' || pathname === '/vue' || pathname === '/core';
+const isApiReferencePage = pathname.includes('/core/api/reference/');
+
+const softwareSourceCodeJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareSourceCode',
+  name: 'Keystone Chart.js Wrappers',
+  description:
+    'Idiomatic Chart.js wrapper components for Vue 3, React, and Angular, sharing a single framework-agnostic core.',
+  codeRepository: 'https://github.com/gwinnem/keystone-chartjs-wrappers',
+  programmingLanguage: 'TypeScript',
+  license: 'https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/LICENSE',
+  author: { '@type': 'Person', name: 'Geirr Winnem' },
+};
+
+const techArticleJsonLd =
+  pageData && !isOverviewPage && !isApiReferencePage
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'TechArticle',
+        headline: pageData.title,
+        description: pageData.description,
+        url: `${SITE}${pathname}`,
+        author: { '@type': 'Person', name: 'Geirr Winnem' },
+      }
+    : null;
 ---
 
 <Default {...Astro.props}><slot /></Default>
@@ -27,4 +72,14 @@ const isVueFeaturesPage = Astro.url.pathname === `/vue/features`;
       --sl-content-width: calc(45rem + 150px);
     }
   </style>
+)}
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:image" content={ogImage} />
+{isOverviewPage && (
+  <script type="application/ld+json" set:html={JSON.stringify(softwareSourceCodeJsonLd)} />
+)}
+{techArticleJsonLd && (
+  <script type="application/ld+json" set:html={JSON.stringify(techArticleJsonLd)} />
 )}

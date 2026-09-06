@@ -37,7 +37,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ##### Returns
 
@@ -53,7 +53,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ##### Returns
 
@@ -69,7 +69,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ###### event
 
@@ -89,7 +89,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ###### event
 
@@ -163,7 +163,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ###### trigger
 
@@ -183,7 +183,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ##### Returns
 
@@ -199,7 +199,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ###### event
 
@@ -219,7 +219,7 @@ title: "ZoomPluginOptions"
 
 ###### chart
 
-[`ChartJs`](ChartJs.md)
+[`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 ###### event
 

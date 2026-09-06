@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withDataLabels"
+description: "Registers a local port of `chartjs-plugin-datalabels` (once), via this project's own dataLabelsPlugin — see `dataLabelsPlugin.ts`'s own header comment for…"
 ---
 
 > **withDataLabels**(`options`, `dataLabelsOptions?`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>

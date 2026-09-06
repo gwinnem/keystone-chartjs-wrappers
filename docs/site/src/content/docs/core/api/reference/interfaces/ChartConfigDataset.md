@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ChartConfigDataset"
+description: "One dataset within `ChartConfigData`. Hand-rolled rather than derived from Chart.js's own generic `ChartDataset<TType, TData>`, for a second, real gap…"
 ---
 
 One dataset within `ChartConfigData`. Hand-rolled rather than derived
@@ -38,4 +39,4 @@ matching every other "loose on purpose" type in this file.
 
 ### type?
 
-> `optional` **type?**: [`ChartKind`](../types/ChartKind.md)
+> `optional` **type?**: [`ChartKind`](/core/api/reference/types/chartkind/)

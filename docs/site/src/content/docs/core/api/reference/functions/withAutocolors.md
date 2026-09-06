@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withAutocolors"
+description: "Registers a local port of `chartjs-plugin-autocolors` (once), via this project's own autocolorPlugin — see `autocolorsPlugin.ts`'s own header comment for…"
 ---
 
 > **withAutocolors**(`options`, `autocolorsOptions?`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>
@@ -35,7 +36,7 @@ npm dependencies needing an async dynamic import to register.
 
 ### autocolorsOptions?
 
-[`AutocolorsPluginOptions`](../interfaces/AutocolorsPluginOptions.md) = `{}`
+[`AutocolorsPluginOptions`](/core/api/reference/interfaces/autocolorspluginoptions/) = `{}`
 
 ## Returns
 

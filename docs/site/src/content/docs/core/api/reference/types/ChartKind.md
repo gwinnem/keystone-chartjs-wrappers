@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ChartKind"
+description: "Every chart \"kind\" this library resolves to a Chart.js controller for — the 8 built-in types plus the ecosystem chart-type extensions decided in…"
 ---
 
 > **ChartKind** = `ChartType` \| `"candlestick"` \| `"ohlc"` \| `"boxplot"` \| `"violin"` \| `"matrix"` \| `"sankey"` \| `"treemap"`

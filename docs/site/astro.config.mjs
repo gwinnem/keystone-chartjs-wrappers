@@ -79,48 +79,18 @@ export default defineConfig({
       title: 'Keystone Chart.js Wrappers',
       favicon: '/favicon.svg',
       customCss: ['./src/styles/tokens.css'],
-      // Site-wide extra <head> tags Starlight's own defaults don't cover:
-      // a static Open Graph / Twitter preview image (Starlight's own
-      // default Head.astro — confirmed directly from the installed
-      // 0.30.6 source — already emits og:title/og:type/og:url/
-      // og:locale/og:description/og:site_name and twitter:card, but no
-      // image tag at all), plus a real JSON-LD SoftwareSourceCode block
-      // for search-engine rich results. `head` entries here apply
-      // site-wide, merged with each page's own `data.head` frontmatter
-      // by Starlight's own `createHead()`.
-      head: [
-        {
-          tag: 'meta',
-          attrs: { property: 'og:image', content: 'https://kcw.winnem.tech/og-image.png' },
-        },
-        {
-          tag: 'meta',
-          attrs: { property: 'og:image:width', content: '1200' },
-        },
-        {
-          tag: 'meta',
-          attrs: { property: 'og:image:height', content: '630' },
-        },
-        {
-          tag: 'meta',
-          attrs: { name: 'twitter:image', content: 'https://kcw.winnem.tech/og-image.png' },
-        },
-        {
-          tag: 'script',
-          attrs: { type: 'application/ld+json' },
-          content: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'SoftwareSourceCode',
-            name: 'Keystone Chart.js Wrappers',
-            description:
-              'Idiomatic Chart.js wrapper components for Vue 3, React, and Angular, sharing a single framework-agnostic core.',
-            codeRepository: 'https://github.com/gwinnem/keystone-chartjs-wrappers',
-            programmingLanguage: 'TypeScript',
-            license: 'https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/LICENSE',
-            author: { '@type': 'Person', name: 'Geirr Winnem' },
-          }),
-        },
-      ],
+      // Site-wide extra <head> tags Starlight's own defaults don't
+      // cover (og:title/og:type/og:url/og:locale/og:description/
+      // og:site_name and twitter:card are already emitted by
+      // Starlight's own default Head.astro, confirmed directly from
+      // the installed 0.30.6 source) — the per-section OG/Twitter
+      // preview image and the contextual JSON-LD block are both
+      // computed dynamically per-route instead, in this project's own
+      // Head.astro override below (Vue pages get one image, Core pages
+      // another, hand-written pages get a real TechArticle block using
+      // their own actual title/description), so nothing static belongs
+      // here for those anymore.
+      head: [],
       // Disables the right-hand table of contents on every Starlight
       // page by default (per-page override still available via
       // `tableOfContents: false` — or a real heading list — in that

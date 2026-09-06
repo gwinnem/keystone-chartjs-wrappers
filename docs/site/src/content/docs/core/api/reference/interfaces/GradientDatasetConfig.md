@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "GradientDatasetConfig"
+description: "One dataset's own real `gradient` config shape, read from `dataset.gradient`."
 ---
 
 One dataset's own real `gradient` config shape, read from `dataset.gradient`.

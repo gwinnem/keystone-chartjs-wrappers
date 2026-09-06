@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "AnnotationPluginOptions"
+description: "`chartjs-plugin-annotation`'s real config lives under `options.plugins.annotation.annotations` — see docs/CHARTJS_ANALYSIS.md §4. Same \"loose on purpose\"…"
 ---
 
 `chartjs-plugin-annotation`'s real config lives under

@@ -1,6 +1,11 @@
 ---
 editUrl: false
 title: "DataLabelsPluginOptions"
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: "noindex, follow"
 ---
 
 > **DataLabelsPluginOptions** = `DataLabelsConfig`

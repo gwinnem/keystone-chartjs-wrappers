@@ -1,9 +1,10 @@
 ---
 editUrl: false
 title: "createChartController"
+description: "Constructs a managed Chart.js instance and wires up its full lifecycle: lazy kind registration (including mixed-dataset kinds), a ResizeObserver on the…"
 ---
 
-> **createChartController**(`canvas`, `initial`): `Promise`\<[`ChartControllerHandle`](../interfaces/ChartControllerHandle.md)\>
+> **createChartController**(`canvas`, `initial`): `Promise`\<[`ChartControllerHandle`](/core/api/reference/interfaces/chartcontrollerhandle/)\>
 
 Constructs a managed Chart.js instance and wires up its full lifecycle:
 lazy kind registration (including mixed-dataset kinds), a ResizeObserver
@@ -21,8 +22,8 @@ lifecycle/registration logic themselves" rule.
 
 ### initial
 
-[`ChartUpdatePayload`](../interfaces/ChartUpdatePayload.md)
+[`ChartUpdatePayload`](/core/api/reference/interfaces/chartupdatepayload/)
 
 ## Returns
 
-`Promise`\<[`ChartControllerHandle`](../interfaces/ChartControllerHandle.md)\>
+`Promise`\<[`ChartControllerHandle`](/core/api/reference/interfaces/chartcontrollerhandle/)\>

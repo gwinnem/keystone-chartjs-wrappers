@@ -1,9 +1,10 @@
 ---
 editUrl: false
 title: "CHART_TYPE_REGISTRY"
+description: "Maps each supported ChartKind to the npm package (if any) whose controller/element must be registered via Chart.register(...) before a chart of that kind…"
 ---
 
-> `const` **CHART\_TYPE\_REGISTRY**: `Record`\<[`ChartKind`](../types/ChartKind.md), `ExtensionEntry` \| `null`\>
+> `const` **CHART\_TYPE\_REGISTRY**: `Record`\<[`ChartKind`](/core/api/reference/types/chartkind/), `ExtensionEntry` \| `null`\>
 
 Maps each supported ChartKind to the npm package (if any) whose
 controller/element must be registered via Chart.register(...) before a

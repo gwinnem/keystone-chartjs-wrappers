@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ChartUpdatePayload"
+description: "What a framework component passes in on mount, and again on every subsequent prop/input change — a flat shape rather than nesting `data`/ `options` inside…"
 ---
 
 What a framework component passes in on mount, and again on every
@@ -21,13 +22,13 @@ not an oversight.
 
 ### TKind
 
-`TKind` *extends* [`ChartKind`](../types/ChartKind.md) = [`ChartKind`](../types/ChartKind.md)
+`TKind` *extends* [`ChartKind`](/core/api/reference/types/chartkind/) = [`ChartKind`](/core/api/reference/types/chartkind/)
 
 ## Properties
 
 ### data
 
-> **data**: [`ChartConfigData`](ChartConfigData.md)
+> **data**: [`ChartConfigData`](/core/api/reference/interfaces/chartconfigdata/)
 
 ***
 

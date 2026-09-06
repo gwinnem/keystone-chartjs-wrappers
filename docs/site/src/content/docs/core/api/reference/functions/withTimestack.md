@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withTimestack"
+description: "Registers `chartjs-scale-timestack` (once). Genuinely different from every other helper in this file, not just `withGradient` — confirmed directly from…"
 ---
 
 > **withTimestack**(`options`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>

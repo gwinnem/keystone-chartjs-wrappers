@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ImageLabelPluginOptions"
+description: "`chartjs-plugin-image-label`'s real config, confirmed directly from the real package's own README (npmjs.com/package/chartjs-plugin- image-label) — unlike…"
 ---
 
 `chartjs-plugin-image-label`'s real config, confirmed directly from

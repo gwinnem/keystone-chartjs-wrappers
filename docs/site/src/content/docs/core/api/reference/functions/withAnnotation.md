@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withAnnotation"
+description: "Registers a local port of `chartjs-plugin-annotation` (once), via this project's own annotationPlugin — see `plugins/annotation/annotationPlugin.ts`'s own…"
 ---
 
 > **withAnnotation**(`options`, `annotationOptions`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>
@@ -32,7 +33,7 @@ plugin-level config merged into `options.plugins.annotation`.
 
 ### annotationOptions
 
-[`AnnotationPluginOptions`](../interfaces/AnnotationPluginOptions.md)
+[`AnnotationPluginOptions`](/core/api/reference/interfaces/annotationpluginoptions/)
 
 ## Returns
 

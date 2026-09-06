@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ChartControllerHandle"
+description: "The handle `createChartController` resolves to — the imperative surface framework layers call into for the rest of the chart's lifecycle after mount."
 ---
 
 The handle `createChartController` resolves to — the imperative surface
@@ -11,7 +12,7 @@ mount.
 
 ### chart
 
-> `readonly` **chart**: [`ChartJs`](ChartJs.md)
+> `readonly` **chart**: [`ChartJs`](/core/api/reference/interfaces/chartjs/)
 
 The live Chart.js instance. Framework layers may read from it, but
 should go through the methods below to change it — the controller
@@ -33,7 +34,7 @@ use `update()` for those.
 
 ##### patch
 
-`NonNullable`\<[`ChartConfiguration`](ChartConfiguration.md)\[`"options"`\]\>
+`NonNullable`\<[`ChartConfiguration`](/core/api/reference/interfaces/chartconfiguration/)\[`"options"`\]\>
 
 #### Returns
 
@@ -79,7 +80,7 @@ any not-yet-registered chart kinds first.
 
 ##### next
 
-[`ChartUpdatePayload`](ChartUpdatePayload.md)
+[`ChartUpdatePayload`](/core/api/reference/interfaces/chartupdatepayload/)
 
 #### Returns
 

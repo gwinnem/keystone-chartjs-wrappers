@@ -51,7 +51,7 @@ title: "ChartJs"
 
 ### config
 
-> `readonly` **config**: [`ChartConfiguration`](ChartConfiguration.md)\<`TType`, `TData`, `TLabel`\> \| `ChartConfigurationCustomTypesPerDataset`\<`TType`, `TData`, `TLabel`\>
+> `readonly` **config**: [`ChartConfiguration`](/core/api/reference/interfaces/chartconfiguration/)\<`TType`, `TData`, `TLabel`\> \| `ChartConfigurationCustomTypesPerDataset`\<`TType`, `TData`, `TLabel`\>
 
 ***
 

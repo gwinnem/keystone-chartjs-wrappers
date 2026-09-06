@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "HierarchicalRawLabelNode"
+description: "The raw, consumer-authored shape passed in as `data.labels` — either a plain string leaf, or an object with optional `children` (each itself a nested…"
 ---
 
 The raw, consumer-authored shape passed in as `data.labels` —

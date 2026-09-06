@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withZoom"
+description: "Merges `zoomOptions` (`pan`/`zoom` config) into `options.plugins.zoom` (this plugin's own real, documented option path) and returns the local plugin…"
 ---
 
 > **withZoom**(`options`, `zoomOptions?`): `Promise`\<\{ `options`: `Options`; `plugin`: `unknown`; \}\>
@@ -28,7 +29,7 @@ covers — notably, no Hammer.js-dependent pinch/gesture-pan support).
 
 ### zoomOptions?
 
-[`ZoomPluginOptions`](../interfaces/ZoomPluginOptions.md) = `{}`
+[`ZoomPluginOptions`](/core/api/reference/interfaces/zoompluginoptions/) = `{}`
 
 ## Returns
 

@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withDeferred"
+description: "Registers a local port of `chartjs-plugin-deferred` (once), via this project's own deferredPlugin — see `deferredPlugin.ts`'s own header comment for the…"
 ---
 
 > **withDeferred**(`options`, `deferredOptions?`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>
@@ -31,7 +32,7 @@ own mechanism) AND real plugin-level config of its own merged into
 
 ### deferredOptions?
 
-[`DeferredPluginOptions`](../interfaces/DeferredPluginOptions.md) = `{}`
+[`DeferredPluginOptions`](/core/api/reference/interfaces/deferredpluginoptions/) = `{}`
 
 ## Returns
 

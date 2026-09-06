@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "AutocolorsPluginOptions"
+description: "`chartjs-plugin-autocolors`'s real config, confirmed directly from the real package's own README (github.com/kurkle/chartjs-plugin- autocolors) — modeled…"
 ---
 
 `chartjs-plugin-autocolors`'s real config, confirmed directly from

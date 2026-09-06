@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ensureChartKindRegistered"
+description: "Ensures Chart.js can render the given kind, dynamically importing and registering its controller/elements exactly once per kind, per process. Safe to call…"
 ---
 
 > **ensureChartKindRegistered**(`kind`): `Promise`\<`void`\>
@@ -15,7 +16,7 @@ repeat calls a no-op.
 
 ### kind
 
-[`ChartKind`](../types/ChartKind.md)
+[`ChartKind`](/core/api/reference/types/chartkind/)
 
 ## Returns
 

@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "TrendlineConfig"
+description: "`chartjs-plugin-trendline`'s real per-dataset config — confirmed directly from the real, installed package's own real source…"
 ---
 
 `chartjs-plugin-trendline`'s real per-dataset config — confirmed

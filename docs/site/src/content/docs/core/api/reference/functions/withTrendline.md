@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withTrendline"
+description: "Registers a local port of `chartjs-plugin-trendline` (once), via this project's own trendlinePlugin — see `trendlinePlugin.ts`'s own header comment for…"
 ---
 
 > **withTrendline**(`options`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>

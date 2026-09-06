@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "DeferredPluginOptions"
+description: "`chartjs-plugin-deferred`'s real config, confirmed directly from the real package's own README (github.com/chartjs/chartjs-plugin-deferred) — modeled…"
 ---
 
 `chartjs-plugin-deferred`'s real config, confirmed directly from the

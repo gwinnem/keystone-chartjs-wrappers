@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "HierarchicalLabelNode"
+description: "A single node in the flattened hierarchy tree — one per visible or hidden category, with its own real position/visibility state kept directly on the node…"
 ---
 
 A single node in the flattened hierarchy tree — one per visible or

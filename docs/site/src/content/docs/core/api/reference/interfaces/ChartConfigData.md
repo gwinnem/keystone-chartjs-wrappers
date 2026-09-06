@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "ChartConfigData"
+description: "The real `data` type this library's own `<Chart>` components accept, across all 15 kinds — exported so framework packages (packages/vue|react|angular) can…"
 ---
 
 The real `data` type this library's own `<Chart>` components accept,
@@ -16,7 +17,7 @@ derived from `ChartConfiguration<...>['data']` directly, for the
 
 ### datasets
 
-> **datasets**: [`ChartConfigDataset`](ChartConfigDataset.md)[]
+> **datasets**: [`ChartConfigDataset`](/core/api/reference/interfaces/chartconfigdataset/)[]
 
 ***
 

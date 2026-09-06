@@ -1,6 +1,7 @@
 ---
 editUrl: false
 title: "withHierarchical"
+description: "Registers a local port of `chartjs-plugin-hierarchical` (once), via this project's own HierarchicalScale — see `hierarchicalScale.ts`'s own header comment…"
 ---
 
 > **withHierarchical**(`options`): `Promise`\<`_DeepPartialObject`\<`CoreChartOptions`\<keyof `ChartTypeRegistry`\> & `ElementChartOptions`\<keyof `ChartTypeRegistry`\> & `PluginChartOptions`\<keyof `ChartTypeRegistry`\> & `DatasetChartOptions`\<keyof `ChartTypeRegistry`\> & `ScaleChartOptions`\<keyof `ChartTypeRegistry`\>\>\>
