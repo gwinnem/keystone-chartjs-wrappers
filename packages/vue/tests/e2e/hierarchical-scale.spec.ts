@@ -25,7 +25,9 @@ test('renders a real chart with the local HierarchicalScale port applied', async
   await expectNonBlankCanvas(canvas);
 });
 
-test('clicking an unexpanded top-level label genuinely expands it, visibly changing the rendered chart', async ({ page }) => {
+test('clicking an unexpanded top-level label genuinely expands it, visibly changing the rendered chart', async ({
+  page,
+}) => {
   // The real, core interaction this plugin exists for — confirms the
   // companion plugin's own beforeEvent-driven click handling actually
   // works end-to-end through a real browser click, not just that the

@@ -6,7 +6,9 @@ import { expectDistinctColorCount } from './helpers/expectDistinctColorCount.js'
 // plugin auto-colors by default (no config needed) AND the specific
 // forceOverride regression found via a live manual browser test: a
 // dataset added after the chart's first render must still get colored.
-test('auto-colors datasets with no explicit color, including one added after the chart already exists', async ({ page }) => {
+test('auto-colors datasets with no explicit color, including one added after the chart already exists', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

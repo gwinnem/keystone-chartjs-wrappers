@@ -10,7 +10,9 @@ import { expectNonBlankCanvas } from './helpers/expectNonBlankCanvas.js';
 // based, a correction from an earlier draft of this comment) has
 // something genuine to defer past, not just a chart that was always
 // visible.
-test('renders a real chart with the local deferred-plugin port applied, once scrolled into the viewport', async ({ page }) => {
+test('renders a real chart with the local deferred-plugin port applied, once scrolled into the viewport', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

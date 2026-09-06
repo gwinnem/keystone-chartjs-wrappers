@@ -287,7 +287,7 @@ export function addFitter(datasetMeta: { controller: { chart: Chart } }, ctx: Ca
   const data = dataset.data as unknown[];
   if (Math.abs(trendoffset) >= data.length) trendoffset = 0;
 
-  let effectiveFirstIndex = 0;
+  let effectiveFirstIndex: number;
   if (trendoffset > 0) {
     const firstNonNullAfterOffset = data.slice(trendoffset).findIndex((d) => d !== undefined && d !== null);
     effectiveFirstIndex = firstNonNullAfterOffset !== -1 ? trendoffset + firstNonNullAfterOffset : data.length;

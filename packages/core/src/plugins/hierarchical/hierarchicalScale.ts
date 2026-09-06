@@ -433,7 +433,7 @@ export function hierarchicalSpanLogic(
   const hasCollapseBox = leftFirstVisible && node.expand !== 'focus';
   const hasFocusBox = leftFirstVisible && rightLastVisible && node.children.length > 1;
 
-  let groupLabelCenter = 0;
+  let groupLabelCenter: number;
   switch (groupLabelPosition) {
     case 'between-first-and-second': {
       const nextVisible = flat.slice(leftVisible.index + 1, rightVisible.index + 1).find((candidate) => visibleNodes.has(candidate));

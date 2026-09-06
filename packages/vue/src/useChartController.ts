@@ -179,7 +179,10 @@ export interface UseChartControllerProps {
   plugins?: ChartConfiguration['plugins'];
 }
 
-export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, props: UseChartControllerProps) {
+export function useChartController(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  props: UseChartControllerProps,
+) {
   // The live Chart.js instance, returned below for the caller to expose
   // for advanced/escape-hatch consumer access — shallowRef since
   // Chart.js instances manage their own internal mutation and should
@@ -242,7 +245,10 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       opts = await withAnnotation(opts, props.annotation);
     }
     if (props.dataLabels) {
-      opts = await withDataLabels(opts, typeof props.dataLabels === 'object' ? props.dataLabels : undefined);
+      opts = await withDataLabels(
+        opts,
+        typeof props.dataLabels === 'object' ? props.dataLabels : undefined,
+      );
     }
     if (props.timestack) {
       opts = await withTimestack(opts);
@@ -251,10 +257,16 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       opts = await withHierarchical(opts);
     }
     if (props.autocolors) {
-      opts = await withAutocolors(opts, typeof props.autocolors === 'object' ? props.autocolors : undefined);
+      opts = await withAutocolors(
+        opts,
+        typeof props.autocolors === 'object' ? props.autocolors : undefined,
+      );
     }
     if (props.deferred) {
-      opts = await withDeferred(opts, typeof props.deferred === 'object' ? props.deferred : undefined);
+      opts = await withDeferred(
+        opts,
+        typeof props.deferred === 'object' ? props.deferred : undefined,
+      );
     }
     if (props.trendline) {
       opts = await withTrendline(opts);
@@ -283,7 +295,10 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
       // again here is cheap either way.
       const inlinePlugins: unknown[] = [];
       if (props.zoom) {
-        const result = await withZoom(opts, typeof props.zoom === 'object' ? props.zoom : undefined);
+        const result = await withZoom(
+          opts,
+          typeof props.zoom === 'object' ? props.zoom : undefined,
+        );
         opts = result.options;
         inlinePlugins.push(result.plugin);
       }
@@ -312,7 +327,10 @@ export function useChartController(canvasRef: Ref<HTMLCanvasElement | null>, pro
         // since all three are real, valid Chart.js plugin objects at
         // runtime (confirmed by each's own dedicated test suite in
         // packages/core).
-        effectivePlugins = [...(props.plugins ?? []), ...inlinePlugins] as ChartConfiguration['plugins'];
+        effectivePlugins = [
+          ...(props.plugins ?? []),
+          ...inlinePlugins,
+        ] as ChartConfiguration['plugins'];
         mergedPluginsCache = effectivePlugins;
       }
     }

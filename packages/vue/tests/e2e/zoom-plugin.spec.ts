@@ -1,11 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+// The zoom fixture exposes the live Chart.js instance on `window` (not
+// reachable from the DOM canvas element directly — only via Chart.vue's
+// own `defineExpose({ chart })`), so this test can call its real,
+// programmatic `getZoomLevel()` API. A real, narrow type for that one
+// custom global instead of `(window as any)`.
+interface WindowWithZoomChart extends Window {
+  __zoomChart?: { getZoomLevel?: () => number };
+}
+
 // This project's own local port of chartjs-plugin-zoom
 // (packages/core/src/zoomPlugin.ts) is otherwise only ever exercised
 // against jsdom mocks (packages/core/tests/unit/zoomPlugin.spec.ts) —
 // this is the one place it runs through the real build pipeline, in a
 // real browser, against a real Chart.js instance.
-test('registers and renders a real chart with the local zoom plugin applied, and wheel-zoom actually works', async ({ page }) => {
+test('registers and renders a real chart with the local zoom plugin applied, and wheel-zoom actually works', async ({
+  page,
+}) => {
   // Only genuine uncaught JS exceptions, not the browser's own
   // `console` 'error' channel — see sankey.spec.ts's own comment for
   // why (harmless favicon-404 noise unrelated to this app's own
@@ -29,14 +40,18 @@ test('registers and renders a real chart with the local zoom plugin applied, and
   // Chart.js instance carrying this API isn't reachable from the DOM
   // canvas element directly — only via Chart.vue's own
   // `defineExpose({ chart })`.
-  const zoomLevelBefore = await page.evaluate(() => (window as any).__zoomChart?.getZoomLevel?.());
+  const zoomLevelBefore = await page.evaluate(() =>
+    (window as WindowWithZoomChart).__zoomChart?.getZoomLevel?.(),
+  );
   expect(zoomLevelBefore).toBe(1);
 
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.wheel(0, -200);
   await page.waitForTimeout(200);
 
-  const zoomLevelAfter = await page.evaluate(() => (window as any).__zoomChart?.getZoomLevel?.());
+  const zoomLevelAfter = await page.evaluate(() =>
+    (window as WindowWithZoomChart).__zoomChart?.getZoomLevel?.(),
+  );
   expect(zoomLevelAfter).not.toBe(1);
 
   expect(pageErrors).toEqual([]);

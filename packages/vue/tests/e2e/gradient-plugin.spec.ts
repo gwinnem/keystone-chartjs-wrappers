@@ -4,7 +4,9 @@ import { expectDistinctColorCount } from './helpers/expectDistinctColorCount.js'
 
 // Real chartjs-plugin-gradient registration, not mocked — see
 // gradient-fixture.ts's own header comment for the full rationale.
-test('renders a real chart with chartjs-plugin-gradient applied via the real package, producing more than one color', async ({ page }) => {
+test('renders a real chart with chartjs-plugin-gradient applied via the real package, producing more than one color', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

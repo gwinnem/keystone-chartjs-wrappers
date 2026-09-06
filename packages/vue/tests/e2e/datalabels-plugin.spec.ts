@@ -3,7 +3,9 @@ import { expectNonBlankCanvas } from './helpers/expectNonBlankCanvas.js';
 
 // Real chartjs-plugin-datalabels registration, not mocked — same
 // rationale as zoom-plugin.spec.ts's own header comment.
-test('renders a real chart with chartjs-plugin-datalabels applied via the real package', async ({ page }) => {
+test('renders a real chart with chartjs-plugin-datalabels applied via the real package', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

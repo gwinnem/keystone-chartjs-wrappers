@@ -7,7 +7,9 @@ import { expectNonBlankCanvas } from './helpers/expectNonBlankCanvas.js';
 // with it (a missing/failed registration would surface as Chart.js
 // throwing "timestack is not a registered scale" and the chart never
 // painting at all).
-test('renders a real chart with the chartjs-scale-timestack axis applied via the real package', async ({ page }) => {
+test('renders a real chart with the chartjs-scale-timestack axis applied via the real package', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

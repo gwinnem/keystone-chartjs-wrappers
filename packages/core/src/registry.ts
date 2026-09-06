@@ -216,10 +216,11 @@ export async function ensureChartKindRegistered(kind: ChartKind): Promise<void> 
     return exported;
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chart.register's
-  // own overloads expect concrete controller/element/plugin classes; the values here
-  // are only known to be "whatever a third-party package's own module namespace
-  // contains", which TypeScript has no way to narrow further at this point.
+  // Chart.register's own overloads expect concrete controller/element/
+  // plugin classes; the values here are only known to be "whatever a
+  // third-party package's own module namespace contains", which
+  // TypeScript has no way to narrow further at this point.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Chart.register(...(exportsToRegister as any[]));
   registeredKinds.add(kind);
 }

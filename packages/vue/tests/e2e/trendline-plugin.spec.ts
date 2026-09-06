@@ -5,7 +5,9 @@ import { expectNonBlankCanvas } from './helpers/expectNonBlankCanvas.js';
 // rationale as datalabels-plugin.spec.ts's own header comment (the
 // first place a version mismatch or renamed export would surface as a
 // real failure).
-test('renders a real chart with chartjs-plugin-trendline applied via the real package', async ({ page }) => {
+test('renders a real chart with chartjs-plugin-trendline applied via the real package', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

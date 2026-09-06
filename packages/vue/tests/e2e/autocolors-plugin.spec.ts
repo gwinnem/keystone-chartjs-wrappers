@@ -4,7 +4,9 @@ import { expectDistinctColorCount } from './helpers/expectDistinctColorCount.js'
 
 // Real chartjs-plugin-autocolors logic, not mocked — see
 // autocolors-fixture.ts's own header comment for the full rationale.
-test('renders a real chart with autocolors applied, producing a distinct color per dataset', async ({ page }) => {
+test('renders a real chart with autocolors applied, producing a distinct color per dataset', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

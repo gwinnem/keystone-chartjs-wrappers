@@ -65,9 +65,9 @@ function hsv2rgb(h: number, s: number, v: number): [number, number, number] {
   const c = v * s;
   const x = c * (1 - Math.abs((hPrime % 2) - 1));
   const m = v - c;
-  let r = 0;
-  let g = 0;
-  let b = 0;
+  let r: number;
+  let g: number;
+  let b: number;
   if (hPrime < 1) {
     [r, g, b] = [c, x, 0];
   } else if (hPrime < 2) {

@@ -35,8 +35,6 @@ vi.mock('keystone-chartjs-core', () => ({
   withTrendline: (...args: unknown[]) => withTrendline(...args),
 }));
 
-// eslint-disable-next-line import/first -- must follow vi.mock, same
-// hoisting requirement as every other spec in this monorepo.
 import Chart from '../../src/Chart.vue';
 
 interface FakeHandle {
@@ -86,14 +84,18 @@ beforeEach(() => {
     },
     plugin: { id: 'zoom-plugin' },
   }));
-  withAnnotation.mockImplementation(async (opts: Record<string, unknown>, annotationOptions: unknown) => ({
-    ...opts,
-    plugins: { ...(opts.plugins as object), annotation: annotationOptions },
-  }));
-  withDataLabels.mockImplementation(async (opts: Record<string, unknown>, dataLabelsOptions: unknown) => ({
-    ...opts,
-    plugins: { ...(opts.plugins as object), datalabels: dataLabelsOptions ?? {} },
-  }));
+  withAnnotation.mockImplementation(
+    async (opts: Record<string, unknown>, annotationOptions: unknown) => ({
+      ...opts,
+      plugins: { ...(opts.plugins as object), annotation: annotationOptions },
+    }),
+  );
+  withDataLabels.mockImplementation(
+    async (opts: Record<string, unknown>, dataLabelsOptions: unknown) => ({
+      ...opts,
+      plugins: { ...(opts.plugins as object), datalabels: dataLabelsOptions ?? {} },
+    }),
+  );
   // withGradient has no config to merge — core's own real implementation
   // returns options completely unchanged, but (as of the local port) it
   // now returns { options, plugin } like withImageLabel, since it's also
@@ -113,27 +115,33 @@ beforeEach(() => {
   // other helper — { options, plugin } instead of just options — since
   // it needs to hand back a plugin object for the caller to merge into
   // Chart.js's own inline plugins array, not a Chart.register(...) call.
-  withImageLabel.mockImplementation(async (opts: Record<string, unknown>, imageLabelOptions: unknown) => ({
-    options: { ...opts, plugins: { ...(opts.plugins as object), imageLabel: imageLabelOptions } },
-    plugin: { id: 'image-label-plugin' },
-  }));
+  withImageLabel.mockImplementation(
+    async (opts: Record<string, unknown>, imageLabelOptions: unknown) => ({
+      options: { ...opts, plugins: { ...(opts.plugins as object), imageLabel: imageLabelOptions } },
+      plugin: { id: 'image-label-plugin' },
+    }),
+  );
   // withAutocolors: identical shape to withDataLabels — merges its own
   // config into options.plugins.autocolors, no plugin object returned
   // (registered via a real Chart.register(...) call inside core itself,
   // not the inline plugins array).
-  withAutocolors.mockImplementation(async (opts: Record<string, unknown>, autocolorsOptions: unknown) => ({
-    ...opts,
-    plugins: { ...(opts.plugins as object), autocolors: autocolorsOptions ?? {} },
-  }));
+  withAutocolors.mockImplementation(
+    async (opts: Record<string, unknown>, autocolorsOptions: unknown) => ({
+      ...opts,
+      plugins: { ...(opts.plugins as object), autocolors: autocolorsOptions ?? {} },
+    }),
+  );
   // withDeferred: identical shape to withDataLabels/withAutocolors —
   // merges its own config into options.plugins.deferred, no plugin
   // object returned (a real npm dependency, registered via a real
   // Chart.register(...) call inside core itself, not the inline
   // plugins array).
-  withDeferred.mockImplementation(async (opts: Record<string, unknown>, deferredOptions: unknown) => ({
-    ...opts,
-    plugins: { ...(opts.plugins as object), deferred: deferredOptions ?? {} },
-  }));
+  withDeferred.mockImplementation(
+    async (opts: Record<string, unknown>, deferredOptions: unknown) => ({
+      ...opts,
+      plugins: { ...(opts.plugins as object), deferred: deferredOptions ?? {} },
+    }),
+  );
   // withTrendline: identical shape to withGradient/withTimestack/
   // withHierarchical — no config to merge, options returned unchanged.
   // Registered via a real Chart.register(...) call inside core itself
@@ -161,23 +169,26 @@ const ALL_KINDS: ChartKind[] = [
 ];
 
 describe('Chart — mount', () => {
-  it.each(ALL_KINDS)('mounts a canvas and calls createChartController with type "%s"', async (type) => {
-    const handle = makeHandle();
-    createChartController.mockResolvedValue(handle);
+  it.each(ALL_KINDS)(
+    'mounts a canvas and calls createChartController with type "%s"',
+    async (type) => {
+      const handle = makeHandle();
+      createChartController.mockResolvedValue(handle);
 
-    const wrapper = mount(Chart, {
-      props: { type, data: { datasets: [] } },
-    });
-    await flushPromises();
+      const wrapper = mount(Chart, {
+        props: { type, data: { datasets: [] } },
+      });
+      await flushPromises();
 
-    expect(wrapper.find('canvas').exists()).toBe(true);
-    expect(createChartController).toHaveBeenCalledTimes(1);
-    expect(createChartController).toHaveBeenCalledWith(wrapper.find('canvas').element, {
-      type,
-      data: { datasets: [] },
-      options: {},
-    });
-  });
+      expect(wrapper.find('canvas').exists()).toBe(true);
+      expect(createChartController).toHaveBeenCalledTimes(1);
+      expect(createChartController).toHaveBeenCalledWith(wrapper.find('canvas').element, {
+        type,
+        data: { datasets: [] },
+        options: {},
+      });
+    },
+  );
 });
 
 describe('Chart — update', () => {
@@ -215,7 +226,11 @@ describe('Chart — update', () => {
     await flushPromises();
 
     expect(createChartController).toHaveBeenCalledTimes(1);
-    expect(handle.update).toHaveBeenCalledWith({ type: 'line', data: { datasets: [] }, options: {} });
+    expect(handle.update).toHaveBeenCalledWith({
+      type: 'line',
+      data: { datasets: [] },
+      options: {},
+    });
   });
 
   it('serializes overlapping prop changes through one promise chain rather than racing', async () => {
@@ -244,7 +259,7 @@ describe('Chart — update', () => {
     });
   });
 
-  it("re-reads handle.chart after update, since a type-change recreate swaps the underlying instance under the same handle", async () => {
+  it('re-reads handle.chart after update, since a type-change recreate swaps the underlying instance under the same handle', async () => {
     const handle = makeHandle();
     createChartController.mockResolvedValue(handle);
 
@@ -426,7 +441,9 @@ describe('Chart — plugin opt-ins', () => {
   it('applies imageLabel only when given a real config object, and merges its own returned plugin object into the effective plugins array', async () => {
     const handle = makeHandle();
     createChartController.mockResolvedValue(handle);
-    const imageLabelConfig = { imagesList: [{ imageUrl: 'a.png', imageWidth: 40, imageHeight: 40 }] };
+    const imageLabelConfig = {
+      imagesList: [{ imageUrl: 'a.png', imageWidth: 40, imageHeight: 40 }],
+    };
 
     mount(Chart, {
       props: { type: 'doughnut', data: { datasets: [] }, imageLabel: imageLabelConfig },
@@ -442,7 +459,7 @@ describe('Chart — plugin opt-ins', () => {
     });
   });
 
-  it('appends imageLabel\'s own plugin object to a consumer-supplied plugins array, additively rather than replacing it', async () => {
+  it("appends imageLabel's own plugin object to a consumer-supplied plugins array, additively rather than replacing it", async () => {
     const handle = makeHandle();
     createChartController.mockResolvedValue(handle);
     const customPlugin = { id: 'my-plugin', beforeDraw: vi.fn() };
@@ -550,7 +567,11 @@ describe('Chart — plugin opt-ins', () => {
     createChartController.mockResolvedValue(handle);
 
     const wrapper = mount(Chart, {
-      props: { type: 'doughnut', data: { datasets: [{ data: [1] }] }, imageLabel: { imagesList: [] } },
+      props: {
+        type: 'doughnut',
+        data: { datasets: [{ data: [1] }] },
+        imageLabel: { imagesList: [] },
+      },
     });
     await flushPromises();
 

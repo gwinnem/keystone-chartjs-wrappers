@@ -8,7 +8,9 @@ import { expectNonBlankCanvas } from './helpers/expectNonBlankCanvas.js';
 // genuinely non-blank pixels — a missing/failed registration would
 // surface as the plugin's own drawing hooks never running, or Chart.js
 // throwing on an unrecognized inline plugin object.
-test('renders a real doughnut chart with chartjs-plugin-image-label applied via the real package', async ({ page }) => {
+test('renders a real doughnut chart with chartjs-plugin-image-label applied via the real package', async ({
+  page,
+}) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
 

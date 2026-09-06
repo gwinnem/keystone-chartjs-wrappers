@@ -5,7 +5,9 @@ import { test, expect } from '@playwright/test';
 // at all, so this is the only way to actually prove a canvas genuinely
 // resizes when its container does, rather than trusting the wiring
 // alone.
-test('canvas resizes when its container does, via the real ResizeObserver path', async ({ page }) => {
+test('canvas resizes when its container does, via the real ResizeObserver path', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 800, height: 600 });
   await page.goto('/tests/e2e/fixtures/resize-fixture.html');
 

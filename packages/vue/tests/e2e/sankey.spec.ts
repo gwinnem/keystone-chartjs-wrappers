@@ -7,7 +7,9 @@ import { test, expect } from '@playwright/test';
 // mismatch or renamed export (the exact risk registry.ts's own error
 // message warns about) would surface here as a real, visible failure,
 // not a passing mocked test.
-test('registers and renders a real sankey chart via the real chartjs-chart-sankey package', async ({ page }) => {
+test('registers and renders a real sankey chart via the real chartjs-chart-sankey package', async ({
+  page,
+}) => {
   // Only genuine uncaught JS exceptions, not the browser's own
   // `console` 'error' channel — confirmed via a real run that the
   // latter includes harmless resource-loading noise unrelated to this

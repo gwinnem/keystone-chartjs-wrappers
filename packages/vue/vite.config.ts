@@ -8,10 +8,7 @@ import { resolve } from 'node:path';
 // (Vitest reads the same `test` field Vite itself ignores) — the
 // standard combined idiom, rather than a separate vitest.config.ts.
 export default defineConfig({
-  plugins: [
-    vue(),
-    dts({ include: ['src'], rollupTypes: false }),
-  ],
+  plugins: [vue(), dts({ include: ['src'], rollupTypes: false })],
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
