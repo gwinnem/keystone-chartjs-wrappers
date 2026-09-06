@@ -21,10 +21,7 @@ it applies to this package specifically.
   ten official-plugin helpers, resize handling, the theme
   re-application hook, and inline-plugin support. 921 unit tests. 99.11%
   statements/lines, 94.52% branches, 99.63% functions overall — every
-  file clears the project's own 90% per-file floor on every metric,
-  each with a small number of individually-documented survivors (a
-  handful of defensive guards confirmed structurally unreachable given
-  each file's own real call graph).
+  file clears the project's own 90% per-file floor on every metric.
 - **Phase 2 — This package** — the real `<Chart>` component: all 15 chart
   kinds, all 10 official plugins as opt-in props, reactive updates
   (diffed on top-level `type` and the `plugins` array's own reference,
@@ -89,8 +86,7 @@ it applies to this package specifically.
 - **Image label plugin** — later ported directly into
   `keystone-chartjs-core` (no longer a real npm dependency), via a
   required-config-object `imageLabel` prop (no plain-boolean form,
-  since `imagesList` has no sensible empty default). Fixed two real
-  bugs found in the original along the way. Confirmed via a real e2e
+  since `imagesList` has no sensible empty default). Confirmed via a real e2e
   test (`packages/vue/tests/e2e/image-label-plugin.spec.ts`). See
   [API → Plugins](/vue/api/plugins) for the full guide.
 - **Autocolors plugin** — later ported directly into

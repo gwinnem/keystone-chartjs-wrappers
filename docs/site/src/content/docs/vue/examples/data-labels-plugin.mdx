@@ -12,12 +12,12 @@ unminified ESM build \u2014 the published package ships no real `src/` of
 its own, only `dist/*`/`types/*`) \u2014 registered once via
 `Chart.register(dataLabelsPlugin)`, at your explicit request, so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself.
-`annotation` remains the only real npm dependency left in this project.
+`timestack` remains the only real npm dependency left in this project.
 
 Being local code rather than a dynamic import also means this example
-is genuinely live on this docs site, like `zoom`/`gradient`/
+is genuinely live on this docs site, like `zoom`/`annotation`/`gradient`/
 `hierarchical`/`imageLabel`/`autocolors`/`deferred`/`trendline` \u2014
-unlike `annotation`, which still renders source-only here.
+unlike `timestack`, which still renders source-only here.
 
 <ExampleTryIt code={DataLabelsPluginSource} filename="data-labels-plugin.vue" live={true}>
   <DataLabelsPlugin client:visible />

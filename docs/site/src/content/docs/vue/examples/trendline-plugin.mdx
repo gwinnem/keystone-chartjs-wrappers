@@ -11,13 +11,13 @@ The `trendline` prop wires in a local port of `chartjs-plugin-trendline`
 `src/`, not just its README) — registered once via
 `Chart.register(trendlinePlugin)`, at your explicit request, so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself.
-`annotation`/`dataLabels` remain the only two real npm dependencies left
+`timestack` remains the only real npm dependency left
 in this project.
 
 Being local code rather than a dynamic import also means this example
-is genuinely live on this docs site, like `zoom`/`gradient`/
-`hierarchical`/`imageLabel`/`autocolors`/`deferred` — unlike
-`annotation`/`dataLabels`, which still render source-only here.
+is genuinely live on this docs site, like `zoom`/`annotation`/`gradient`/
+`hierarchical`/`imageLabel`/`autocolors`/`deferred`/`dataLabels` — unlike
+`timestack`, which still renders source-only here.
 
 <ExampleTryIt code={TrendlinePluginSource} filename="trendline-plugin.vue" live={true}>
   <TrendlinePlugin client:visible />

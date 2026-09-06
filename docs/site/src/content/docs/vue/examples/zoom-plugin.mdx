@@ -12,18 +12,27 @@ The `zoom` prop draws on a local port of `chartjs-plugin-zoom`. Like
 on a third-party package at all — its logic is ported directly into
 `keystone-chartjs-core` (`src/zoomPlugin.ts`).
 
-:::caution[Real scope limitation, not a bug]
-This port drops every Hammer.js-dependent code path — pinch-zoom, and
-the gesture-driven pan interaction — since Hammer.js itself is
-unmaintained (confirmed via a real, open upstream issue). Mouse-wheel
-zoom, mouse-drag-to-zoom-rectangle (with Escape-to-cancel), and the
-full programmatic API (`chart.zoom()`, `chart.resetZoom()`, `chart.pan()`,
-and more) are all kept. A real, honest finding from dissecting the
-original source: it has no mouse-only drag-to-pan mechanism at all —
-`pan()` was only ever driven by Hammer's own gesture recognizer — so
-dropping Hammer.js means dropping *all* interactive pan, not just
-touch-pan. `chart.pan()` stays callable programmatically (see the
-pan buttons below), just with no built-in drag gesture wired to it.
+:::tip[Pinch-zoom and touch/pen pan, reimplemented without Hammer.js]
+The original `chartjs-plugin-zoom` drives pinch-zoom and drag-to-pan
+through Hammer.js, which is itself unmaintained (confirmed via a real,
+open upstream issue). Rather than dropping those two features along
+with that dependency, this port reimplements both directly on the
+standards-based **Pointer Events API**
+(`pointerdown`/`pointermove`/`pointerup`/`pointercancel`), which unifies
+mouse/touch/pen input with no external dependency at all:
+
+- **`zoom.pinch.enabled`** — two-finger pinch-zoom.
+- **`pan.enabled`** — single-finger (or pen) drag-to-pan, honoring
+  `pan.threshold`/`onPanStart`/`onPanRejected`/`onPanComplete`.
+
+**Mouse input is deliberately excluded from this pointer-event path**:
+mouse users get wheel-zoom and drag-to-zoom-rectangle only, with
+`chart.pan()` still callable *programmatically* (see the pan buttons
+below) but no interactive mouse-drag-to-pan gesture — the original
+package never had a mouse-only pan gesture either, so this isn't a new
+limitation. The full programmatic API (`chart.zoom()`, `chart.zoomRect()`,
+`chart.zoomScale()`, `chart.resetZoom()`, `chart.pan()`,
+`chart.getZoomLevel()`, and more) is unaffected by any of this.
 :::
 
 Being local code rather than a dynamic import also means this example is
@@ -31,6 +40,9 @@ genuinely live on this docs site — unlike the
 [timestack](/vue/examples/timestack-scale) example, which still hits a
 docs-site build-pipeline gap around dynamic imports (its own real
 `luxon` dependency currently can't be resolved the same way).
+
+Try it on a touch or pen device: single-finger drag pans, two-finger
+pinch zooms.
 
 <ExampleTryIt code={ZoomPluginSource} filename="zoom-plugin.vue" live={true}>
   <ZoomPlugin client:visible />

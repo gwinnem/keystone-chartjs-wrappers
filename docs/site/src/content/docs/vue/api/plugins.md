@@ -71,18 +71,15 @@ mouse/touch/pen input with no external dependency at all:
   `pan.onPanStart`/`onPanRejected`/`onPanComplete` exactly as documented
   below.
 
-**A real, honest limitation worth knowing precisely**: mouse input is
-deliberately excluded from this pointer-event path entirely — mouse
-users get wheel-zoom and drag-to-zoom-rectangle only, with `chart.pan()`
-still callable *programmatically* (useful for a consumer's own custom
-pan buttons, as the docs example below does) but no interactive
-mouse-drag-to-pan gesture. This matches the original package's own real
-mouse behavior, not a new limitation this port introduced: dissecting
-the original's own source directly confirmed it never had a mouse-only
-pan gesture either — `pan()` there was *only* ever invoked from
-Hammer's own gesture recognizer, which handled touch and mouse-pointer
-drags identically. There was no separate "mouse-drag-to-pan" code path
-to port in the first place.
+Mouse input is deliberately excluded from this pointer-event path
+entirely: mouse users get wheel-zoom and drag-to-zoom-rectangle only,
+with `chart.pan()` still callable *programmatically* (useful for a
+consumer's own custom pan buttons, as the docs example below does) but
+no interactive mouse-drag-to-pan gesture. This matches the original
+package's own real mouse behavior: `pan()` there was *only* ever
+invoked from Hammer's own gesture recognizer, which handled touch and
+mouse-pointer drags identically — there was no separate
+"mouse-drag-to-pan" code path to port in the first place.
 
 The full programmatic API is unaffected by any of this: `chart.zoom()`,
 `chart.zoomRect()`, `chart.zoomScale()`, `chart.resetZoom()`,
@@ -133,13 +130,6 @@ otherwise fall outside it (`adjustScaleRange`); (3) click/hover
 interaction routes entirely through Chart.js's own `beforeEvent` hook
 and a real, dedicated interaction-mode resolver (`options.interaction`:
 `nearest`/`point`/`x`/`y`), not raw DOM events.
-
-**A real bug found and fixed during the port, the identical class
-already found in `gradient`'s/`deferred`'s own ports**: the original
-names its teardown hook `destroy`, which Chart.js's real `Plugin`
-interface doesn't recognize at all — renamed to `afterDestroy`, the
-correct real hook name, and the original's own plain `Map` per-chart
-bookkeeping switched to a `WeakMap`.
 
 Registers via a real, synchronous `Chart.register(annotationPlugin)`
 call for the orchestrator itself (matching `autocolors`/`deferred`'s
@@ -304,11 +294,10 @@ Unlike `gradient`/`zoom`, it has no plain-boolean opt-in form —
 ```
 
 Its logic (originally `chartjs-plugin-image-label`) is ported directly
-into `keystone-chartjs-core` (`src/plugins/imageLabel/imageLabelPlugin.ts`), fixing two
-bugs found in the original along the way: it now draws labels for every
-dataset (not just the first), and positions each image using Chart.js's
-own already-computed arc geometry instead of recomputing slice angles
-from raw values. See the
+into `keystone-chartjs-core` (`src/plugins/imageLabel/imageLabelPlugin.ts`): it draws labels for every
+dataset, and positions each image using Chart.js's own already-computed
+arc geometry instead of recomputing slice angles from raw values. See
+the
 [Image label plugin example](/vue/examples/image-label-plugin) for the
 full version.
 
@@ -400,11 +389,7 @@ all defaulting to `0`.
 source during the port**: scroll-event-based, not `IntersectionObserver`-
 based — it walks up from the canvas's own parent chain for the nearest
 scrollable ancestor (falling back to the whole page if none is found)
-and listens for a real `scroll` event there. **A real bug found and
-fixed during the port**, the identical class already found in
-`gradientPlugin.ts`'s own port: the original names its teardown hook
-`destroy`, but Chart.js's own real `Plugin` interface has no such hook
-at all — renamed to `afterDestroy`, the correct real hook name. Zero
+and listens for a real `scroll` event there. Zero
 runtime dependencies of its own. Being local code rather than a dynamic
 import also means this is one of nine plugins/scales on this project's
 docs site (alongside `zoom`, `annotation`, `gradient`, `hierarchical`,
@@ -415,11 +400,8 @@ for the full version.
 ## Trendline — a local port, not a dependency, config lives on the dataset
 
 `trendline` draws on a local port of `chartjs-plugin-trendline` (v3.2.12,
-MIT, by Marcus Alsterfjord). Genuinely different motivation from every
-other port above: there was no concrete bug or unmaintained-dependency
-reason for this one — the real package is actively maintained with zero
-runtime dependencies of its own and no known bugs found during
-dissection. Ported anyway, at your explicit request, specifically so
+MIT, by Marcus Alsterfjord) — actively maintained, with zero runtime
+dependencies of its own. Ported at your explicit request, specifically so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself —
 with `annotation` also now locally ported, this package's own real npm
 dependency list is just `chart.js`.
@@ -471,12 +453,6 @@ mentions any of these:
   own default-generated entries — confirmed via a real, direct patch of
   the chart's own `legend.options.labels.generateLabels`, additive to
   whatever Chart.js itself already generates.
-
-**No type declarations shipped by the real package at all** — a
-genuine, confirmed gap (the original `chartjs-plugin-annotation` shipped
-real `.d.ts` files of its own) — irrelevant to this port itself (no
-dependency left to lack types for), but worth knowing if you ever
-compare against the original package directly.
 
 Being local code rather than a dynamic import also means this is one of
 nine plugins/scales on this project's docs site (alongside `zoom`,

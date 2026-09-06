@@ -53,4 +53,4 @@ copies).
 
 See [docs/IMPLEMENTATION_PLAN.md](https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/docs/IMPLEMENTATION_PLAN.md)
 Phase 1 (core) and Phase 2 (this package) for the full implementation
-history, including real bugs found and fixed along the way.
+history.

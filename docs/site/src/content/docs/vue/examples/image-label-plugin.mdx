@@ -9,11 +9,10 @@ import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
 The `imageLabel` prop draws image labels on doughnut/pie chart arcs.
 Unlike every other plugin on this site, it isn't a dependency on a
 third-party package at all — its logic is ported directly into
-`keystone-chartjs-core` (`src/imageLabelPlugin.ts`), fixing two real
-bugs found in the original package along the way: it now draws labels
-for every dataset (not just the first), and positions each image using
-Chart.js's own already-computed arc geometry instead of recomputing
-slice angles from raw values.
+`keystone-chartjs-core` (`src/imageLabelPlugin.ts`): it draws labels
+for every dataset, and positions each image using Chart.js's own
+already-computed arc geometry instead of recomputing slice angles from
+raw values.
 
 Being local code rather than a dynamic import also means this example
 is genuinely live on this docs site — unlike the

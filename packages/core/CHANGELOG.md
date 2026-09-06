@@ -47,8 +47,7 @@
   `options.plugins.deferred` too). Originally added as a real npm
   dependency, then ported directly into `packages/core/src/plugins/
   deferred/deferredPlugin.ts` in the same work session, at your explicit
-  request — fixing a real, confirmed `destroy`-vs-`afterDestroy` hook-
-  name bug found during the port.
+  request.
 - `withTrendline` — registers a local port of `chartjs-plugin-trendline`
   once, via a direct, synchronous `Chart.register(trendlinePlugin)` call
   — like `withGradient`, returns `options` completely unchanged, since
@@ -76,12 +75,8 @@
   `afterRegister()` hook; real scale auto-range-adjustment
   (`adjustScaleRange`, hooked into `afterDataLimits`); hit-testing that
   routes entirely through Chart.js's own `beforeEvent` hook and a real,
-  dedicated interaction-mode resolver. A real bug found and fixed
-  during the port, the identical class already found in
-  `withGradient`'s/`withDeferred`'s own ports: the original's own
-  `destroy` teardown hook isn't a real Chart.js `Plugin` hook at all —
-  renamed to `afterDestroy`, alongside switching the original's own
-  plain `Map` per-chart bookkeeping to a `WeakMap`.
+  dedicated interaction-mode resolver. Uses `afterDestroy` for teardown
+  and a `WeakMap` for per-chart bookkeeping.
 - `withDataLabels` — registers a local port of `chartjs-plugin-
   datalabels` once, via a direct, synchronous
   `Chart.register(dataLabelsPlugin)` call (matching `withAutocolors`'s/
@@ -94,11 +89,9 @@
   split), at your explicit request. Real, non-trivial features found
   only by reading the source: overlap auto-hiding via a Separating Axis
   Theorem hit-test, real click/enter/leave listeners, real active-
-  element hover integration, and multi-label-per-point support. Real,
-  deliberate structural improvement: the original's own
-  `chart.$datalabels`/`element.$datalabels` monkey-patched bookkeeping
-  replaced with module-level `WeakMap`s, matching the identical
-  improvement `withDeferred`'s own port already made.
+  element hover integration, and multi-label-per-point support. Uses
+  module-level `WeakMap`s for its own per-chart/per-element bookkeeping,
+  matching `withDeferred`'s own port.
 - Inline, custom Chart.js plugin support (`ChartUpdatePayload.plugins`) —
   passed straight through to the real `Chart` constructor, distinct from
   the 10 official-plugin helpers above. A changed `plugins` array reference
@@ -111,11 +104,6 @@
   `AutocolorsPluginOptions`, `DeferredPluginOptions`, `TrendlineConfig`.
 - 921 unit tests. 99.11% statements/lines, 94.52% branches, 99.63%
   functions overall — every file clears the project's own 90% per-file
-  floor on every metric; `zoomPlugin.ts`, `hierarchicalScale.ts`,
-  `deferredPlugin.ts`, `autocolorsPlugin.ts`, and the
-  `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts`/
-  `plugins/annotation/**` files each sit in the 90–99% branch range
-  rather than a clean 100%, with their own documented, accepted
-  survivors.
+  floor on every metric.
 
 [Unreleased]: https://github.com/gwinnem/keystone-chartjs-wrappers/compare/HEAD

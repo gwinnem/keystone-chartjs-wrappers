@@ -41,11 +41,6 @@ as `imageLabel`'s own `imagesList`). Its real config merges into
   through Chart.js's own `beforeEvent` hook and a real, dedicated
   interaction-mode resolver (`options.interaction`: `nearest`/`point`/
   `x`/`y`), not raw DOM events.
-- **A real bug found and fixed during the port** — the original names
-  its teardown hook `destroy`, which Chart.js's real `Plugin` interface
-  doesn't recognize at all; renamed to `afterDestroy`, the correct real
-  hook name, alongside switching the original's own plain `Map`
-  per-chart bookkeeping to a `WeakMap`.
 
 See [Plugins](/vue/api/plugins/) for the full prop reference.
 :::

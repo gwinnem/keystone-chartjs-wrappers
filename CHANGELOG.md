@@ -26,17 +26,11 @@ changes (tooling, shared config, docs site).
 - Nine of the ten official plugins are local ports, not real npm
   dependencies (`zoom`, `annotation`, `gradient`, `hierarchical`,
   `imageLabel`, `autocolors`, `deferred`, `trendline`, `dataLabels`),
-  each dissected directly from the real, installed package's own source
-  (fixing a handful of real bugs found along the way — see each
-  plugin's own file header for the full rationale). `timestack` remains
-  the only real npm dependency.
+  each dissected directly from the real, installed package's own source.
+  `timestack` remains the only real npm dependency.
 - 921 unit tests. 99.11% statements/lines, 94.52% branches, 99.63%
   functions overall — every individual file clears the project's own
-  90% per-file floor on every metric, with a handful (`zoomPlugin.ts`,
-  `hierarchicalScale.ts`, `deferredPlugin.ts`, `autocolorsPlugin.ts`,
-  and the `trendline/*.ts`/`dataLabels/*.ts`/`plugins/annotation/**`
-  files) settling in the 90–99% branch range rather than a clean 100%,
-  each with its own documented, accepted survivors.
+  90% per-file floor on every metric.
 
 ### keystone-chartjs-vue
 

@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import vue from '@astrojs/vue';
+import sitemap from '@astrojs/sitemap';
 
 // Standalone Astro + Starlight site — not part of the pnpm workspace,
 // same convention as keystone-dashboard-layout/astro-docs (see that
@@ -66,15 +67,72 @@ export default defineConfig({
   },
   integrations: [
     vue(),
+    // Starlight's own default Head.astro (confirmed directly from the
+    // installed 0.30.6 source) unconditionally emits a
+    // <link rel="sitemap" href="/sitemap-index.xml"> whenever `site` is
+    // set above — but Starlight does not generate that file itself; it
+    // assumes a separate sitemap integration is present. Without one,
+    // that link was a dead 404. This integration is what actually
+    // produces `sitemap-index.xml`/`sitemap-0.xml` at build time.
+    sitemap(),
     starlight({
       title: 'Keystone Chart.js Wrappers',
       favicon: '/favicon.svg',
       customCss: ['./src/styles/tokens.css'],
+      // Site-wide extra <head> tags Starlight's own defaults don't cover:
+      // a static Open Graph / Twitter preview image (Starlight's own
+      // default Head.astro — confirmed directly from the installed
+      // 0.30.6 source — already emits og:title/og:type/og:url/
+      // og:locale/og:description/og:site_name and twitter:card, but no
+      // image tag at all), plus a real JSON-LD SoftwareSourceCode block
+      // for search-engine rich results. `head` entries here apply
+      // site-wide, merged with each page's own `data.head` frontmatter
+      // by Starlight's own `createHead()`.
+      head: [
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image', content: 'https://kcw.winnem.tech/og-image.png' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:width', content: '1200' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:height', content: '630' },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:image', content: 'https://kcw.winnem.tech/og-image.png' },
+        },
+        {
+          tag: 'script',
+          attrs: { type: 'application/ld+json' },
+          content: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareSourceCode',
+            name: 'Keystone Chart.js Wrappers',
+            description:
+              'Idiomatic Chart.js wrapper components for Vue 3, React, and Angular, sharing a single framework-agnostic core.',
+            codeRepository: 'https://github.com/gwinnem/keystone-chartjs-wrappers',
+            programmingLanguage: 'TypeScript',
+            license: 'https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/LICENSE',
+            author: { '@type': 'Person', name: 'Geirr Winnem' },
+          }),
+        },
+      ],
       // Disables the right-hand table of contents on every Starlight
       // page by default (per-page override still available via
       // `tableOfContents: false` — or a real heading list — in that
       // page's own frontmatter, but the site-wide default is off).
       tableOfContents: false,
+      // "Edit page" link at the bottom of every doc page, pointing at
+      // this repo's own real source path for that page (confirmed
+      // branch name: `main`, matching every other cross-reference to
+      // this repo elsewhere in this project's own docs).
+      editLink: {
+        baseUrl: 'https://github.com/gwinnem/keystone-chartjs-wrappers/edit/main/docs/site/src/content/docs/',
+      },
       components: {
         // Top navbar for Starlight doc pages ONLY — a VitePress-style
         // section nav (Guide/Features/Components/API/Examples/Changelog
@@ -112,6 +170,9 @@ export default defineConfig({
               items: [
                 { label: 'Introduction', slug: 'vue/guide/introduction' },
                 { label: 'Installation', slug: 'vue/guide/installation' },
+                { label: 'Migrating from vue-chartjs', slug: 'vue/guide/migrating-from-vue-chartjs' },
+                { label: 'Recipes', slug: 'vue/guide/recipes' },
+                { label: 'Troubleshooting & FAQ', slug: 'vue/guide/troubleshooting' },
                 {
                   label: 'Concepts',
                   collapsed: false,
@@ -250,6 +311,18 @@ export default defineConfig({
                 { label: 'Chart kinds', slug: 'core/api/chart-kinds' },
                 { label: 'Plugins', slug: 'core/api/plugins' },
                 { label: 'Test utilities', slug: 'core/api/test-utils' },
+                // Auto-generated from `packages/core/src/index.ts` via
+                // TypeDoc + typedoc-plugin-markdown, called directly by
+                // `scripts/generate-typedoc.mjs` (wired as predev/
+                // prebuild in package.json — see that script's own
+                // header comment for why this project doesn't use the
+                // `starlight-typedoc` package for this). `autogenerate`
+                // is Starlight's own native, first-party sidebar
+                // feature — no plugin needed — listing every page
+                // currently on disk under this directory automatically,
+                // so it never goes stale as the generated content
+                // itself changes between rebuilds.
+                { label: 'References', autogenerate: { directory: 'core/api/reference' } },
               ],
             },
           ],

@@ -70,11 +70,8 @@ above.
 at your explicit request — but not as a dependency: confirmed version
 3.2.12, MIT, real Chart.js v4 compatibility confirmed directly ("Made
 for Chart.js > 4.0", tested against 4.4.9/4.5.0), by Marcus
-Alsterfjord, zero runtime dependencies of its own. Unlike every other
-plugin this project has ported, there was no concrete bug or
-unmaintained-dependency reason to port this one — it's actively
-maintained with no known bugs found during dissection. Ported anyway,
-at your explicit request, specifically so `keystone-chartjs-core`
+Alsterfjord, zero runtime dependencies of its own. Ported at your
+explicit request, specifically so `keystone-chartjs-core`
 depends on nothing but `chart.js` itself. Its real, published source
 (the package ships real `.js` source, not just a minified bundle) was
 dissected and ported directly into `packages/core/src/plugins/
@@ -119,8 +116,7 @@ above.
 **image-label (yunusemrejs/chartjs-image-label) has also been
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
-directly into `packages/core/src/plugins/imageLabel/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. One of nine of this
+directly into `packages/core/src/plugins/imageLabel/imageLabelPlugin.ts`. One of nine of this
 project's own 10 official plugins/scales (alongside `gradient`, `zoom`,
 `annotation`, `hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders live on the
 docs site rather than source-only, since local code has no dynamic
@@ -151,10 +147,7 @@ into `packages/core/src/plugins/deferred/deferredPlugin.ts` in the same work ses
 your explicit request** — it is not, and is no longer, a real npm
 dependency of this project. The package ships real, readable source
 (not just a minified bundle), which was dissected and carried over
-largely unchanged — including fixing a real bug (a `destroy` teardown
-hook name Chart.js's own real `Plugin` interface doesn't recognize;
-renamed to `afterDestroy`), the identical class of bug already found in
-`gradient`'s own port. One of nine of this project's own 10 official
+largely unchanged, using `afterDestroy` for teardown. One of nine of this project's own 10 official
 plugins/scales (alongside `gradient`, `zoom`, `annotation`, `hierarchical`, `image-
 label`, `autocolors`, `trendline`, and `dataLabels`) that renders live on the docs site rather
 than source-only. See `CHARTJS_ANALYSIS.md` §4's own "Added after v1

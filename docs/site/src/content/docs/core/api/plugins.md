@@ -95,17 +95,11 @@ merge `plugin` into whatever `plugins` array is already in effect.
   lives on each *dataset* instead (`dataset.gradient = {...}`), which
   already reaches Chart.js untouched via the existing `data` field, so
   this helper's only job is supplying the plugin object. Boolean-only
-  opt-in. During the port, a real bug was found and fixed: the
-  original's own teardown hook was named `destroy`, which isn't a real
-  Chart.js `Plugin` hook at all (the real hooks are
-  `beforeDestroy`/`afterDestroy`) — the original's own cleanup likely
-  never actually ran in real Chart.js, silently leaking one state entry
-  per destroyed chart.
-- **`withImageLabel(options, imageLabelOptions)`** — fixes two bugs
-  found in the original along the way (only the first dataset got
-  labels; slice angles were recomputed from raw values instead of read
-  from Chart.js's own already-computed arc geometry). `imagesList` is
-  required — no plain-boolean opt-in form. Doughnut/pie charts only.
+  opt-in. Uses `afterDestroy` for teardown.
+- **`withImageLabel(options, imageLabelOptions)`** — draws labels for
+  every dataset, positioning each image from Chart.js's own
+  already-computed arc geometry. `imagesList` is required — no
+  plain-boolean opt-in form. Doughnut/pie charts only.
 
 ## Option types
 

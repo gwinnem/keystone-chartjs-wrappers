@@ -6,14 +6,14 @@ description: What keystone-chartjs-core exports, grouped by area, with links to 
 Every export below comes from the package's own main entry point
 (`import { ... } from 'keystone-chartjs-core'`) unless noted otherwise.
 
-| Export | Area | Status |
-|---|---|---|
-| `createChartController`, `ChartControllerHandle`, `ChartUpdatePayload` | [Lifecycle](/core/api/lifecycle) | Implemented |
-| `ChartConfigData`, `ChartConfigDataset`, `ChartConfiguration`, `ChartJs` | [Lifecycle](/core/api/lifecycle) | Implemented |
-| `ChartKind`, `CHART_TYPE_REGISTRY`, `ensureChartKindRegistered` | [Chart kinds](/core/api/chart-kinds) | Implemented |
-| `withZoom`, `withAnnotation`, `withDataLabels`, `withGradient`, `withTimestack`, `withHierarchical`, `withImageLabel`, `withAutocolors`, `withDeferred`, `withTrendline` | [Plugins](/core/api/plugins) | Implemented |
-| Plugin option types (`ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`, `AutocolorsPluginOptions`, `DeferredPluginOptions`, `ImageLabelPluginOptions`) | [Plugins](/core/api/plugins) | Implemented |
-| `createTestCanvas`, `createTestCanvasWithParent` | [Test utilities](/core/api/test-utils) | Implemented |
+| Export | Area |
+|---|---|
+| `createChartController`, `ChartControllerHandle`, `ChartUpdatePayload` | [Lifecycle](/core/api/lifecycle) |
+| `ChartConfigData`, `ChartConfigDataset`, `ChartConfiguration`, `ChartJs` | [Lifecycle](/core/api/lifecycle) |
+| `ChartKind`, `CHART_TYPE_REGISTRY`, `ensureChartKindRegistered` | [Chart kinds](/core/api/chart-kinds) |
+| `withZoom`, `withAnnotation`, `withDataLabels`, `withGradient`, `withTimestack`, `withHierarchical`, `withImageLabel`, `withAutocolors`, `withDeferred`, `withTrendline` | [Plugins](/core/api/plugins) |
+| Plugin option types (`ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`, `AutocolorsPluginOptions`, `DeferredPluginOptions`, `ImageLabelPluginOptions`) | [Plugins](/core/api/plugins) |
+| `createTestCanvas`, `createTestCanvasWithParent` | [Test utilities](/core/api/test-utils) |
 
 See:
 - **[Lifecycle](/core/api/lifecycle)** — constructing, updating, resizing,

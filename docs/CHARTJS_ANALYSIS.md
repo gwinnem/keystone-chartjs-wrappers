@@ -92,76 +92,48 @@ below for the Hammer.js dependency concern flagged early on, and
 `docs/ZOOM_PLUGIN_PORT_PLAN.md` for the full scope analysis written before
 the port started.
 
-**Later ported directly into `packages/core/src/zoomPlugin.ts`, at your
+Later ported directly into `packages/core/src/zoomPlugin.ts`, at your
 explicit request, the same way `chartjs-plugin-gradient`/`chartjs-plugin-
-image-label` were** — it is not, and is no longer, a real npm dependency of
+image-label` were — it is not, and is no longer, a real npm dependency of
 this project (`hammerjs` is gone too, as a direct consequence — see below).
 
-**A real, deliberate scope decision, made explicitly rather than
-silently, later revisited**: this port originally dropped every
-Hammer.js-dependent code path — pinch-zoom, and the gesture-driven pan
-interaction — keeping only what was plain DOM event handling at the
-time: mouse-wheel zoom, mouse-drag-to-zoom-rectangle (with
-Escape-to-cancel), and the full programmatic API (`chart.zoom()`,
-`chart.zoomRect()`, `chart.zoomScale()`, `chart.resetZoom()`,
-`chart.pan()`, `chart.getZoomLevel()`, `chart.getInitialScaleBounds()`,
+This port originally dropped every Hammer.js-dependent code path —
+pinch-zoom, and the gesture-driven pan interaction — keeping only what
+was plain DOM event handling at the time: mouse-wheel zoom,
+mouse-drag-to-zoom-rectangle (with Escape-to-cancel), and the full
+programmatic API (`chart.zoom()`, `chart.zoomRect()`,
+`chart.zoomScale()`, `chart.resetZoom()`, `chart.pan()`,
+`chart.getZoomLevel()`, `chart.getInitialScaleBounds()`,
 `chart.getZoomedScaleBounds()`, `chart.isZoomedOrPanned()`,
-`chart.isZoomingOrPanning()`). **Pinch-zoom and interactive pan were
+`chart.isZoomingOrPanning()`). Pinch-zoom and interactive pan were
 later added back in, at your explicit request, reimplemented directly
 on the standards-based Pointer Events API
-(`pointerdown`/`pointermove`/`pointerup`/`pointercancel`)** — which
-unifies mouse/touch/pen input with no external dependency at all —
-rather than staying dropped. `zoom.pinch.enabled` opts into two-finger
-pinch-zoom; `pan.enabled` opts into single-finger/pen drag-to-pan,
-honoring `pan.threshold`/`onPanStart`/`onPanRejected`/`onPanComplete`
-(previously dead configuration with no gesture to apply to — now
-genuinely functional). Mouse input is deliberately excluded from this
-pointer-event path: mouse users keep wheel-zoom and drag-to-zoom-
-rectangle only, with `chart.pan()` still callable programmatically.
-This resolves the exact Hammer.js unmaintained-dependency concern §6
-originally flagged as an open question — it's no longer open — while
-keeping the original's own real feature set intact via a maintained,
+(`pointerdown`/`pointermove`/`pointerup`/`pointercancel`), which
+unifies mouse/touch/pen input with no external dependency at all.
+`zoom.pinch.enabled` opts into two-finger pinch-zoom; `pan.enabled`
+opts into single-finger/pen drag-to-pan, honoring `pan.threshold`/
+`onPanStart`/`onPanRejected`/`onPanComplete`. Mouse input is
+deliberately excluded from this pointer-event path: mouse users keep
+wheel-zoom and drag-to-zoom-rectangle only, with `chart.pan()` still
+callable programmatically. This resolves the Hammer.js
+unmaintained-dependency concern §6 originally flagged, while keeping
+the original's own real feature set intact via a maintained,
 dependency-free replacement instead of a permanent feature cut.
 
-**A real, honest finding from dissecting the original source, not
-assumed from the port plan's own earlier (slightly imprecise)
-summary**: the original plugin has no mouse-only drag-to-pan mechanism
-at all — `pan()` is only ever invoked from Hammer's own `handlePan()`
-(driven by `Hammer.Pan()`, which recognizes both touch *and*
-mouse-pointer drags identically). This port's own pointer-event-based
-pan is touch/pen-only for that reason, not an arbitrary new
-limitation — there was no separate "mouse-drag-to-pan" code path in the
-original to reproduce for mouse users in the first place.
+The original plugin has no mouse-only drag-to-pan mechanism at all —
+`pan()` is only ever invoked from Hammer's own `handlePan()` (driven by
+`Hammer.Pan()`, which recognizes both touch *and* mouse-pointer drags
+identically). This port's own pointer-event-based pan is touch/pen-only
+for that reason — there was no separate "mouse-drag-to-pan" code path
+in the original to reproduce for mouse users in the first place.
 
-**Two real bugs found and fixed in the port itself, not the original
-package** — confirmed via failing tests during the port, not assumed: (1) an
-earlier draft used `enabledScales.length ? enabledScales :
-liveScales(chart)` to mirror the original's own `enabledScales ||
-chart.scales` — but an empty array is truthy in JavaScript, so the original
-never actually falls back at all; the `.length`-based version zoomed every
-scale whenever none matched the enabled directions, instead of zooming none.
-(2) an earlier draft coerced a genuinely-possibly-`undefined` pixel-to-value
-result to `NaN` for type-safety reasons, which silently made the original's
-own real `logarithmicZoomRange` early-return branch (for an out-of-range
-pixel) permanently unreachable.
-
-**Genuinely distinct registration shape, same as `withGradient`/
-`withImageLabel`'s own local ports**: never passed to a global
+Genuinely distinct registration shape, same as `withGradient`/
+`withImageLabel`'s own local ports: never passed to a global
 `Chart.register(...)` call — supplied per-chart-instance via Chart.js's own
 real inline `plugins` array instead. Unlike `gradient`/`imageLabel`, `zoom`
 does have real plugin-level config of its own (`pan`/`zoom` sub-objects),
 merged into `options.plugins.zoom` — so `withZoom`'s own boolean-or-config-
 object opt-in shape is unchanged from before the port.
-
-**Full verification via 93+ dedicated unit tests**, each exercising real DOM
-event dispatch (`mousedown`/`mousemove`/`mouseup`/`wheel`/`keydown`/
-`pointerdown`/`pointermove`/`pointerup`) against a real jsdom `<canvas>`
-element, achieving 100% statement and 97%+ branch coverage on the ported
-file — confirmed via a real `test:coverage` run, not assumed. One
-genuinely untestable gap, documented in code rather than forced: jsdom
-has no `setPointerCapture` on `Element.prototype` at all, so the "real
-capture happens" branch of that optional-chained call can only ever be
-exercised in a real browser.
 
 ### Annotations — later locally ported, not a dependency
 
@@ -173,7 +145,7 @@ largest, most architecturally distinct plugin in this project: seven
 real annotation *types*, each its own genuine Chart.js `Element`
 subclass, not merely a plugin object drawing shapes on top of the chart).
 
-**Later ported directly into `packages/core/src/plugins/annotation/`
+Later ported directly into `packages/core/src/plugins/annotation/`
 (17 real files — a top-level orchestrator, `annotationPlugin.ts`,
 mirroring the original's own real `index.js`, plus 9 shared
 foundational modules — `geometry.ts`, `drawing.ts`, `callout.ts`,
@@ -183,57 +155,31 @@ foundational modules — `geometry.ts`, `drawing.ts`, `callout.ts`,
 `pointAnnotation.ts`, `polygonAnnotation.ts`, `labelAnnotation.ts`,
 `doughnutLabelAnnotation.ts`, `lineAnnotation.ts`), at your explicit
 request, the same way every other locally-ported plugin in this project
-was** — it is not, and is no longer, a real npm dependency of this
-project. Real source dissected directly from the installed package's
-own real, unminified ESM build (`dist/chartjs-plugin-annotation.esm.js`
-— the published package ships no real `src/` of its own, only
-`dist/*`/`types/*`, but the ESM build is genuinely unminified and
-complete, making a precise, line-by-line dissection possible the same
-way the installed `dist` output already was for `gradient`/
-`autocolors`/`dataLabels`).
+was — it is not, and is no longer, a real npm dependency of this
+project.
 
-**By far the largest and most architecturally distinct port in this
-project, confirmed directly from the real dissected source, not
-assumed from the README**: (1) each of the seven annotation types
-(`box`, `doughnutLabel`, `ellipse`, `label`, `line`, `point`, `polygon`)
-registers as a genuine Chart.js *element* (`Chart.register(annotationTypes)`
-inside this port's own `afterRegister()` hook) — the same real
-mechanism Chart.js's own built-in elements (`ArcElement`, `BarElement`,
-…) use; (2) option resolution goes through a faithfully-reimplemented
-version of Chart.js's own internal scriptable-option-resolution
-machinery (`resolveObj`/`resolveAnnotationOptions`, per-type
+By far the largest and most architecturally distinct port in this
+project: (1) each of the seven annotation types (`box`, `doughnutLabel`,
+`ellipse`, `label`, `line`, `point`, `polygon`) registers as a genuine
+Chart.js *element* (`Chart.register(annotationTypes)` inside this
+port's own `afterRegister()` hook) — the same real mechanism Chart.js's
+own built-in elements (`ArcElement`, `BarElement`, …) use; (2) option
+resolution goes through a faithfully-reimplemented version of Chart.js's
+own internal scriptable-option-resolution machinery
+(`resolveObj`/`resolveAnnotationOptions`, per-type
 `defaults`/`defaultRoutes`, a real `_fallback`/`_scriptable` descriptor
 chain), not a simple "spread the given config" merge the way every
 other locally-ported plugin in this project has needed; (3) annotations
 automatically extend a scale's own min/max to fit values that would
 otherwise fall outside it (`adjustScaleRange`, hooked into
-`afterDataLimits`) — a real, distinct interaction with Chart.js's own
-layout pass no other port in this project has needed; (4) hit-testing
-(click/hover) routes entirely through Chart.js's own `beforeEvent` hook
-and a real, dedicated interaction-mode resolver (`nearest`/`point`/
-`x`/`y`, honoring `options.interaction.intersect`), not raw DOM events
-the way `zoom`'s own port needed.
+`afterDataLimits`); (4) hit-testing (click/hover) routes entirely
+through Chart.js's own `beforeEvent` hook and a real, dedicated
+interaction-mode resolver (`nearest`/`point`/`x`/`y`, honoring
+`options.interaction.intersect`), not raw DOM events the way `zoom`'s
+own port needed.
 
-**A real, deliberate structural improvement over the original's own
-design, not a behavior change, the identical class already found in
-`gradientPlugin.ts`'s/`deferredPlugin.ts`'s own ports**: the original
-names its own teardown hook `destroy`, but Chart.js's real `Plugin`
-interface has no such hook at all — confirmed directly against
-`chart.js`'s own installed type declarations. The real hook for chart
-teardown is `afterDestroy`; a hook name Chart.js's own plugin system
-doesn't recognize is simply never invoked, so the original's own
-`destroy` handler — whose only job is deleting this plugin's own
-per-chart state entry — likely never actually ran in real Chart.js,
-silently leaking one entry per destroyed chart for as long as the
-plugin's own module stayed loaded. Renamed to `afterDestroy` in this
-port, the correct real hook name. The original also keys its own
-per-chart bookkeeping in a plain `Map` (not even a `WeakMap`), relying
-entirely on that same broken `destroy` hook to `.delete()` the entry —
-this port uses a `WeakMap` instead, so a chart that somehow never
-reaches its teardown hook doesn't leak its own state entry forever.
-
-**Genuinely distinct registration shape from every other plugin ported
-so far**: registers directly via a real, synchronous
+Genuinely distinct registration shape from every other plugin ported
+so far: registers directly via a real, synchronous
 `Chart.register(annotationPlugin)` call for the orchestrator itself
 (matching `withAutocolors`'s/`withDeferred`'s own mechanism), which in
 turn registers all seven real element classes via its own
@@ -244,37 +190,11 @@ own to merge into `options.plugins.annotation` (matching
 `withDataLabels`'s own config-merging shape) — `annotation` remains a
 config-object-required opt-in, the same as before the port.
 
-**Confirmed live in a real browser after the port**: the same real
+Confirmed live in a real browser after the port: the same real
 line/box/label annotations the docs-site example already demonstrated
 against the *dependency* version, now rendering from local, static
 code — one of `keystone-chartjs-core`'s ten plugin/scale examples that
-renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to. Also confirmed working end-to-end via the existing
-Playwright e2e test (`annotation-plugin.spec.ts`), written before the
-port and passing unchanged after it.
-
-**By far the largest test suite of any port in this project**: a new,
-dedicated test file per real source module (10 foundational files' own
-`.spec.ts` counterparts, 7 element-class `.spec.ts` files under
-`elements/`, plus `annotationPlugin.spec.ts` for the orchestrator
-itself) — covering every real element's own hit-testing geometry
-(circular/elliptical/polygonal/point-in-range tests, including
-rotation-aware variants), the real quadratic-Bezier curved-line
-geometry and its own label-along-a-line positioning, the real
-centered-doughnut-hole label (including its own real, non-degenerate
-background-arc angle computation), the full real plugin lifecycle
-(`beforeInit`/`beforeUpdate`/`afterDataLimits`/`afterUpdate`/every real
-draw hook/`beforeEvent`/`afterDestroy`), and the real scriptable-option
-resolution machinery's own array-valued (per-line) font/color support —
-confirmed via a real `test:coverage` run, not assumed: every one of
-the 17 ported files clears this project's own 90%-per-file floor on
-every metric (statements/branches/functions/lines), landing at 99.6%/
-95.28%/99.28%/99.6% in aggregate across the module — within the same
-range every other local port in this project has settled at (gradient
-99.05% branch, zoom/autocolors ~98%, hierarchical/deferred ~91%,
-trendline/dataLabels ~86-90%).
+renders live on the docs site rather than source-only.
 
 ### Data labels — later locally ported, not a dependency
 
@@ -282,63 +202,35 @@ trendline/dataLabels ~86-90%).
 above, and stayed a real npm dependency for most of this project's own
 history, alongside `annotation`.
 
-**Later ported directly into `packages/core/src/plugins/dataLabels/`
+Later ported directly into `packages/core/src/plugins/dataLabels/`
 (six real files — `utils.ts`, `positioners.ts`, `drawing.ts`, `label.ts`,
 `layout.ts`, `dataLabelsPlugin.ts` — mirroring the original's own real
-module split), at your explicit request** — it is not, and is no
-longer, a real npm dependency of this project. Real source dissected
-directly from the installed package's own real, unminified ESM build
-(`dist/chartjs-plugin-datalabels.esm.js`) — the published package ships
-no real `src/` of its own at all, only `dist/*`/`types/*`, but the ESM
-build is genuinely unminified and complete, making a precise,
-line-by-line dissection possible the same way the installed `dist`
-output already was for `gradient`/`autocolors`.
+module split), at your explicit request — it is not, and is no
+longer, a real npm dependency of this project.
 
-**A real, non-trivial feature set found only by reading the source, not
-fully apparent from the README alone**: (1) real overlap detection —
-`display: 'auto'` labels auto-hide via a genuine Separating Axis Theorem
-hit-test against every other visible label's own rotated bounding box;
-(2) real `click`/`enter`/`leave` event listeners, dispatched via a
-genuine hit-test against each label's own current position, not the
-underlying data element's own hit area; (3) real active-element (hover)
+Real features found only by reading the source, not fully apparent
+from the README alone: (1) real overlap detection — `display: 'auto'`
+labels auto-hide via a genuine Separating Axis Theorem hit-test against
+every other visible label's own rotated bounding box; (2) real
+`click`/`enter`/`leave` event listeners, dispatched via a genuine
+hit-test against each label's own current position, not the underlying
+data element's own hit area; (3) real active-element (hover)
 integration — when Chart.js's own active-elements set changes, every
 label on the affected element gets its own `context.active` flag
-toggled (`true` on entering the active set, `false` on leaving it —
-both directions, confirmed directly from the original's own real
-`update[1]`/`update[1] === 1` logic, not just the "entering" half) and
-re-resolved; (4) real support for multiple, independently-configured
-labels per data point (`options.labels`), each with its own real event
-listeners keyed by label name.
+toggled (both directions, not just "entering") and re-resolved; (4)
+real support for multiple, independently-configured labels per data
+point (`options.labels`), each with its own real event listeners keyed
+by label name.
 
-**A real, confirmed structural finding worth flagging precisely**: the
-original's own real `dispatchEvent()` reads `listeners[$groups.set]`
+The original's own real `dispatchEvent()` reads `listeners[$groups.set]`
 (the dataset index) then `[$groups.key]` (the label key) — meaning the
 chart-wide listener registry built up across every dataset's own
 `afterDatasetUpdate` call needs *three* levels of nesting (event →
 dataset index → label key), one level deeper than the per-dataset
 listeners each dataset's own `configureDataset()`-equivalent resolves
-(event → label key) — easy to under-model at a glance from the README
-alone, confirmed only by tracing the real dispatch call chain in the
-source itself.
+(event → label key).
 
-**A real, deliberate structural improvement over the original's own
-design, not a behavior change**: the original stores its own real
-per-chart bookkeeping (`_actives`, `_listened`, `_listeners`, `_datasets`,
-`_labels`, `_hovered`, `_dirty`) and per-element label arrays as ad-hoc
-properties monkey-patched directly onto the live chart instance and its
-own data elements (`chart.$datalabels`, `element.$datalabels`) — this
-port uses two module-level `WeakMap`s instead, matching the identical
-real improvement `deferredPlugin.ts`'s own port already made for an
-identical class of pattern (`chart.$deferred`/
-`element.$chartjs_deferred`).
-
-**No real bug found during dissection**, the same as `trendline`'s own
-port — the original's own real hook names (`beforeInit`, `beforeUpdate`,
-`afterDatasetUpdate`, `afterUpdate`, `afterDatasetsDraw`, `beforeEvent`,
-`afterEvent`) are all genuine, valid Chart.js v4 lifecycle hooks,
-confirmed directly against `chart.js`'s own installed type declarations.
-
-**Genuinely distinct registration shape**: registers directly and
+Genuinely distinct registration shape: registers directly and
 synchronously via `Chart.register(dataLabelsPlugin)` (matching
 `withAutocolors`'s/`withDeferred`'s own mechanism) AND merges real
 plugin-level config of its own into `options.plugins.datalabels`
@@ -346,30 +238,11 @@ plugin-level config of its own into `options.plugins.datalabels`
 and `dataLabels` are now locally ported, leaving no plugin in this
 project still needing a real dynamic `import()` to register.
 
-**Confirmed live in a real browser after the port**: a bar chart with a
+Confirmed live in a real browser after the port: a bar chart with a
 real label rendered directly above each bar — one of nine of this
 project's plugins/scales (alongside `zoom`, `annotation`, `gradient`,
 `hierarchical`, `imageLabel`, `autocolors`, `deferred`, and `trendline`)
-that renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to. Also confirmed working end-to-end via the existing Playwright e2e
-test (`data-labels-plugin.spec.ts`), written before the port and passing
-unchanged after it.
-
-**Comprehensive unit test coverage**: a new, dedicated test file per
-real source module (`utils.spec.ts`, `positioners.spec.ts`,
-`drawing.spec.ts`, `label.spec.ts`, `layout.spec.ts`,
-`dataLabelsPlugin.spec.ts`) covering the real per-element positioner
-dispatch, the Cohen–Sutherland line-clipping helper the frame-anchor
-math shares with `trendlineCore.ts`'s own port, the Separating Axis
-Theorem overlap detection, the default value formatter's own real
-branches, and the plugin's own real click/hover/active-element
-behavior — confirmed via a real `test:coverage` run, not assumed:
-95.81% statements/lines, 85.97% branches, 100% functions across the six
-real files — within the same range every other local port in this
-project has settled at (gradient 99.05% branch, zoom/autocolors ~98%,
-hierarchical/deferred ~91%, trendline 87.55%).
+that renders live on the docs site rather than source-only.
 
 ### Added after v1 kickoff: Gradient (later locally ported, not a dependency)
 
@@ -385,31 +258,20 @@ package's own release notes ("v0.6.0: Add compatibility to Chart.js
 version 4"), maintained by Jukka Kurkela — the same person who maintains
 Chart.js core itself, and 3 of the 5 extension packages in §3.
 
-**Later ported directly into `packages/core/src/gradientPlugin.ts`, at
+Later ported directly into `packages/core/src/gradientPlugin.ts`, at
 your explicit request, the same way `chartjs-plugin-image-label` was
-(see that section below)** — it is not, and is no longer, a real npm
-dependency of this project. Confirmed a faithful port, not a
-reimplementation from scratch: the original's own real logic (per-dataset
+(see that section below) — it is not, and is no longer, a real npm
+dependency of this project. The original's own real logic (per-dataset
 gradient computation, legend-swatch color application, sRGB-aware color
 interpolation for radar/polar-style charts) was dissected directly from
 the installed package's own dist file
 (`node_modules/chartjs-plugin-gradient/dist/
-chartjs-plugin-gradient.esm.js`) and carried over largely unchanged.
+chartjs-plugin-gradient.esm.js`) and carried over largely unchanged,
+using `afterDestroy` for teardown (the real Chart.js `Plugin` lifecycle
+hook for this).
 
-**One real bug found and fixed during the port**: the original names
-its teardown hook `destroy`, but Chart.js's own real `Plugin` interface
-has no such hook at all — confirmed directly against `chart.js`'s own
-installed type declarations (`dist/types/index.d.ts`). The real
-lifecycle hooks for chart teardown are `beforeDestroy`/`afterDestroy`;
-a hook name Chart.js's own plugin system doesn't recognize is simply
-never invoked, so the original's own `destroy` handler — whose only job
-is deleting this plugin's own per-chart state entry — likely never
-actually ran in real Chart.js, silently leaking one entry per destroyed
-chart for as long as the plugin's own module stayed loaded. Renamed to
-`afterDestroy` in the port, the correct real hook name.
-
-**Genuinely different shape from `withZoom`/`withAnnotation`/
-`withDataLabels`**: this plugin has no plugin-level config of its own to
+Genuinely different shape from `withZoom`/`withAnnotation`/
+`withDataLabels`: this plugin has no plugin-level config of its own to
 merge into `options.plugins.gradient` — confirmed directly from the
 original package's own README (github.com/kurkle/chartjs-plugin-
 gradient). Its real config lives on each *dataset* instead
@@ -422,15 +284,12 @@ of the port, it's also never passed to a global `Chart.register(...)`
 call at all — supplied per-chart-instance via Chart.js's own real inline
 `plugins` array instead, the same mechanism `imageLabel` uses.
 
-**Confirmed live in a real browser after the port**: a real bar chart
+Confirmed live in a real browser after the port: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
 varying by each bar's own height — one of nine of this project's
 plugins/scales (alongside `imageLabel`, `zoom`, `annotation`,
 `hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`)
-that renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to.
+that renders live on the docs site rather than source-only.
 
 ### Added after v1 kickoff: Timestack
 
@@ -444,8 +303,8 @@ version (1.0.1), MIT license, real Chart.js v4 compatibility confirmed
 directly from its own `package.json` (`peerDependencies: { "chart.js":
 ">=4" }`), by jkmnt.
 
-**Genuinely different registration mechanism from every other plugin
-here**: confirmed directly from the real package's own README
+Genuinely different registration mechanism from every other plugin
+here: confirmed directly from the real package's own README
 (github.com/jkmnt/chartjs-scale-timestack) — there is no exported plugin
 object to pass to `Chart.register(...)` at all. The package registers
 its own `timestack` scale as a side effect of being imported
@@ -454,15 +313,12 @@ Like `gradient`, the `timestack` opt-in prop is boolean-only — the
 scale is used via the standard `options.scales.<id>.type = 'timestack'`
 mechanism, which already reaches Chart.js untouched.
 
-**Real, hard runtime dependency worth flagging**: this package requires
+Real, hard runtime dependency worth flagging: this package requires
 `luxon` (confirmed from its own README: "npm install luxon chartjs-
 scale-timestack") for locale-aware time formatting — a real, sizeable
 added dependency, not merely optional. Confirmed Luxon itself is
 actively maintained (version 3.7.2, 2 maintainers, healthy release
-cadence, no open unpatched CVEs at the time of this check) — a real
-dependency-weight cost, but not the same maintenance-risk concern
-already flagged for `chartjs-plugin-zoom`'s own Hammer.js dependency in
-§6 below.
+cadence, no open unpatched CVEs at the time of this check).
 
 ### Added after v1 kickoff: Hierarchical (later locally ported, not a dependency)
 
@@ -473,25 +329,23 @@ already flagged for `chartjs-plugin-zoom`'s own Hammer.js dependency in
 Also added later, at your explicit request, after being surveyed in
 `docs/CHARTJS_AWESOME_PLUGINS.md`. Verified the same way: current
 version (4.4.5), MIT license, 267 kB, by sgratzl — the same maintainer
-already behind `@sgratzl/chartjs-chart-boxplot` in §3 above, a known,
-trusted maintainer within this project already. Confirmed a legitimate,
-actively maintained fork of the now-archived `chartjs-scale-hierarchical`
-(that original package's own npm listing states "Package no longer
-supported... There is an active fork" pointing to this exact package).
+already behind `@sgratzl/chartjs-chart-boxplot` in §3 above. Confirmed a
+legitimate, actively maintained fork of the now-archived
+`chartjs-scale-hierarchical` (that original package's own npm listing
+states "Package no longer supported... There is an active fork"
+pointing to this exact package).
 
-**Later ported directly into `packages/core/src/hierarchicalScale.ts`, at
+Later ported directly into `packages/core/src/hierarchicalScale.ts`, at
 your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-plugin-
-gradient`/`chartjs-plugin-image-label` were** — it is not, and is no longer,
-a real npm dependency of this project. **Real, confirmed finding that made
-this port simpler than `timestack`'s own**: unlike `chartjs-scale-
+gradient`/`chartjs-plugin-image-label` were — it is not, and is no longer,
+a real npm dependency of this project. Unlike `chartjs-scale-
 timestack` (a hard, real `luxon` dependency), this package has zero
 runtime dependencies of its own, confirmed directly from its own
 `package.json` (`peerDependencies: { "chart.js": "^4.1.0" }`, nothing
-else) — fully self-contained, the same "zero extra dependency weight"
-outcome `zoom`/`gradient`/`imageLabel` already have.
+else).
 
-**Two things bundled into one package, ported here as one cohesive
-file**: a real `CategoryScale` subclass (`HierarchicalScale`, its own
+Two things bundled into one package, ported here as one cohesive
+file: a real `CategoryScale` subclass (`HierarchicalScale`, its own
 custom pixel/value mapping so nested tree levels get progressively
 tighter spacing) plus a companion drawing/interaction plugin, dissected
 directly from the installed package's own real TypeScript source
@@ -504,31 +358,21 @@ itself, matching the original's own identical registration mechanism
 exactly, just called directly and synchronously now instead of after a
 dynamic `import()`.
 
-**A real, discovered gap in the original package's own design, not
-introduced by this port**: the companion plugin draws its own
-expand/collapse/focus indicator boxes directly below (or beside) the
-axis's own real edge, but never participates in Chart.js's own layout/
-padding calculation to reserve space for them — confirmed via a live,
-reproduced issue: without a consumer manually adding enough
+The companion plugin draws its own expand/collapse/focus indicator
+boxes directly below (or beside) the axis's own real edge, but never
+participates in Chart.js's own layout/padding calculation to reserve
+space for them — without a consumer manually adding enough
 `layout.padding` themselves, those indicator boxes are drawn past the
-canvas's own visible edge entirely, invisible and unclickable. An
-attempt at fixing this port-side (a `fit()` override on the scale
-reserving its own extra space automatically) was tried and reverted: a
-live, reproduced regression showed Chart.js's own real, iterative
-layout pass calling `fit()` more than once per render, each call adding
-the same extra amount again on top of the last and collapsing the real
-plot area to near-zero height. Documented as a known, necessary
-consumer-side addition instead (see the
+canvas's own visible edge, invisible and unclickable. This matches the
+original package's own real, identical behavior. See the
 [Hierarchical scale example](/vue/examples/hierarchical-scale)'s own
-`layout.padding.bottom`), matching the original's own real, identical
-behavior — not a regression this port introduced.
+`layout.padding.bottom` for the required consumer-side workaround.
 
-**A real, deliberate type-system improvement over the original's own
-consumer-facing experience**: this project's own `timestack-scale.vue`
-docs example needs an `as unknown as ChartConfiguration['options']`
-cast to write `type: 'timestack'`, since that third-party package's own
-module augmentation is never statically imported anywhere in that
-file's own compile graph (only a dynamic `import()` at runtime). Because
+This project's own `timestack-scale.vue` docs example needs an
+`as unknown as ChartConfiguration['options']` cast to write
+`type: 'timestack'`, since that third-party package's own module
+augmentation is never statically imported anywhere in that file's own
+compile graph (only a dynamic `import()` at runtime). Because
 `hierarchicalScale.ts` is statically imported by every real consumer of
 `keystone-chartjs-core` already, its own identical `declare module
 'chart.js'` augmentation (`CartesianScaleTypeRegistry`,
@@ -536,35 +380,19 @@ file's own compile graph (only a dynamic `import()` at runtime). Because
 needed to write `options.scales.x.type = 'hierarchical'` in the docs
 example.
 
-**Real, distinct tree-node data shape**: confirmed directly from the
+Real, distinct tree-node data shape: confirmed directly from the
 real package's own type declarations, dissected into this project's own
 `HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
 `keystone-chartjs-core`) — `data.labels`/`dataset.data` need this tree
 structure (`{ label, children }` / `{ value, children }`), not the flat
 arrays every other kind or plugin in this project accepts.
 
-**Confirmed live in a real browser after the port**, including the real
+Confirmed live in a real browser after the port, including the real
 click-to-expand/collapse/zoom-in/zoom-out interaction — one of nine of
 this project's plugins/scales (alongside `zoom`, `annotation`,
 `gradient`, `imageLabel`, `autocolors`, `deferred`, `trendline`, and
 `dataLabels`) that renders live on the docs site rather than
-source-only, for the identical reason: local, static code has no
-dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
-
-**Comprehensive unit test coverage**: grew to 87 dedicated tests across
-several rounds (55 from the initial port, then a coverage-hardening
-pass) covering the tree-flattening/visibility/span-logic utilities as
-pure functions, the scale's own tick/pixel-mapping methods, and the
-companion plugin's own beforeUpdate/beforeDatasetsDraw/beforeEvent
-hooks (collapse/expand/zoom-in/zoom-out round trips, vertical-axis
-rendering, static mode, attribute inheritance, and several genuinely
-subtle span-logic combinations) — confirmed via a real `test:coverage`
-run, not assumed: 98.2% statements/lines, 90.93% branches, 98%
-functions on this file specifically, clearing the project's own 90%
-per-file floor on every metric (every other core file sits at a clean
-100%, aside from `zoomPlugin.ts`'s own pre-existing 98.41% branch
-figure).
+source-only.
 
 ### Added after v1 kickoff: Image label (locally ported, not a dependency)
 
@@ -573,51 +401,34 @@ figure).
 | Image label | `chartjs-plugin-image-label` | `1.0.10` | Draws an image (e.g. a logo/avatar) on each doughnut/pie slice. |
 
 Also added later, at your explicit request, after being surveyed in
-`docs/CHARTJS_AWESOME_PLUGINS.md`. **Genuinely different from every
-other entry in this section**: rather than adding this as a real npm
+`docs/CHARTJS_AWESOME_PLUGINS.md`. Rather than adding this as a real npm
 dependency, its own real, published source
 (`node_modules/chartjs-plugin-image-label/dist/chartjs-plugin-image-
 label.es.js`, v1.0.10, MIT, by Yunus Emre Kara) was dissected and ported
 directly into `packages/core/src/imageLabelPlugin.ts`, at your explicit
 request — it is not, and has never been, a dependency of this project.
+Draws labels for every dataset on a multi-dataset doughnut, and
+positions each image using Chart.js's own already-computed
+`startAngle`/`endAngle`/`innerRadius`/`outerRadius` arc geometry rather
+than recomputing slice angles from raw values — so image placement
+stays correct under any `rotation`/`circumference` option.
 
-**Two real bugs in the original, fixed during the port rather than
-carried over verbatim**: (1) the original only ever read
-`chart.data.datasets[0].data`, silently drawing nothing for any
-additional ring on a multi-dataset doughnut; the port iterates every
-dataset. (2) the original recomputed each slice's angular span from raw
-data values (`value / total * 2π`, always starting at a hardcoded
-`-π/2`), which silently mispositioned images under any non-default
-`rotation`/`circumference` option, since it never read Chart.js's own
-computed state at all; the port reads each arc's own real, already-
-computed `startAngle`/`endAngle`/`innerRadius`/`outerRadius` (confirmed
-exact property names from `chart.js`'s own installed type declarations,
-`dist/elements/element.arc.d.ts`) instead.
+Confirmed live in a real browser: this, `annotation`, `gradient`,
+`zoom`, `hierarchical`, `autocolors`, `deferred`, `trendline`, and
+`dataLabels` are nine of the ten plugin/scale examples on the docs site
+that render live rather than source-only.
 
-**Why this one, like `gradient`'s own later port, never hit the
-docs-site dynamic-import hydration gap** (see "Current status & open
-issues" item #4 in `docs/IMPLEMENTATION_PLAN.md`): that gap is
-specifically about a dynamic `import()` of an external package failing
-to resolve when the importing file is served from outside the docs
-site's own project root. Because this plugin is local, static code with
-no `import()` at all—exactly like the 8 built-in chart types—there is
-nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this, `annotation`, `gradient`, `zoom`, `hierarchical`,
-`autocolors`, `deferred`, `trendline`, and `dataLabels` are nine of the
-ten plugin/scale examples on the docs site that render live rather
-than source-only.
-
-**Genuinely distinct registration shape, same as `withGradient`’s and
-`withZoom`’s own local ports — different from `withTimestack`/
-`withHierarchical`**:
-never passed to a global `Chart.register(...)` call. Unlike
-`withTimestack`/`withHierarchical`, it's also never a real module import
-at all — the plugin object (`imageLabelPlugin` in `imageLabelPlugin.ts`)
-is a plain, local, statically-defined value, supplied per-chart-instance
-via Chart.js's own real inline `plugins` array (the same mechanism this
-project's own `plugins` prop already exposes for custom/community
-plugins). `imagesList` is required — no plain-boolean opt-in form,
-matching `annotation`'s own reasoning. Doughnut/pie charts only.
+Genuinely distinct registration shape, same as `withGradient`'s and
+`withZoom`'s own local ports — different from `withTimestack`/
+`withHierarchical`: never passed to a global `Chart.register(...)` call.
+Unlike `withTimestack`/`withHierarchical`, it's also never a real
+module import at all — the plugin object (`imageLabelPlugin` in
+`imageLabelPlugin.ts`) is a plain, local, statically-defined value,
+supplied per-chart-instance via Chart.js's own real inline `plugins`
+array (the same mechanism this project's own `plugins` prop already
+exposes for custom/community plugins). `imagesList` is required — no
+plain-boolean opt-in form, matching `annotation`'s own reasoning.
+Doughnut/pie charts only.
 
 ### Added after v1 kickoff: Autocolors (later locally ported, not a dependency)
 
@@ -638,42 +449,30 @@ official release (`chartjs-plugin-colorschemes`'s own real, installed
 `package.json` pins `peerDependencies: { "chart.js": ">= 2.5.0 < 3" }`
 directly), so neither was implemented alongside this one.
 
-**Later ported directly into `packages/core/src/autocolorsPlugin.ts`,
+Later ported directly into `packages/core/src/autocolorsPlugin.ts`,
 at your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
-plugin-gradient`/`chartjs-plugin-image-label` were** — it is not, and is
-no longer, a real npm dependency of this project. **A real, genuine
-dependency the original itself needs, unlike every other plugin ported
-so far**: the original's own real logic imports two small color-
-conversion utility functions (`hsv2rgb`, `rgbString`) from a separate
-package, `@kurkle/color` — a real, declared `peerDependency` of the
-original (confirmed directly from its own installed `package.json`),
-not bundled into its own dist output at all. Chart.js itself already
-depends on this exact package for its own internal color handling
-(confirmed directly from `chart.js`'s own real `package.json`:
-`"@kurkle/color": "^0.3.0"`), so it's already present in `node_modules`
-for any real consumer of this project regardless — but deliberately
-NOT imported directly here anyway, since doing so would mean importing
-an undeclared transitive dependency, a real, confirmed fragile pattern
-under pnpm's own strict, non-flat `node_modules` layout this monorepo
-already uses (see `stryker.config.mjs`'s own comment on an identical
-class of pnpm-specific resolution gap). Instead, both small functions
-are reimplemented locally: both are textbook, standard color-space-
-conversion algorithms with one universally agreed-upon definition, not
-any bespoke logic of the plugin's own — confirmed by directly comparing
-this port's own output against the real `@kurkle/color` package's own
-installed source for the same inputs before removing that package as a
-dependency again. Every real piece of the plugin's own actual color-
+plugin-gradient`/`chartjs-plugin-image-label` were — it is not, and is
+no longer, a real npm dependency of this project. The original's own
+real logic imports two small color-conversion utility functions
+(`hsv2rgb`, `rgbString`) from a separate package, `@kurkle/color` — a
+real, declared `peerDependency` of the original, not bundled into its
+own dist output. Chart.js itself already depends on this exact package
+for its own internal color handling, so it's already present in
+`node_modules` for any real consumer of this project regardless — but
+deliberately not imported directly here anyway, since doing so would
+mean importing an undeclared transitive dependency under pnpm's own
+strict, non-flat `node_modules` layout this monorepo already uses.
+Instead, both small functions are reimplemented locally: both are
+textbook, standard color-space-conversion algorithms with one
+universally agreed-upon definition, not any bespoke logic of the
+plugin's own. Every real piece of the plugin's own actual color-
 *selection* logic (the golden-ratio-style hue-stepping generator, the
 `dataset`/`data`/`label` mode branching, the "don't overwrite an
 already-set color" merge behavior, `customize`/`offset`/`repeat`
-config handling) is carried over unchanged, dissected directly from the
-real, installed dist output (the package ships no real `src/` in its
-published files, only `dist/*` — the same "dissected from the installed
-dist output" situation `gradient`/`imageLabel` were each in, not
-`zoom`'s/`hierarchical`'s own real `src/` access).
+config handling) is carried over unchanged.
 
-**Genuinely distinct registration shape from every other local port so
-far**: the only one that both (a) registers directly via a real,
+Genuinely distinct registration shape from every other local port so
+far: the only one that both (a) registers directly via a real,
 synchronous `Chart.register(...)` call (matching `withHierarchical`'s
 own mechanism) AND (b) has real plugin-level config of its own to merge
 into `options.plugins.autocolors` (matching `withAnnotation`/
@@ -681,22 +480,13 @@ into `options.plugins.autocolors` (matching `withAnnotation`/
 no config to merge (a scale, not a plugin with options); `withAnnotation`
 is also now locally ported, registering the same real, synchronous way.
 
-**Confirmed live in a real browser after the port**: three datasets on
+Confirmed live in a real browser after the port: three datasets on
 a line chart, each automatically assigned a distinct, generated color
 with no `backgroundColor`/`borderColor` set on any of them — one of
 nine of this project's plugins/scales (alongside `zoom`, `annotation`,
 `gradient`, `hierarchical`, `imageLabel`, `deferred`, `trendline`, and
 `dataLabels`) that renders live on the docs site rather than
-source-only, for the identical reason: local, static code has no
-dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
-
-**Comprehensive unit test coverage**: a new, dedicated
-`tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
-`'data'`/`'label'` mode, the "don't overwrite an already-set color"
-merge behavior, `offset`/`repeat`/`customize` config handling, and the
-real, distinct rgba color format each generated color produces —
-confirmed via a real `test:unit` run, not assumed.
+source-only.
 
 ### Added after v1 kickoff: Deferred (later locally ported, not a dependency)
 
@@ -710,54 +500,35 @@ version (2.0.0), MIT license, by the official Chart.js team
 (simonbrunel) — the same organization behind `annotation`/`datalabels`
 in the original v1 scope above.
 
-**Later ported directly into `packages/core/src/plugins/deferred/
+Later ported directly into `packages/core/src/plugins/deferred/
 deferredPlugin.ts`, at your explicit request, the same way `chartjs-plugin-zoom`/`chartjs-
 plugin-gradient`/`chartjs-plugin-image-label`/`chartjs-plugin-
-hierarchical`/`chartjs-plugin-autocolors` were** — it is not, and is no
+hierarchical`/`chartjs-plugin-autocolors` were — it is not, and is no
 longer, a real npm dependency of this project. The package ships real,
 readable source (`node_modules/chartjs-plugin-deferred/src/plugin.js`,
 not just a minified bundle), which was dissected and carried over
-largely unchanged.
+largely unchanged, using `afterDestroy` for teardown (the real Chart.js
+`Plugin` lifecycle hook for this) to remove its own `scroll` event
+listener(s) and clear its per-chart bookkeeping.
 
-**A real bug found and fixed during the port, the identical class
-already found in `gradientPlugin.ts`'s own port**: the original names
-its teardown hook `destroy`, but Chart.js's own real `Plugin`
-interface (v3/v4 alike) has no such hook at all — confirmed directly
-against `chart.js`'s own installed type declarations. The real hook
-for chart teardown is `afterDestroy`; a hook name Chart.js's own
-plugin system doesn't recognize is simply never invoked, so the
-original's own `destroy` handler — whose only job is removing this
-plugin's own `scroll` event listener(s) and clearing its per-chart
-bookkeeping — likely never actually ran in real Chart.js, silently
-leaking one `scroll` listener (on whichever scrollable ancestor, or the
-`document`, the chart was still watching) per destroyed chart that
-hadn't yet appeared in the viewport. Renamed to `afterDestroy` in this
-port, the correct real hook name.
+This plugin is scroll-event-based, not `IntersectionObserver`-based —
+it walks up from the canvas's own `parentElement` chain looking for the
+nearest scrollable ancestor (`overflow-x`/`overflow-y` of
+`auto`/`scroll`), falling back to the whole `document` if none is
+found, and listens for a real `scroll` event there, checking the
+canvas's own `getBoundingClientRect()` against the viewport on every
+scroll (throttled via `requestAnimationFrame`, or `delay` ms via
+`setTimeout` if configured).
 
-**A real, confirmed finding about the original's own real mechanism,
-not assumed from its own README/marketing copy**: this plugin is
-scroll-event-based, not `IntersectionObserver`-based — it walks up from
-the canvas's own `parentElement` chain looking for the nearest
-scrollable ancestor (`overflow-x`/`overflow-y` of `auto`/`scroll`),
-falling back to the whole `document` if none is found, and listens for
-a real `scroll` event there, checking the canvas's own
-`getBoundingClientRect()` against the viewport on every scroll
-(throttled via `requestAnimationFrame`, or `delay` ms via `setTimeout`
-if configured).
-
-**A real, deliberate design improvement over the original's own
-approach, not a behavior change**: the original stores its own
-per-chart/per-element bookkeeping as ad-hoc properties monkey-patched
+This port stores its own per-chart/per-element bookkeeping in two
+module-level `WeakMap`s (keyed by the real chart/element object, with
+entries garbage-collected automatically once the chart/element itself
+is), rather than the original's own ad-hoc properties monkey-patched
 directly onto the chart instance and DOM elements themselves
-(`chart.$deferred`, `element.$chartjs_deferred`) — this port uses two
-module-level `WeakMap`s instead, keyed by the real chart/element
-object, with entries garbage-collected automatically once the chart/
-element itself is. Same real algorithm and observable behavior,
-confirmed by directly comparing the port's own logic against the real
-installed source line-by-line — only the storage mechanism differs.
+(`chart.$deferred`, `element.$chartjs_deferred`).
 
-**Real config defaults, confirmed directly from the installed source's
-own `defaults` object, not the README's own example values** (which
+Real config defaults, confirmed directly from the installed source's
+own `defaults` object, not the README's own example values (which
 show `xOffset: 150, yOffset: '50%', delay: 500` as illustrative
 numbers, not the plugin's own real shipped defaults): `{ xOffset: 0,
 yOffset: 0, delay: 0 }` — meaning with no config at all, the chart
@@ -766,39 +537,21 @@ the viewport, with no extra delay. Accepts either `true` (apply with
 the real defaults) or a config object, the same boolean-or-config-
 object shape as `zoom`/`dataLabels`/`autocolors`.
 
-**Genuinely distinct registration shape from every other local port so
-far, matching `withAutocolors`'s own shape exactly**: registers
+Genuinely distinct registration shape from every other local port so
+far, matching `withAutocolors`'s own shape exactly: registers
 directly via a real, synchronous `Chart.register(...)` call (matching
 `withHierarchical`'s own mechanism) AND has real plugin-level config of
 its own to merge into `options.plugins.deferred` (matching
 `withAnnotation`/`withDataLabels`'s own config-merging shape).
 
-**Confirmed live in a real browser after the port**: a Playwright e2e
+Confirmed live in a real browser after the port: a Playwright e2e
 test starting the canvas below the fold (via a tall spacer element),
 confirming it scrolls into view and renders real, non-blank pixels
 once a real `scroll` event and the configured delay elapse — one of
 nine of this project's plugins/scales (alongside `zoom`, `annotation`,
 `gradient`, `hierarchical`, `imageLabel`, `autocolors`, `trendline`, and
 `dataLabels`) that renders live on the docs site rather than
-source-only, for the identical reason: local, static code has no
-dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to.
-
-**Comprehensive unit test coverage**: a new, dedicated
-`tests/unit/deferredPlugin.spec.ts` (17 tests) covering in-viewport-at-
-mount, delayed updates (including a destroyed-chart-during-delay
-guard), blocking a second update while a delayed one is pending,
-outside-viewport-at-mount with a real scroll event revealing the
-canvas, `xOffset`/`yOffset` (fixed-number and percentage), an
-unparseable-offset fallback to 0, a `display: none` canvas, scrollable-
-ancestor detection (`overflow-y: scroll` and `overflow-x: auto`),
-scroll-event throttling, two charts sharing one scrollable ancestor,
-and `afterDestroy` cleanup — 96.1% statements/lines, 91.37% branches,
-100% functions, with three accepted, individually-documented survivors
-(each a defensive guard confirmed structurally unreachable given this
-file's own real call graph, the same class of accepted gap as
-`controller.ts`'s/`hierarchicalScale.ts`'s own already-documented
-survivors) — confirmed via a real `test:coverage` run, not assumed.
+source-only.
 
 ### Added after v1 kickoff: Trendline (later locally ported, not a dependency)
 
@@ -815,21 +568,15 @@ for Chart.js > 4.0", tested against real Chart.js 4.4.9/4.5.0 in its
 own published examples), zero runtime dependencies of its own
 (confirmed directly from its own installed `package.json`).
 
-**Genuinely different motivation from every other port above**: unlike
-`zoom` (an unmaintained Hammer.js dependency), `gradient`/`image-label`
-(a real, fixable bug found during dissection), `hierarchical` (zero
-dependencies of its own), `autocolors` (avoiding a new `@kurkle/color`
-dependency), or `deferred` (a real, confirmed hook-name bug) — there
-was no concrete bug or unmaintained-dependency reason for this one at
-all. **Ported anyway, at your explicit request, specifically so
-`keystone-chartjs-core` depends on nothing but `chart.js` itself** —
+Ported at your explicit request, specifically so
+`keystone-chartjs-core` depends on nothing but `chart.js` itself —
 with `annotation` also later ported (see above), this project's core
 package carries zero real npm dependencies of its own beyond `chart.js`.
 
-**Later ported directly into `packages/core/src/plugins/trendline/`
+Later ported directly into `packages/core/src/plugins/trendline/`
 (six real files — `fitters.ts`, `drawing.ts`, `label.ts`,
 `accessibility.ts`, `trendlineCore.ts`, `trendlinePlugin.ts` — mirroring
-the original's own real module split), at your explicit request** — it
+the original's own real module split), at your explicit request — it
 is not, and is no longer, a real npm dependency of this project. The
 package ships real, readable source of its own
 (`src/core/plugin.js`, `src/components/{trendline,label}.js`,
@@ -837,9 +584,9 @@ package ships real, readable source of its own
 accessibility}.js`, not just a minified bundle), which was dissected
 and carried over largely unchanged.
 
-**Real, undocumented features found only by reading the source —
+Real, undocumented features found only by reading the source —
 neither the real package's own README nor its `MIGRATION.md` mentions
-any of these**: (1) `fillColor` on the trendline config, filling the
+any of these: (1) `fillColor` on the trendline config, filling the
 area between the trendline and the chart's own bottom edge; (2)
 `dataset.order` — trendlines draw in ascending order, except order-`0`
 datasets (Chart.js's own real default when unset), which draw *last*,
@@ -854,28 +601,16 @@ entry for it, via a direct patch of the chart's own real
 `legend.options.labels.generateLabels`, additive to whatever Chart.js
 itself already generates.
 
-**A real, deliberate omission from the original's own real logic, not
-a simplification of anything a real consumer needs**: the original's
-own `ExponentialFitter` also tracks every real data point and computes
-an R-squared `correlation()` from them — but nothing in the original's
-own real `plugin.js`/`trendline.js`/`label.js` ever reads that value,
-and `generateTrendlineDescription` (a second, separate accessibility
-function the original also exports, computing a slope/intercept-based
-description directly from a fitter) is likewise never called by
-anything in the original's own real source — both confirmed genuinely
-dead code in the original itself, not this port's own simplification.
-Neither was ported, to avoid carrying over dead weight (and, for
-`correlation()` specifically, a real unused-state violation under this
-project's own strict TypeScript config).
+The original's own `ExponentialFitter` also tracks every real data
+point and computes an R-squared `correlation()` from them, and
+`generateTrendlineDescription` (a second, separate accessibility
+function the original also exports) — neither is ever called by
+anything in the original's own real `plugin.js`/`trendline.js`/
+`label.js`. Neither was ported, to avoid carrying over dead weight
+(and, for `correlation()` specifically, a real unused-state violation
+under this project's own strict TypeScript config).
 
-**No real bug found during dissection**, unlike every prior port — the
-original's own real hook names (`afterDatasetsDraw`, `afterInit`,
-`afterUpdate`, `beforeInit`) are all genuine, valid Chart.js v4 lifecycle
-hooks, confirmed directly against `chart.js`'s own installed type
-declarations, so there was no `destroy`-vs-`afterDestroy`-class mistake
-to find here the way there was in `gradient`'s/`deferred`'s own ports.
-
-**Genuinely distinct registration shape**: like `withAnnotation`/
+Genuinely distinct registration shape: like `withAnnotation`/
 `withDataLabels` before this port, needs a real `Chart.register(...)`
 call (confirmed directly from the real package's own README:
 "Chart.register(ChartJSTrendline)") — now direct and synchronous, no
@@ -887,29 +622,13 @@ trendlineExponential`), which already reaches Chart.js untouched via
 this project's own `data` passthrough. `trendline` is therefore
 boolean-only.
 
-**Confirmed live in a real browser after the port**: a line chart with
+Confirmed live in a real browser after the port: a line chart with
 a genuine upward trend in its data, a real `trendlineLinear` config
 fitting a visibly distinct dotted red line against it — one of nine of
 this project's plugins/scales (alongside `zoom`, `annotation`,
 `gradient`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
 `dataLabels`) that renders live on the docs site rather than
-source-only, for the identical reason: local, static code has no
-dynamic `import()` for the docs-site hydration gap (item #4 in
-`docs/IMPLEMENTATION_PLAN.md`) to apply to. Also confirmed working
-end-to-end via a real Playwright e2e test (`trendline-plugin.spec.ts`).
-
-**Comprehensive unit test coverage**: a new, dedicated test file per
-real source module (`fitters.spec.ts`, `drawing.spec.ts`,
-`label.spec.ts`, `accessibility.spec.ts`, `trendlineCore.spec.ts`,
-`trendlinePlugin.spec.ts`) covering the real least-squares math for
-both curve types, the Liang-Barsky line-clipping algorithm, the real
-near-zero-slope relative-threshold fallback, canvas drawing/fallback
-paths, and the plugin's own real dataset-ordering/legend/accessibility
-features — confirmed via a real `test:coverage` run, not assumed: 97.83%
-statements/lines, 87.55% branches, 100% functions across the six real
-files — within the same range every other local port in this project
-has settled at (gradient 99.05% branch, zoom/autocolors ~98%,
-hierarchical/deferred ~91%).
+source-only.
 
 ## 5. What's explicitly out of scope for v1
 
@@ -936,13 +655,12 @@ or resolved by a later decision:
   `package.json` (`hammerjs: ^2.0.8`, plus `@types/hammerjs`), not merely a
   peer or optional gesture-recognition add-on, with a real, open upstream
   issue (chartjs/chartjs-plugin-zoom#938) flagging Hammer.js itself as
-  unmaintained for years. **Resolved, not just decided**: `chartjs-plugin-
+  unmaintained for years. `chartjs-plugin-
   zoom` was later ported locally into `packages/core/src/zoomPlugin.ts` (see
   §4 above), dropping Hammer.js itself entirely — `hammerjs` and
   `@types/hammerjs` are no longer dependencies of this project at all,
   transitively or otherwise. Pinch-zoom and interactive pan, which the
-  original drove through Hammer.js, were **not** left as a permanent
+  original drove through Hammer.js, were not left as a permanent
   feature cut: both were later reimplemented directly on the standards-
   based Pointer Events API instead, with no external dependency of any
-  kind. The "minimal runtime dependencies" claim about `packages/core` no
-  longer needs the scoping caveat this section originally called for.
+  kind.

@@ -25,38 +25,17 @@ tiers.
    (jsdom has no real 2D context at all), a real extension package
    actually resolving and registering, a real `ResizeObserver` actually
    resizing a chart on a real viewport change. Run across Chromium,
-   Firefox, and WebKit. This tier already caught one real production bug
-   in `keystone-chartjs-core` (a missing built-in registration call) that
-   no earlier, fully-mocked tier could have found — direct evidence for
-   why this tier exists, not just a formality.
+   Firefox, and WebKit.
 4. **Mutation** (Stryker, Vitest runner) — confirms the test suite above
    would actually catch a broken implementation, not just execute one
-   that happens to work. Every accepted surviving mutant is individually
-   explained in `docs/IMPLEMENTATION_PLAN.md`, not silently ignored.
+   that happens to work.
 
 ## Status
 
 All four tiers are real and confirmed, not placeholder scaffolding:
 
-- **Unit** (core): 921 tests. **99.11% statements/lines, 94.52%
-  branches, 99.63% functions overall** — most files (`controller.ts`,
-  `index.ts`, `plugins.ts`, `registry.ts`, `test-utils.ts`,
-  `imageLabelPlugin.ts`, most of `plugins/annotation/**`) are a clean
-  100% across the board; `zoomPlugin.ts`, `hierarchicalScale.ts`,
-  `deferredPlugin.ts`, `autocolorsPlugin.ts`, and the
-  `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts`/
-  `plugins/annotation/**` files each sit in the 90–99% branch range,
-  their own documented, accepted gaps. Every file individually clears
-  the project's own 90% floor on every metric — the remaining gaps are
-  narrow, defensive edge cases (a handful of jsdom-style unreachable
-  branches, or state genuinely unobservable through any external
-  assertion), the same class of accepted gap across every local port in
-  this project.
+- **Unit** (core): 921 tests, 99.11% statements/lines, 94.52% branches,
+  99.63% functions overall.
 - **Component** (this package): 49 tests, 100% coverage on every metric.
-- **End-to-end**: **84/84 passing** across all 3 browsers — every chart
-  kind, all 10 plugins, and resize behavior pass on every browser. No
-  known limitations remain.
-
-See [docs/IMPLEMENTATION_PLAN.md](https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/docs/IMPLEMENTATION_PLAN.md)
-for the full history — including every real bug this testing process
-found along the way, not just the final numbers.
+- **End-to-end**: 84/84 passing across all 3 browsers — every chart
+  kind, all 10 plugins, and resize behavior pass on every browser.
