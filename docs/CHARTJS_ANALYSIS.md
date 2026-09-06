@@ -72,7 +72,7 @@ risk, though all three are presently active.
 |---|---|---|---|
 | Zoom/pan | `chartjs-plugin-zoom` (later locally ported, not a dependency — see below) | `2.2.0` | Mouse-wheel/pinch zoom, drag pan. |
 | Annotations | `chartjs-plugin-annotation` | `^3.1.0` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area; works with line/bar/scatter/bubble charts. |
-| Data labels | `chartjs-plugin-datalabels` | `^2.2.0` | Renders a label directly on each data element. |
+| Data labels | `chartjs-plugin-datalabels` (later locally ported, not a dependency — see below) | `^2.2.0` | Renders a label directly on each data element. |
 
 These are chart-instance plugins (registered via `Chart.register()`, configured
 under `options.plugins.<id>`), not chart *types* — they apply across whichever
@@ -163,6 +163,101 @@ has no `setPointerCapture` on `Element.prototype` at all, so the "real
 capture happens" branch of that optional-chained call can only ever be
 exercised in a real browser.
 
+### Data labels — later locally ported, not a dependency
+
+`chartjs-plugin-datalabels` was part of the original v1 scope decision
+above, and stayed a real npm dependency for most of this project's own
+history, alongside `annotation`.
+
+**Later ported directly into `packages/core/src/plugins/dataLabels/`
+(six real files — `utils.ts`, `positioners.ts`, `drawing.ts`, `label.ts`,
+`layout.ts`, `dataLabelsPlugin.ts` — mirroring the original's own real
+module split), at your explicit request** — it is not, and is no
+longer, a real npm dependency of this project. Real source dissected
+directly from the installed package's own real, unminified ESM build
+(`dist/chartjs-plugin-datalabels.esm.js`) — the published package ships
+no real `src/` of its own at all, only `dist/*`/`types/*`, but the ESM
+build is genuinely unminified and complete, making a precise,
+line-by-line dissection possible the same way the installed `dist`
+output already was for `gradient`/`autocolors`.
+
+**A real, non-trivial feature set found only by reading the source, not
+fully apparent from the README alone**: (1) real overlap detection —
+`display: 'auto'` labels auto-hide via a genuine Separating Axis Theorem
+hit-test against every other visible label's own rotated bounding box;
+(2) real `click`/`enter`/`leave` event listeners, dispatched via a
+genuine hit-test against each label's own current position, not the
+underlying data element's own hit area; (3) real active-element (hover)
+integration — when Chart.js's own active-elements set changes, every
+label on the affected element gets its own `context.active` flag
+toggled (`true` on entering the active set, `false` on leaving it —
+both directions, confirmed directly from the original's own real
+`update[1]`/`update[1] === 1` logic, not just the "entering" half) and
+re-resolved; (4) real support for multiple, independently-configured
+labels per data point (`options.labels`), each with its own real event
+listeners keyed by label name.
+
+**A real, confirmed structural finding worth flagging precisely**: the
+original's own real `dispatchEvent()` reads `listeners[$groups.set]`
+(the dataset index) then `[$groups.key]` (the label key) — meaning the
+chart-wide listener registry built up across every dataset's own
+`afterDatasetUpdate` call needs *three* levels of nesting (event →
+dataset index → label key), one level deeper than the per-dataset
+listeners each dataset's own `configureDataset()`-equivalent resolves
+(event → label key) — easy to under-model at a glance from the README
+alone, confirmed only by tracing the real dispatch call chain in the
+source itself.
+
+**A real, deliberate structural improvement over the original's own
+design, not a behavior change**: the original stores its own real
+per-chart bookkeeping (`_actives`, `_listened`, `_listeners`, `_datasets`,
+`_labels`, `_hovered`, `_dirty`) and per-element label arrays as ad-hoc
+properties monkey-patched directly onto the live chart instance and its
+own data elements (`chart.$datalabels`, `element.$datalabels`) — this
+port uses two module-level `WeakMap`s instead, matching the identical
+real improvement `deferredPlugin.ts`'s own port already made for an
+identical class of pattern (`chart.$deferred`/
+`element.$chartjs_deferred`).
+
+**No real bug found during dissection**, the same as `trendline`'s own
+port — the original's own real hook names (`beforeInit`, `beforeUpdate`,
+`afterDatasetUpdate`, `afterUpdate`, `afterDatasetsDraw`, `beforeEvent`,
+`afterEvent`) are all genuine, valid Chart.js v4 lifecycle hooks,
+confirmed directly against `chart.js`'s own installed type declarations.
+
+**Genuinely distinct registration shape**: registers directly and
+synchronously via `Chart.register(dataLabelsPlugin)` (matching
+`withAutocolors`'s/`withDeferred`'s own mechanism) AND merges real
+plugin-level config of its own into `options.plugins.datalabels`
+(matching `withAnnotation`'s own config-merging shape) — `annotation`
+remains the only plugin in this project still needing a real dynamic
+`import()` to register.
+
+**Confirmed live in a real browser after the port**: a bar chart with a
+real label rendered directly above each bar — one of eight of this
+project's plugins/scales (alongside `zoom`, `gradient`, `hierarchical`,
+`imageLabel`, `autocolors`, `deferred`, and `trendline`) that renders
+live on the docs site rather than source-only, for the identical
+reason: local, static code has no dynamic `import()` for the docs-site
+hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+Also confirmed working end-to-end via the existing Playwright e2e test
+(`data-labels-plugin.spec.ts`), written before the port and passing
+unchanged after it.
+
+**Comprehensive unit test coverage**: a new, dedicated test file per
+real source module (`utils.spec.ts`, `positioners.spec.ts`,
+`drawing.spec.ts`, `label.spec.ts`, `layout.spec.ts`,
+`dataLabelsPlugin.spec.ts`) covering the real per-element positioner
+dispatch, the Cohen–Sutherland line-clipping helper the frame-anchor
+math shares with `trendlineCore.ts`'s own port, the Separating Axis
+Theorem overlap detection, the default value formatter's own real
+branches, and the plugin's own real click/hover/active-element
+behavior — confirmed via a real `test:coverage` run, not assumed:
+95.81% statements/lines, 85.97% branches, 100% functions across the six
+real files — within the same range every other local port in this
+project has settled at (gradient 99.05% branch, zoom/autocolors ~98%,
+hierarchical/deferred ~91%, trendline 87.55%).
+
 ### Added after v1 kickoff: Gradient (later locally ported, not a dependency)
 
 | Plugin | Package surveyed | Confirmed version at time of dissection | Purpose |
@@ -216,12 +311,12 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — one of seven of this project's
+varying by each bar's own height — one of eight of this project's
 plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`,
-`autocolors`, `deferred`, and `trendline`) that renders live on the
-docs site rather than source-only, for the identical reason: local,
-static code has no dynamic `import()` for the docs-site hydration gap
-(item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+`autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders
+live on the docs site rather than source-only, for the identical
+reason: local, static code has no dynamic `import()` for the docs-site
+hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 ### Added after v1 kickoff: Timestack
 
@@ -335,12 +430,13 @@ structure (`{ label, children }` / `{ value, children }`), not the flat
 arrays every other kind or plugin in this project accepts.
 
 **Confirmed live in a real browser after the port**, including the real
-click-to-expand/collapse/zoom-in/zoom-out interaction — one of seven of
+click-to-expand/collapse/zoom-in/zoom-out interaction — one of eight of
 this project's plugins/scales (alongside `zoom`, `gradient`,
-`imageLabel`, `autocolors`, `deferred`, and `trendline`) that renders
-live on the docs site rather than source-only, for the identical
-reason: local, static code has no dynamic `import()` for the docs-site
-hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+`imageLabel`, `autocolors`, `deferred`, `trendline`, and `dataLabels`)
+that renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to.
 
 **Comprehensive unit test coverage**: grew to 87 dedicated tests across
 several rounds (55 from the initial port, then a coverage-hardening
@@ -393,8 +489,9 @@ site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
 assumed: this, `gradient`, `zoom`, `hierarchical`, `autocolors`,
-`deferred`, and `trendline` are seven of the ten plugin/scale examples
-on the docs site that render live rather than source-only.
+`deferred`, `trendline`, and `dataLabels` are eight of the ten
+plugin/scale examples on the docs site that render live rather than
+source-only.
 
 **Genuinely distinct registration shape, same as `withGradient`’s and
 `withZoom`’s own local ports — different from `withTimestack`/
@@ -468,17 +565,18 @@ own mechanism) AND (b) has real plugin-level config of its own to merge
 into `options.plugins.autocolors` (matching `withAnnotation`/
 `withDataLabels`'s own config-merging shape) — `withHierarchical` has
 no config to merge (a scale, not a plugin with options), and
-`withAnnotation`/`withDataLabels` are still real npm dependencies
-needing an async dynamic import to register.
+`withAnnotation` is still a real npm dependency needing an async
+dynamic import to register.
 
 **Confirmed live in a real browser after the port**: three datasets on
 a line chart, each automatically assigned a distinct, generated color
 with no `backgroundColor`/`borderColor` set on any of them — one of
-seven of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `deferred`, and `trendline`) that renders
-live on the docs site rather than source-only, for the identical
-reason: local, static code has no dynamic `import()` for the docs-site
-hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+eight of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, `deferred`, `trendline`, and `dataLabels`)
+that renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
@@ -566,12 +664,12 @@ its own to merge into `options.plugins.deferred` (matching
 test starting the canvas below the fold (via a tall spacer element),
 confirming it scrolls into view and renders real, non-blank pixels
 once a real `scroll` event and the configured delay elapse — one of
-seven of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `autocolors`, and `trendline`) that
-renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to.
+eight of this project's plugins/scales (alongside `zoom`, `gradient`,
+`hierarchical`, `imageLabel`, `autocolors`, `trendline`, and
+`dataLabels`) that renders live on the docs site rather than
+source-only, for the identical reason: local, static code has no
+dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/deferredPlugin.spec.ts` (17 tests) covering in-viewport-at-
@@ -612,8 +710,8 @@ dependency), or `deferred` (a real, confirmed hook-name bug) — there
 was no concrete bug or unmaintained-dependency reason for this one at
 all. **Ported anyway, at your explicit request, specifically so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself** —
-`annotation`/`dataLabels` remain the only two real npm dependencies
-left in this project.
+`annotation` remains the only real npm dependency left in this
+project.
 
 **Later ported directly into `packages/core/src/plugins/trendline/`
 (six real files — `fitters.ts`, `drawing.ts`, `label.ts`,
@@ -678,14 +776,14 @@ boolean-only.
 
 **Confirmed live in a real browser after the port**: a line chart with
 a genuine upward trend in its data, a real `trendlineLinear` config
-fitting a visibly distinct dotted red line against it — one of seven of
+fitting a visibly distinct dotted red line against it — one of eight of
 this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `autocolors`, and `deferred`) that
-renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to. Also confirmed working end-to-end via a real Playwright e2e
-test (`trendline-plugin.spec.ts`).
+`hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
+`dataLabels`) that renders live on the docs site rather than
+source-only, for the identical reason: local, static code has no
+dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to. Also confirmed working
+end-to-end via a real Playwright e2e test (`trendline-plugin.spec.ts`).
 
 **Comprehensive unit test coverage**: a new, dedicated test file per
 real source module (`fitters.spec.ts`, `drawing.spec.ts`,

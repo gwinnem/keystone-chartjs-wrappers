@@ -23,19 +23,20 @@ changes (tooling, shared config, docs site).
   `ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`,
   `ImageLabelPluginOptions`, `AutocolorsPluginOptions`, `DeferredPluginOptions`,
   `TrendlineConfig` re-exported for consumer use.
-- Seven of the ten official plugins are local ports, not real npm
+- Eight of the ten official plugins are local ports, not real npm
   dependencies (`zoom`, `gradient`, `hierarchical`, `imageLabel`,
-  `autocolors`, `deferred`, `trendline`), each dissected directly from
-  the real, installed package's own source (fixing a handful of real
-  bugs found along the way — see each plugin's own file header for the
-  full rationale). `annotation`/`dataLabels` remain real npm
-  dependencies.
-- 520 unit tests. 98.92% statements/lines, 94.35% branches, 99.61%
+  `autocolors`, `deferred`, `trendline`, `dataLabels`), each dissected
+  directly from the real, installed package's own source (fixing a
+  handful of real bugs found along the way — see each plugin's own
+  file header for the full rationale). `annotation` remains the only
+  real npm dependency.
+- 605 unit tests. 98.25% statements/lines, 92.86% branches, 99.69%
   functions overall — every individual file clears the project's own
   90% per-file floor on every metric, with a handful (`zoomPlugin.ts`,
   `hierarchicalScale.ts`, `deferredPlugin.ts`, and the new
-  `trendline/*.ts` files) settling in the 87–99% branch range rather
-  than a clean 100%, each with its own documented, accepted survivors.
+  `trendline/*.ts`/`dataLabels/*.ts` files) settling in the 78–99%
+  branch range rather than a clean 100%, each with its own documented,
+  accepted survivors.
 
 ### keystone-chartjs-vue
 
@@ -66,10 +67,10 @@ changes (tooling, shared config, docs site).
   labels plugin, gradient plugin, timestack scale, hierarchical scale,
   image label plugin, autocolors plugin, deferred plugin, and trendline
   plugin — zoom/gradient/hierarchical/imageLabel/autocolors/deferred/
-  trendline live and interactive; annotation/dataLabels source-only
-  pending a docs-site build-pipeline gap around dynamic imports of
-  their still-real npm dependencies; timestack similarly source-only
-  for its own real `luxon` dependency).
+  trendline/dataLabels live and interactive; annotation source-only
+  pending a docs-site build-pipeline gap around dynamic imports of its
+  still-real npm dependency; timestack similarly source-only for its
+  own real `luxon` dependency).
 - Concept guide pages: data structures, options resolution, axes & scales,
   mixed charts, colors/fonts/padding, performance, accessibility.
 

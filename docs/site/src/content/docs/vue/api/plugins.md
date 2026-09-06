@@ -7,7 +7,7 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 |---|---|---|---|---|
 | Zoom/pan | locally ported, not a dependency | Wheel-zoom, drag-to-zoom, pinch-zoom, touch/pen pan, plus a full programmatic API | `zoom` | Implemented |
 | Annotations | `chartjs-plugin-annotation` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area | `annotation` | Implemented |
-| Data labels | `chartjs-plugin-datalabels` | Renders a label directly on each data element | `dataLabels` | Implemented |
+| Data labels | locally ported, not a dependency | Renders a label directly on each data element | `dataLabels` | Implemented |
 | Gradient | locally ported, not a dependency | Per-dataset color gradients, keyed by axis position | `gradient` | Implemented |
 | Timestack | `chartjs-scale-timestack` | Alternative time axis, formatting time in two stacked, human-friendly rows | `timestack` | Implemented |
 | Hierarchical | locally ported, not a dependency | Collapsible, tree-like categorical axis | `hierarchical` | Implemented |
@@ -19,11 +19,12 @@ description: Official Chart.js plugins this package wires in as opt-in props.
 These are chart-instance plugins, not chart types — they apply across
 whichever `type` you use them with. Each is a one-line opt-in prop on
 `<Chart>` (see [Props](/vue/components/props)) rather than requiring a
-manual `Chart.register()` call in consumer code — the two still-
-dependency-based ones (`annotation`, `dataLabels`) are dynamically
-imported and registered automatically, the first time the prop is used
-(`zoom`/`gradient`/`imageLabel`/`autocolors`/`deferred`/`trendline` are
-local code instead — see their own sections below).
+manual `Chart.register()` call in consumer code — the one still-
+dependency-based plugin left (`annotation`) is dynamically imported and
+registered automatically, the first time the prop is used
+(`zoom`/`gradient`/`imageLabel`/`autocolors`/`deferred`/`trendline`/
+`dataLabels` are all local code instead — see their own sections
+below).
 
 `zoom`/`dataLabels` accept either `true` (apply with no extra config) or a
 config object merged into `options.plugins.zoom`/`options.plugins.datalabels`
@@ -121,10 +122,10 @@ on a third-party package at all — its logic (originally
 (`src/plugins/gradient/gradientPlugin.ts`), never registered via `Chart.register(...)`,
 supplied per-chart-instance via Chart.js's own inline `plugins` array
 instead (the same mechanism `zoom`/`imageLabel` use). Being local code
-rather than a dynamic import also means this is one of seven plugins on
+rather than a dynamic import also means this is one of eight plugins on
 this project's docs site (alongside `zoom`, `imageLabel`, `hierarchical`,
-`autocolors`, `deferred`, and `trendline`) whose own example renders
-genuinely live rather than source-only.
+`autocolors`, `deferred`, `trendline`, and `dataLabels`) whose own
+example renders genuinely live rather than source-only.
 
 See the [Gradient plugin example](/vue/examples/gradient-plugin) for the
 full version, and
@@ -206,10 +207,10 @@ in this project accepts — confirmed directly from the real package's
 own type declarations, dissected into this project's own
 `HierarchicalRawLabelNode`/`HierarchicalValueNode` types (exported from
 `keystone-chartjs-core`). Being local code rather than a dynamic import
-also means this is one of seven plugins/scales on this project's docs
+also means this is one of eight plugins/scales on this project's docs
 site (alongside `zoom`, `gradient`, `imageLabel`, `autocolors`,
-`deferred`, and `trendline`) whose own example renders genuinely live
-rather than source-only — click a category's own box below the axis to expand/
+`deferred`, `trendline`, and `dataLabels`) whose own example renders
+genuinely live rather than source-only — click a category's own box below the axis to expand/
 collapse it, or the small dot on a fully-expanded group to zoom in/out,
 right on the example page. See the
 [Hierarchical scale example](/vue/examples/hierarchical-scale) for the
@@ -217,8 +218,8 @@ full version.
 
 ## Image label — a local port, not a dependency, doughnut/pie only
 
-Genuinely different mechanism from `annotation`/`dataLabels` (the two
-still-dependency-based plugins left): `imageLabel` is never
+Genuinely different mechanism from `annotation` (the one still-
+dependency-based plugin left): `imageLabel` is never
 registered globally via `Chart.register(...)` at all — it's supplied
 per-chart-instance, via Chart.js's own real inline `plugins` array, the
 same mechanism the `plugins` prop below already exposes for
@@ -258,7 +259,7 @@ synchronous `Chart.register(...)` call (matching `hierarchical`'s own
 mechanism) AND has real plugin-level config of its own to merge into
 `options.plugins.autocolors` (matching `dataLabels`'s own config-
 merging shape) — `hierarchical` has no config to merge (a scale, not a
-plugin with options), and `dataLabels` is still a real npm dependency
+plugin with options), and `annotation` is still a real npm dependency
 needing an async dynamic import to register.
 
 ```vue
@@ -294,10 +295,11 @@ agreed-upon definition, not any bespoke logic of the plugin's own)
 while carrying over every real piece of the plugin's own actual color-
 *selection* logic (the hue-stepping generator, mode branching, the
 "don't overwrite an already-set color" merge behavior) unchanged. Being
-local code rather than a dynamic import also means this is one of seven
+local code rather than a dynamic import also means this is one of eight
 plugins/scales on this project's docs site (alongside `zoom`,
-`gradient`, `hierarchical`, `imageLabel`, `deferred`, and `trendline`)
-whose own example renders genuinely live rather than source-only. See the
+`gradient`, `hierarchical`, `imageLabel`, `deferred`, `trendline`, and
+`dataLabels`) whose own example renders genuinely live rather than
+source-only. See the
 [Autocolors plugin example](/vue/examples/autocolors-plugin) for the
 full version.
 
@@ -341,10 +343,10 @@ fixed during the port**, the identical class already found in
 `destroy`, but Chart.js's own real `Plugin` interface has no such hook
 at all — renamed to `afterDestroy`, the correct real hook name. Zero
 runtime dependencies of its own. Being local code rather than a dynamic
-import also means this is one of seven plugins/scales on this project's
+import also means this is one of eight plugins/scales on this project's
 docs site (alongside `zoom`, `gradient`, `hierarchical`, `imageLabel`,
-`autocolors`, and `trendline`) whose own example renders genuinely live
-rather than source-only. See the [Deferred plugin example](/vue/examples/deferred-plugin)
+`autocolors`, `trendline`, and `dataLabels`) whose own example renders
+genuinely live rather than source-only. See the [Deferred plugin example](/vue/examples/deferred-plugin)
 for the full version.
 
 ## Trendline — a local port, not a dependency, config lives on the dataset
@@ -356,8 +358,7 @@ reason for this one — the real package is actively maintained with zero
 runtime dependencies of its own and no known bugs found during
 dissection. Ported anyway, at your explicit request, specifically so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself —
-`annotation`/`dataLabels` remain the only two real npm dependencies left
-in this project.
+`annotation` remains the only real npm dependency left in this project.
 
 Like `gradient`, `trendline` is **boolean only** — it has no
 plugin-level config of its own to merge into `options.plugins.
@@ -408,16 +409,88 @@ mentions any of these:
   whatever Chart.js itself already generates.
 
 **No type declarations shipped by the real package at all** — a
-genuine, confirmed gap unlike `annotation`/`dataLabels`, both of which
-ship real `.d.ts` files of their own — irrelevant to this port itself
-(no dependency left to lack types for), but worth knowing if you ever
-compare against the original package directly.
+genuine, confirmed gap unlike `annotation`, which ships real `.d.ts`
+files of its own — irrelevant to this port itself (no dependency left
+to lack types for), but worth knowing if you ever compare against the
+original package directly.
 
 Being local code rather than a dynamic import also means this is one of
-seven plugins/scales on this project's docs site (alongside `zoom`,
-`gradient`, `hierarchical`, `imageLabel`, `autocolors`, and `deferred`)
-whose own example renders genuinely live rather than source-only. See
+eight plugins/scales on this project's docs site (alongside `zoom`,
+`gradient`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
+`dataLabels`) whose own example renders genuinely live rather than
+source-only. See
 the [Trendline plugin example](/vue/examples/trendline-plugin) for the
+full version.
+
+## Data labels — a local port, not a dependency
+
+`dataLabels` draws on a local port of `chartjs-plugin-datalabels`
+(v2.2.0, MIT). Real source dissected directly from the installed
+package's own real, unminified ESM build
+(`dist/chartjs-plugin-datalabels.esm.js`) — the published package ships
+no real `src/` of its own, only `dist/*`/`types/*`, but the ESM build is
+genuinely unminified and complete, making a precise, line-by-line
+dissection possible the same way the installed `dist` output already
+was for `gradient`/`autocolors`. Ported directly into
+`keystone-chartjs-core` (`src/plugins/dataLabels/`, six real files
+mirroring the original's own real module split — `utils.ts`,
+`positioners.ts`, `drawing.ts`, `label.ts`, `layout.ts`,
+`dataLabelsPlugin.ts`), at your explicit request, specifically so this
+package depends on nothing but `chart.js` itself — `annotation` remains
+the only real npm dependency left in this project.
+
+`dataLabels` accepts either `true` (apply the plugin's own defaults) or
+a config object merged into `options.plugins.datalabels`, and/or a
+per-dataset override via `dataset.datalabels` (`false` disables the
+plugin for that dataset entirely; an object merges over the plugin-
+level config):
+
+```vue
+<Chart
+  type="bar"
+  :data-labels="{ color: 'white', font: { weight: 'bold' }, anchor: 'end', align: 'top' }"
+  :data="data"
+/>
+```
+
+**Real features found only by reading the source, not fully documented
+in the README** — all faithfully carried over:
+- **Real overlap auto-hiding** — `display: 'auto'` hides a label once it
+  collides with another, higher-priority one, via a genuine Separating
+  Axis Theorem hit-test between every pair of labels' own rotated
+  bounding boxes.
+- **Real `click`/`enter`/`leave` listeners** (`options.listeners`),
+  dispatched via a genuine hit-test against each label's own current
+  position, not the underlying data element's own hit area.
+- **Real active-element (hover) integration** — a label's own
+  `context.active` flag toggles automatically as the corresponding data
+  element enters/leaves Chart.js's own active-elements set, confirmed
+  directly from the original's own real `update[1] === 1` logic (both
+  directions, not just "entering").
+- **Multiple labels per data point** — `options.labels` (a `{<name>:
+  {...}}` map) configures more than one independently-styled label per
+  element, each with its own listeners.
+
+**A real, deliberate structural improvement over the original's own
+design, not a behavior change**: the original stores its own real
+per-chart bookkeeping and per-element label arrays as ad-hoc properties
+monkey-patched directly onto the live chart instance and its own data
+elements (`chart.$datalabels`, `element.$datalabels`) — this port uses
+two module-level `WeakMap`s instead, matching the same real improvement
+`deferredPlugin.ts`'s own port already made for an identical class of
+pattern.
+
+Registers via a direct, synchronous `Chart.register(dataLabelsPlugin)`
+call (matching `withAutocolors`/`withDeferred`'s own mechanism) AND
+merges real plugin-level config into `options.plugins.datalabels`
+(matching `withAnnotation`'s own config-merging shape).
+
+Being local code rather than a dynamic import also means this is one of
+eight plugins/scales on this project's docs site (alongside `zoom`,
+`gradient`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
+`trendline`) whose own example renders genuinely live rather than
+source-only. See the
+[Data labels plugin example](/vue/examples/data-labels-plugin) for the
 full version.
 
 ## Custom, inline plugins

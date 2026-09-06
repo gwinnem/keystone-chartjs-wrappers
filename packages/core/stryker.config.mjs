@@ -41,16 +41,17 @@ const config = {
   // Each locally-ported plugin now lives in its own subdirectory under
   // src/plugins/<name>/, mirrored under tests/unit/plugins/<name>/ —
   // imageLabelPlugin.ts, gradientPlugin.ts, zoomPlugin.ts,
-  // hierarchicalScale.ts, autocolorsPlugin.ts, deferredPlugin.ts, and
-  // (as of the trendline port) the five real files under
-  // plugins/trendline/: real, non-trivial ported logic (see each
-  // file's own header comment), each with its own dedicated test file
-  // (tests/unit/plugins/imageLabel/imageLabelPlugin.spec.ts, tests/
-  // unit/plugins/gradient/gradientPlugin.spec.ts, tests/unit/plugins/
-  // zoom/zoomPlugin.spec.ts, tests/unit/plugins/hierarchical/
-  // hierarchicalScale.spec.ts, tests/unit/plugins/autocolors/
-  // autocolorsPlugin.spec.ts, tests/unit/plugins/deferred/
-  // deferredPlugin.spec.ts, tests/unit/plugins/trendline/*.spec.ts).
+  // hierarchicalScale.ts, autocolorsPlugin.ts, deferredPlugin.ts, the
+  // six real files under plugins/trendline/, and (as of the dataLabels
+  // port) the six real files under plugins/dataLabels/: real,
+  // non-trivial ported logic (see each file's own header comment),
+  // each with its own dedicated test file (tests/unit/plugins/
+  // imageLabel/imageLabelPlugin.spec.ts, tests/unit/plugins/gradient/
+  // gradientPlugin.spec.ts, tests/unit/plugins/zoom/zoomPlugin.spec.ts,
+  // tests/unit/plugins/hierarchical/hierarchicalScale.spec.ts, tests/
+  // unit/plugins/autocolors/autocolorsPlugin.spec.ts, tests/unit/
+  // plugins/deferred/deferredPlugin.spec.ts, tests/unit/plugins/
+  // trendline/*.spec.ts, tests/unit/plugins/dataLabels/*.spec.ts).
   mutate: [
     'src/registry.ts',
     'src/controller.ts',
@@ -67,6 +68,12 @@ const config = {
     'src/plugins/trendline/accessibility.ts',
     'src/plugins/trendline/trendlineCore.ts',
     'src/plugins/trendline/trendlinePlugin.ts',
+    'src/plugins/dataLabels/utils.ts',
+    'src/plugins/dataLabels/positioners.ts',
+    'src/plugins/dataLabels/drawing.ts',
+    'src/plugins/dataLabels/label.ts',
+    'src/plugins/dataLabels/layout.ts',
+    'src/plugins/dataLabels/dataLabelsPlugin.ts',
   ],
 
   vitest: {

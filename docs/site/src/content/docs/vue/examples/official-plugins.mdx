@@ -17,7 +17,7 @@ support — via the separate `plugins` prop.
 | Colors | *(none — enabled by default)* | Chart.js built-in |
 | Zoom/pan | `zoom` | Local port (`keystone-chartjs-core/src/plugins/zoom/zoomPlugin.ts`) |
 | Annotation | `annotation` | `chartjs-plugin-annotation` |
-| Data labels | `dataLabels` | `chartjs-plugin-datalabels` |
+| Data labels | `dataLabels` | Local port (`keystone-chartjs-core/src/plugins/dataLabels/`) |
 | Gradient | `gradient` | Local port (`keystone-chartjs-core/src/plugins/gradient/gradientPlugin.ts`) |
 | Timestack scale | `timestack` | `chartjs-scale-timestack` |
 | Hierarchical scale | `hierarchical` | Local port (`keystone-chartjs-core/src/plugins/hierarchical/hierarchicalScale.ts`) |
@@ -26,10 +26,10 @@ support — via the separate `plugins` prop.
 | Deferred | `deferred` | Local port (`keystone-chartjs-core/src/plugins/deferred/deferredPlugin.ts`) |
 | Trendline | `trendline` | Local port (`keystone-chartjs-core/src/plugins/trendline/`) |
 
-Seven of these (zoom, gradient, hierarchical, image label, autocolors,
-deferred, trendline) are ported directly into `keystone-chartjs-core`
-rather than kept as real npm dependencies — see each one's own example
-page for why, and [Plugins](/vue/api/plugins) for the full prop
-reference and config shape each one accepts.
+Eight of these (zoom, gradient, hierarchical, image label, autocolors,
+deferred, trendline, data labels) are ported directly into
+`keystone-chartjs-core` rather than kept as real npm dependencies — see
+each one's own example page for why, and [Plugins](/vue/api/plugins) for
+the full prop reference and config shape each one accepts.
 
 See each plugin's own page in this section for a real, working example.

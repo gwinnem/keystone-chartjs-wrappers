@@ -1123,24 +1123,36 @@ match that.
    directly under Angular's own `src/` tree) — deliberately left unsolved
    until Phase 4 actually starts.
 10. **Phase 5 (ecosystem extensions & plugins hardening, all 3
-    frameworks)** — not started as a phase, but a 10th official plugin,
-    `trendline`, has been implemented ahead of the phase proper, at your
-    explicit request — **ported directly into `packages/core/src/
-    plugins/trendline/`** (six real files, mirroring the original
-    package's own real module split), at your explicit request,
-    specifically so `keystone-chartjs-core` depends on nothing but
-    `chart.js` itself (`annotation`/`dataLabels` remain the only two
-    real npm dependencies left). See `docs/TRENDLINE_PLUGIN_PLAN.md`
-    for the original scoping (a real npm dependency was the initial
-    recommendation — no concrete bug or unmaintained-dependency reason
-    motivated a port, unlike every other plugin ported so far) and its
-    own updated "Status: Implemented, then ported" header for the real,
-    confirmed port results: `withTrendline` in `plugins.ts` registers
-    directly and synchronously via `Chart.register(trendlinePlugin)`,
-    several real, undocumented features found only by reading the
-    source (`fillColor`, `dataset.order`, `dataset.alwaysShowTrendline`,
-    automatic ARIA labels, real legend integration), and a docs example
-    that now renders live rather than source-only. Two further
+    frameworks)** — not started as a phase, but two further official
+    plugins have been ported ahead of the phase proper, at your explicit
+    request: **`trendline`**, ported directly into `packages/core/src/
+    plugins/trendline/` (six real files, mirroring the original
+    package's own real module split), specifically so
+    `keystone-chartjs-core` depends on nothing but `chart.js` itself —
+    see `docs/TRENDLINE_PLUGIN_PLAN.md` for the original scoping (a real
+    npm dependency was the initial recommendation — no concrete bug or
+    unmaintained-dependency reason motivated a port, unlike every other
+    plugin ported so far) and its own updated "Status: Implemented,
+    then ported" header for the real, confirmed port results:
+    `withTrendline` in `plugins.ts` registers directly and synchronously
+    via `Chart.register(trendlinePlugin)`, several real, undocumented
+    features found only by reading the source (`fillColor`, `dataset.
+    order`, `dataset.alwaysShowTrendline`, automatic ARIA labels, real
+    legend integration), and a docs example that now renders live
+    rather than source-only; and **`dataLabels`**, ported directly into
+    `packages/core/src/plugins/dataLabels/` (six real files —
+    `utils.ts`, `positioners.ts`, `drawing.ts`, `label.ts`, `layout.ts`,
+    `dataLabelsPlugin.ts` — mirroring the original's own real module
+    split), for the identical "depends on nothing but `chart.js`" reason
+    — `annotation` remains the only real npm dependency left in the
+    project. See `docs/CHARTJS_ANALYSIS.md` §4's own "Data labels—later
+    locally ported, not a dependency" section for the full port
+    verification: real overlap auto-hiding (Separating Axis Theorem
+    hit-testing), real click/enter/leave listeners, real active-element
+    hover integration, multi-label-per-point support, and a real
+    structural improvement replacing the original's own `chart.
+    $datalabels`/`element.$datalabels` monkey-patched bookkeeping with
+    module-level `WeakMap`s. Two further
     candidates, `regression` and `waterfall`, are confirmed genuinely
     Chart.js-v2-only (not just unverified — `regression`'s own README
     states outright "does not work with <chart.js@3.x>"; `waterfall`'s

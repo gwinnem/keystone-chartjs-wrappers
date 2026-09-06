@@ -21,7 +21,11 @@ vi.mock('chart.js', () => ({
 // static plugin object with no dynamic import), so withZoom needs no
 // module mock the way it used to.
 vi.mock('chartjs-plugin-annotation', () => ({ default: { id: 'annotation' } }));
-vi.mock('chartjs-plugin-datalabels', () => ({ default: { id: 'datalabels' } }));
+// No mock for chartjs-plugin-datalabels — it's no longer a dependency
+// at all. Its logic was ported directly into plugins/dataLabels/
+// dataLabelsPlugin.ts (a real, local plugin object, statically
+// imported), so withDataLabels needs no module mock the way it used
+// to.
 // No mock for chartjs-plugin-trendline — it's no longer a dependency at
 // all. Its logic was ported directly into plugins/trendline/
 // trendlinePlugin.ts (a real, local plugin object, statically
@@ -147,11 +151,22 @@ describe('withDataLabels', () => {
     expect(result.plugins).toEqual({ datalabels: {} });
   });
 
+  it('registers via a direct Chart.register(dataLabelsPlugin) call, the real local plugin object, not a dynamically-imported module', async () => {
+    // As of the local port, dataLabelsPlugin is imported directly from
+    // plugins/dataLabels/dataLabelsPlugin.ts — the same real object
+    // reference is what gets passed to Chart.register, no dynamic
+    // import or mod.default ?? mod fallback involved at all anymore
+    // (matching withAutocolors's/withDeferred's own identical
+    // registration mechanism).
+    await withDataLabels({});
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'datalabels' }));
+  });
+
   it('registers the plugin exactly once no matter how many times it is called', async () => {
     await withDataLabels({});
     await withDataLabels({});
     expect(registerMock).toHaveBeenCalledTimes(1);
-    expect(registerMock).toHaveBeenCalledWith({ id: 'datalabels' });
   });
 });
 
@@ -368,17 +383,6 @@ describe('mod.default ?? mod fallback (a plugin package with no default export)'
     await freshPlugins.withAnnotation({}, { annotations: {} });
 
     expect(freshChart.Chart.register).toHaveBeenCalledWith({ default: undefined, id: 'annotation-named-only' });
-  });
-
-  it('withDataLabels registers the module namespace itself when there is no default export', async () => {
-    vi.resetModules();
-    vi.doMock('chartjs-plugin-datalabels', () => ({ default: undefined, id: 'datalabels-named-only' }));
-    const freshChart = await import('chart.js');
-    const freshPlugins = await import('../../src/plugins.js');
-
-    await freshPlugins.withDataLabels({});
-
-    expect(freshChart.Chart.register).toHaveBeenCalledWith({ default: undefined, id: 'datalabels-named-only' });
   });
 });
 

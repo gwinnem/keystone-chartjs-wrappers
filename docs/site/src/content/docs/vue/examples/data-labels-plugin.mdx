@@ -1,37 +1,54 @@
 ---
 title: Data labels plugin
-description: chartjs-plugin-datalabels, supplied via the dataLabels prop, rendering a label directly on each data element.
+description: A local port of chartjs-plugin-datalabels, supplied via the dataLabels prop, rendering a label directly on each data element.
 ---
+import DataLabelsPlugin from '../../../../components/examples/data-labels-plugin.vue';
 import DataLabelsPluginSource from '../../../../components/examples/data-labels-plugin.vue?raw';
 import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
 
-The `dataLabels` prop wires in the real `chartjs-plugin-datalabels`
-package, dynamically imported and registered the first time any
-`<Chart dataLabels>` mounts — one of the two remaining
-still-dependency-based plugins in this library (alongside
-`annotation`), unlike `zoom`/`gradient`/`hierarchical`/`imageLabel`,
-which are all local ports.
+The `dataLabels` prop wires in a local port of `chartjs-plugin-datalabels`
+(real source dissected directly from the installed package's own real,
+unminified ESM build \u2014 the published package ships no real `src/` of
+its own, only `dist/*`/`types/*`) \u2014 registered once via
+`Chart.register(dataLabelsPlugin)`, at your explicit request, so
+`keystone-chartjs-core` depends on nothing but `chart.js` itself.
+`annotation` remains the only real npm dependency left in this project.
 
-:::caution[Not yet live-embedded on this docs site]
-This example isn't hydrated on this page yet — this docs site resolves
-`keystone-chartjs-core` from this monorepo's own workspace source, not a
-published package, and the dynamic import that lazily registers
-still-dependency-based plugins like `dataLabels` doesn't currently
-resolve correctly across that boundary in Vite's dev server. The code
-below is real and correct — confirmed working end-to-end in this
-package's own Playwright e2e suite
-(`packages/vue/tests/e2e/data-labels-plugin.spec.ts`) — this is a
-docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
-itself. Expected to resolve once this package is built/published for
-real (Phase 7).
-:::
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site, like `zoom`/`gradient`/
+`hierarchical`/`imageLabel`/`autocolors`/`deferred`/`trendline` \u2014
+unlike `annotation`, which still renders source-only here.
 
-<ExampleTryIt code={DataLabelsPluginSource} filename="data-labels-plugin.vue" live={false} />
+<ExampleTryIt code={DataLabelsPluginSource} filename="data-labels-plugin.vue" live={true}>
+  <DataLabelsPlugin client:visible />
+</ExampleTryIt>
 
 :::tip[Accepts either `true` or a config object, like `zoom`]
-`dataLabels` merges its real config into `options.plugins.datalabels` —
+`dataLabels` merges its real config into `options.plugins.datalabels` \u2014
 pass `true` for the plugin's own defaults (shown here), or a config
 object (e.g. `{ color: 'white', font: { weight: 'bold' } }`) to
 customize label placement, formatting, and styling. See
 [Plugins](/vue/api/plugins/) for the full prop reference.
+:::
+
+:::note[Real features found only by reading the source]
+Neither the real package's own README fully documents these \u2014 confirmed
+only by dissecting the installed package's own real, unminified ESM
+build directly:
+- **Automatic overlap hiding** \u2014 `display: 'auto'` auto-hides a label
+  once it collides with another, higher-priority one, via a genuine
+  Separating Axis Theorem hit-test between each pair of labels' own
+  rotated bounding boxes.
+- **Real click/enter/leave listeners** \u2014 `listeners: { click, enter,
+  leave }`, dispatched via a genuine hit-test against each label's own
+  current position, not the underlying data element's own hit area.
+- **Real hover integration** \u2014 a label's own `context.active` flag
+  toggles automatically as the corresponding data element becomes
+  active/inactive (e.g. on hover), letting scriptable options react to
+  it directly.
+- **Multiple labels per data point** \u2014 `labels: { <name>: {...} }`
+  configures more than one independently-styled label per element, each
+  with its own listeners.
+
+See [Plugins](/vue/api/plugins/) for the full prop reference.
 :::

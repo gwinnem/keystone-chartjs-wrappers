@@ -1,5 +1,6 @@
 import { Chart, type ChartConfiguration } from 'chart.js';
 import { autocolorPlugin } from './plugins/autocolors/autocolorsPlugin.js';
+import { dataLabelsPlugin } from './plugins/dataLabels/dataLabelsPlugin.js';
 import { deferredPlugin } from './plugins/deferred/deferredPlugin.js';
 import { gradientPlugin } from './plugins/gradient/gradientPlugin.js';
 import { HierarchicalScale } from './plugins/hierarchical/hierarchicalScale.js';
@@ -100,24 +101,42 @@ export async function withAnnotation(options: Options, annotationOptions: Annota
 }
 
 /**
- * Registers `chartjs-plugin-datalabels` (once) and returns `options` with
- * the given config merged into `options.plugins.datalabels`, without
- * touching any other existing `plugins.*` entries.
+ * Registers a local port of `chartjs-plugin-datalabels` (once), via
+ * this project's own {@link dataLabelsPlugin} — see
+ * `dataLabelsPlugin.ts`'s own header comment for the full port
+ * rationale (real overlap auto-hiding, real click/hover interaction,
+ * real multi-label-per-point support, and a real, deliberate
+ * structural improvement replacing the original's own
+ * `chart.$datalabels`/`element.$datalabels` monkey-patched bookkeeping
+ * with module-level `WeakMap`s). `Chart.register(...)` is called
+ * directly and synchronously (no dynamic `import()` at all, unlike
+ * this function's own prior, still-a-dependency version) — kept
+ * `async` regardless, purely so `useChartController.ts`'s own `await
+ * withDataLabels(opts, ...)` call site needed no changes.
+ *
+ * Same registration/config-merging shape as `withAutocolors`/
+ * `withDeferred`: a real, synchronous `Chart.register(...)` call
+ * (matching `withHierarchical`'s own mechanism) AND real plugin-level
+ * config of its own merged into `options.plugins.datalabels`.
  */
 export async function withDataLabels(options: Options, dataLabelsOptions: DataLabelsPluginOptions = {}): Promise<Options> {
   if (!dataLabelsRegistered) {
-    // Stryker disable next-line StringLiteral: see withZoom's own comment
-    // above for the full reasoning — same issue, same fix.
-    const mod = await import(/* @vite-ignore */ 'chartjs-plugin-datalabels');
-    Chart.register(mod.default ?? mod);
+    Chart.register(dataLabelsPlugin);
     dataLabelsRegistered = true;
   }
   return {
     ...options,
     plugins: {
       ...options.plugins,
+      // Cast needed: Chart.js's own `PluginOptionsByType` has no
+      // knowledge of this local plugin's own precisely-modeled option
+      // shape (`DataLabelsConfig`) — safe at runtime since Chart.js
+      // itself does no compile-time shape checking, only reads
+      // whatever object is actually passed —
+      // `dataLabelsPlugin.ts`'s own `afterDatasetUpdate` reads this key
+      // directly via its second argument.
       datalabels: dataLabelsOptions,
-    },
+    } as Options['plugins'],
   };
 }
 

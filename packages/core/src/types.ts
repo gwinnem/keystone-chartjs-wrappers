@@ -1,4 +1,4 @@
-import type { Chart, ChartConfiguration, ChartType, DefaultDataPoint } from 'chart.js';
+import type { Chart, ChartConfiguration, ChartEvent, ChartType, DefaultDataPoint } from 'chart.js';
 
 // Re-exported so framework packages (packages/vue|react|angular) can
 // import Chart.js's own types through this package rather than
@@ -180,11 +180,115 @@ export interface AnnotationPluginOptions {
 }
 
 /**
- * `chartjs-plugin-datalabels`'s real config lives under
- * `options.plugins.datalabels` directly. Same "loose on purpose" note as
- * `ZoomPluginOptions` above.
+ * `chartjs-plugin-datalabels`'s real config — confirmed directly from
+ * the real, installed package's own real, unminified ESM build
+ * (`dist/chartjs-plugin-datalabels.esm.js`, not just its README),
+ * dissected during this project's own local port (see `plugins/
+ * dataLabels/dataLabelsPlugin.ts` for the full port rationale). Lives
+ * under `options.plugins.datalabels`, and/or per-dataset under
+ * `dataset.datalabels` (`false` disables the plugin entirely for that
+ * dataset; `true` applies the plugin-level config with no override;
+ * an object is merged over the plugin-level config).
+ *
+ * Every field below is genuinely **scriptable** in the real package's
+ * own sense — a plain value, or a function receiving the current
+ * per-label context and returning one, resolved fresh on every real
+ * chart update (see `label.ts`'s own `modelize()`). Modeled via the
+ * shared `Scriptable<T>` helper below rather than a plain union, to
+ * avoid repeating the same `T | ((context) => T)` shape for every one
+ * of the ~20 real fields.
  */
-export type DataLabelsPluginOptions = Record<string, unknown>;
+export interface DataLabelsContext {
+  active: boolean;
+  chart: Chart;
+  dataIndex: number;
+  dataset: unknown;
+  datasetIndex: number;
+}
+
+export type Scriptable<T> = T | ((context: DataLabelsContext) => T);
+
+export interface DataLabelsFontOptions {
+  family?: string;
+  lineHeight?: number | string;
+  size?: number;
+  style?: string;
+  weight?: string | number | null;
+}
+
+export interface DataLabelsPaddingOptions {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+export interface DataLabelsConfig {
+  /** Where the label is positioned relative to its own real anchor
+   * point — a named direction, `'start'`/`'end'` (relative to the
+   * element's own natural orientation), or a real clockwise angle in
+   * degrees.
+   * @default 'center' */
+  align?: Scriptable<'center' | 'start' | 'end' | 'right' | 'bottom' | 'left' | 'top' | number>;
+  /** Which real point along the element's own natural geometry
+   * (bisector angle for an arc, base-to-tip span for a bar, radius for
+   * a point) the label anchors to.
+   * @default 'center' */
+  anchor?: Scriptable<'center' | 'start' | 'end'>;
+  backgroundColor?: Scriptable<string | null>;
+  borderColor?: Scriptable<string | null>;
+  borderRadius?: Scriptable<number>;
+  borderWidth?: Scriptable<number>;
+  /** Keeps the label's own anchor point inside the visible chart area
+   * even if its own natural anchor would otherwise fall outside it
+   * (e.g. a very thin bar/arc slice).
+   * @default false */
+  clamp?: Scriptable<boolean>;
+  /** Clips the label's own drawing to the chart area's own bounds.
+   * @default false */
+  clip?: Scriptable<boolean>;
+  color?: Scriptable<string | undefined>;
+  /** `'auto'` lets this plugin's own real overlap detection
+   * (Separating Axis Theorem hit-testing between every pair of
+   * labels' own rotated bounding boxes) hide this label automatically
+   * when it collides with another, higher-priority one.
+   * @default true */
+  display?: Scriptable<boolean | 'auto'>;
+  font?: Scriptable<DataLabelsFontOptions>;
+  /** Transforms the real raw data value into the text (or nested array
+   * of text, for multi-line labels) actually drawn — receives the raw
+   * value and the current context.
+   * @default an identity-ish formatter that stringifies objects using
+   * their own `label`/`r` field, or a `key: value` listing otherwise */
+  formatter?: (value: unknown, context: DataLabelsContext) => unknown;
+  /** Configures more than one real, independently-styled label per
+   * data element — each key is an arbitrary label name, each value a
+   * partial `DataLabelsConfig` merged over the outer config. */
+  labels?: Record<string, Partial<DataLabelsConfig> | undefined>;
+  /** Real `enter`/`leave`/`click` event listeners, dispatched via a
+   * genuine hit-test against each label's own current, rotated
+   * bounding box (not the underlying data element's own hit area). */
+  listeners?: {
+    enter?: (context: DataLabelsContext, event: ChartEvent) => boolean | void;
+    leave?: (context: DataLabelsContext, event: ChartEvent) => boolean | void;
+    click?: (context: DataLabelsContext, event: ChartEvent) => boolean | void;
+  };
+  offset?: Scriptable<number>;
+  opacity?: Scriptable<number>;
+  padding?: Scriptable<number | DataLabelsPaddingOptions>;
+  /** Real rotation, in degrees, applied to the whole label (frame +
+   * text) around its own anchor point. */
+  rotation?: Scriptable<number>;
+  textAlign?: Scriptable<'left' | 'right' | 'start' | 'center' | 'end'>;
+  textStrokeColor?: Scriptable<string | undefined>;
+  textStrokeWidth?: Scriptable<number>;
+  textShadowBlur?: Scriptable<number>;
+  textShadowColor?: Scriptable<string | undefined>;
+}
+
+/** @deprecated kept only as an alias while any external reference to
+ * the pre-port name still exists — use {@link DataLabelsConfig}. */
+export type DataLabelsPluginOptions = DataLabelsConfig;
 
 /**
  * `chartjs-plugin-image-label`'s real config, confirmed directly from

@@ -89,9 +89,13 @@ trendline-plugin.mdx` for the docs-site example. No longer a survey
 candidate — removed from the table above (this section's own table is
 now empty).
 
-(`annotation`/`datalabels` also appear in this list's own "Features"
-category — already this project's own official plugins, not new
-candidates.)
+(`annotation` also appears in this list's own "Features" category —
+already this project's own official plugin, not a new candidate.
+`datalabels` was in the same category and has since also been ported
+directly into `packages/core/src/plugins/dataLabels/`, at your explicit
+request — see `CHARTJS_ANALYSIS.md` §4's own "Data labels" section for
+the full verification, and `docs/site/src/content/docs/vue/examples/
+data-labels-plugin.mdx` for the docs-site example.)
 
 **hierarchical (sgratzl/chartjs-plugin-hierarchical) has been
 implemented**, at your explicit request — confirmed version 4.4.5, MIT,
@@ -106,9 +110,9 @@ above.
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
 directly into `packages/core/src/plugins/imageLabel/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. One of seven of this
+bugs found in the original along the way. One of eight of this
 project's own 10 official plugins/scales (alongside `gradient`, `zoom`,
-`hierarchical`, `autocolors`, `deferred`, and `trendline`) that renders live on the
+`hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders live on the
 docs site rather than source-only, since local code has no dynamic
 import for the known docs-site hydration gap to apply to. See
 `CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff: Image label"
@@ -140,9 +144,9 @@ dependency of this project. The package ships real, readable source
 largely unchanged — including fixing a real bug (a `destroy` teardown
 hook name Chart.js's own real `Plugin` interface doesn't recognize;
 renamed to `afterDestroy`), the identical class of bug already found in
-`gradient`'s own port. One of seven of this project's own 10 official
+`gradient`'s own port. One of eight of this project's own 10 official
 plugins/scales (alongside `gradient`, `zoom`, `hierarchical`, `image-
-label`, `autocolors`, and `trendline`) that renders live on the docs site rather
+label`, `autocolors`, `trendline`, and `dataLabels`) that renders live on the docs site rather
 than source-only. See `CHARTJS_ANALYSIS.md` §4's own "Added after v1
 kickoff: Deferred" section for the full verification, and
 `docs/site/src/content/docs/vue/examples/deferred-plugin.mdx` for the
