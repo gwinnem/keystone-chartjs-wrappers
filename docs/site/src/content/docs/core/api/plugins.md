@@ -1,61 +1,96 @@
 ---
 title: Plugins
-description: The 7 official Chart.js plugin/scale helpers this project wires in.
+description: The 10 official Chart.js plugin/scale helpers this project wires in.
 ---
 
 One function per official Chart.js plugin/scale this project targets.
-Two of the seven register a third-party package (dynamically imported,
-once) and return `options` with the plugin's own config merged into its
-real path under `options.plugins`, without touching any other existing
-`plugins.*` entry. `withZoom`, `withGradient`, and `withImageLabel` are
-genuinely different — see their own section below.
+All 10 are local code — nine register directly and synchronously
+(`Chart.register(...)`, or a real inline `plugins`-array object for
+three of them); only `withTimestack` still performs a real dynamic
+`import()` of a third-party package. Every helper stays `async`
+regardless of whether it actually awaits anything, purely so call
+sites (`useChartController.ts`'s own `resolveOptionsAndPlugins()`)
+needed no changes as each one was ported off its own former dependency.
 
-- **`withAnnotation(options, annotationOptions)`** — registers
-  `chartjs-plugin-annotation`; merges `annotationOptions` into
-  `options.plugins.annotation`.
-- **`withDataLabels(options, dataLabelsOptions?)`** — registers
-  `chartjs-plugin-datalabels`; merges `dataLabelsOptions` into
-  `options.plugins.datalabels`.
-- **`withTimestack(options)`** — registers `chartjs-scale-timestack` (a
-  side-effect-only import — this package has no exported plugin object
-  and is never passed to `Chart.register(...)` at all). No config to
-  merge; used via `options.scales.<id>.type = 'timestack'` directly.
-  Requires `luxon` as a real runtime dependency.
-- **`withHierarchical(options)`** — registers `chartjs-plugin-hierarchical`
-  via its own named export (`HierarchicalScale`). No config to merge;
-  used via `options.scales.<id>.type = 'hierarchical'` directly. Needs
-  data in this scale's own tree-node shape (`ILabelNode`/`IValueNode`),
-  not the flat arrays every other kind/plugin accepts.
+## Helpers that merge config and return `options` directly
 
-## `withZoom`, `withGradient`, and `withImageLabel` — local ports, not dependencies
+Each of these registers its own local plugin (once, guarded by a
+module-level flag) via a real, synchronous `Chart.register(...)` call,
+then merges the given config into its own real path under
+`options.plugins`, without touching any other existing `plugins.*`
+entry:
 
-All three are genuinely different from the two above: none is a
-dependency on a third-party package at all. Each one's logic
-(originally `chartjs-plugin-zoom`, `chartjs-plugin-gradient`, and
-`chartjs-plugin-image-label` respectively) is ported directly into this
-package (`zoomPlugin.ts`/`gradientPlugin.ts`/`imageLabelPlugin.ts`), and
-none is ever passed to `Chart.register(...)` — all three are supplied
-per-chart-instance via Chart.js's own inline `plugins` array instead.
-All three return `Promise<{ options, plugin }>` rather than just
-`options` (unlike either helper above), since the caller needs to merge
-`plugin` into whatever `plugins` array is already in effect.
+- **`withAnnotation(options, annotationOptions)`** — registers this
+  project's own local port of `chartjs-plugin-annotation` (see
+  `plugins/annotation/annotationPlugin.ts`); merges `annotationOptions`
+  into `options.plugins.annotation`. By far the largest, most
+  architecturally distinct port in this project — seven real annotation
+  types, each its own genuine Chart.js `Element` subclass, registered
+  via a second, nested `Chart.register(annotationTypes)` call inside
+  this plugin's own `afterRegister()` hook.
+- **`withDataLabels(options, dataLabelsOptions?)`** — registers this
+  project's own local port of `chartjs-plugin-datalabels`; merges
+  `dataLabelsOptions` into `options.plugins.datalabels`.
+- **`withAutocolors(options, autocolorsOptions?)`** — registers this
+  project's own local port of `chartjs-plugin-autocolors`; merges
+  `autocolorsOptions` into `options.plugins.autocolors`.
+- **`withDeferred(options, deferredOptions?)`** — registers this
+  project's own local port of `chartjs-plugin-deferred`; merges
+  `deferredOptions` into `options.plugins.deferred`.
+
+## Helpers with no plugin-level config at all
+
+These register their own local plugin/scale the same synchronous way,
+but return `options` completely unchanged — each one's real config
+lives somewhere other than `options.plugins.<id>`:
+
+- **`withTrendline(options)`** — registers this project's own local
+  port of `chartjs-plugin-trendline`; its real config
+  (`dataset.trendlineLinear`/`dataset.trendlineExponential`) lives on
+  each dataset instead.
+- **`withHierarchical(options)`** — registers this project's own local
+  port of `chartjs-plugin-hierarchical` via its own named export
+  (`HierarchicalScale`). A real, distinct **scale**, not a Chart.js
+  "plugin" object — used via `options.scales.<id>.type = 'hierarchical'`
+  directly. Needs data in this scale's own tree-node shape
+  (`HierarchicalRawLabelNode`/`HierarchicalValueNode`), not the flat
+  arrays every other kind/plugin accepts.
+- **`withTimestack(options)`** — the one remaining real npm dependency:
+  registers `chartjs-scale-timestack` via a genuine dynamic `import()`
+  (a side-effect-only import — this package has no exported plugin
+  object and is never passed to `Chart.register(...)` at all). No
+  config to merge; used via `options.scales.<id>.type = 'timestack'`
+  directly. Requires `luxon` as a real runtime dependency.
+
+## `withZoom`, `withGradient`, and `withImageLabel` — inline-plugins-array shape
+
+All three are genuinely different from every helper above: none is
+ever passed to `Chart.register(...)` at all. Each one's own local
+plugin object (`zoomPlugin`/`gradientPlugin`/`imageLabelPlugin`) is
+supplied per-chart-instance via Chart.js's own inline `plugins` array
+instead. All three return `Promise<{ options, plugin }>` rather than
+just `options` (unlike every helper above), since the caller needs to
+merge `plugin` into whatever `plugins` array is already in effect.
 
 - **`withZoom(options, zoomOptions?)`** — merges `zoomOptions` into
-  `options.plugins.zoom`, same as before the port (this is the one of
-  the three that keeps real plugin-level config, unlike
-  `gradient`/`imageLabel` below). **A real, deliberate scope decision**:
-  the port drops every Hammer.js-dependent code path — pinch-zoom, and
-  the gesture-driven pan interaction — since Hammer.js is itself
-  unmaintained (confirmed via a real, open upstream issue). Mouse-wheel
-  zoom, mouse-drag-to-zoom-rectangle, and the full programmatic API
-  (`chart.zoom()`, `chart.zoomRect()`, `chart.zoomScale()`,
-  `chart.resetZoom()`, `chart.pan()`, `chart.getZoomLevel()`, and more)
-  are all kept. A real, honest finding from dissecting the original
-  source: it has no mouse-only drag-to-pan mechanism at all — `pan()`
-  was only ever driven by Hammer's own gesture recognizer — so dropping
-  Hammer.js means dropping *all* interactive pan, not just touch-pan.
-  `chart.pan()` stays callable programmatically for a consumer's own
-  custom controls, just with no built-in gesture wired to it.
+  `options.plugins.zoom` (this is the one of the three that keeps real
+  plugin-level config, unlike `gradient`/`imageLabel` below). **A real,
+  deliberate scope decision, later revisited**: this port originally
+  dropped every Hammer.js-dependent code path — pinch-zoom, and the
+  gesture-driven pan interaction — since Hammer.js is itself
+  unmaintained (confirmed via a real, open upstream issue). **Pinch-zoom
+  and interactive pan were later added back in, reimplemented directly
+  on the standards-based Pointer Events API**
+  (`pointerdown`/`pointermove`/`pointerup`/`pointercancel`), which
+  unifies mouse/touch/pen input with no external dependency at all —
+  `zoom.pinch.enabled` opts into pinch-zoom, `pan.enabled` opts into
+  touch/pen drag-to-pan. Mouse input stays wheel-zoom and
+  drag-to-zoom-rectangle only, with `chart.pan()` still callable
+  programmatically — the original itself never had a mouse-only
+  drag-to-pan mechanism either, so this isn't a new limitation. The full
+  programmatic API (`chart.zoom()`, `chart.zoomRect()`,
+  `chart.zoomScale()`, `chart.resetZoom()`, `chart.pan()`,
+  `chart.getZoomLevel()`, and more) is unaffected by any of this.
 - **`withGradient(options)`** — no config to merge; its real config
   lives on each *dataset* instead (`dataset.gradient = {...}`), which
   already reaches Chart.js untouched via the existing `data` field, so
@@ -75,15 +110,17 @@ All three return `Promise<{ options, plugin }>` rather than just
 ## Option types
 
 - **`ZoomPluginOptions`** / **`AnnotationPluginOptions`** /
-  **`DataLabelsPluginOptions`** / **`ImageLabelPluginOptions`** — the
+  **`DataLabelsPluginOptions`** / **`AutocolorsPluginOptions`** /
+  **`DeferredPluginOptions`** / **`ImageLabelPluginOptions`** — the
   option shapes each corresponding helper above accepts.
-  `AnnotationPluginOptions`/`DataLabelsPluginOptions` are deliberately
+  `AnnotationPluginOptions`/`DataLabelsPluginOptions`/
+  `AutocolorsPluginOptions`/`DeferredPluginOptions` are deliberately
   loose (not a full mirror of each plugin's own, much larger, option
   surface — full typing is future hardening work, not yet done);
   `ZoomPluginOptions`/`ImageLabelPluginOptions` are both modeled
   precisely, since both are this package's own local logic with a
   fully-known surface (confirmed by dissecting each plugin's own real
-  source directly, not left loose "for later" the way the two
-  still-dependency-based ones are).
-  `withGradient`/`withTimestack`/`withHierarchical` have no corresponding
-  options type — none of the three takes a config parameter.
+  source directly).
+  `withGradient`/`withTimestack`/`withHierarchical`/`withTrendline` have
+  no corresponding options type — none of the four takes a config
+  parameter.

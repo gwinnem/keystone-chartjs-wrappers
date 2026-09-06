@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 // the barrel's own contract test: every symbol a consumer is meant to
 // import from 'keystone-chartjs-core' actually resolves through it.
 vi.mock('chart.js', () => ({
-  Chart: { register: vi.fn() },
+  Chart: { register: vi.fn(), version: '4.5.1' },
   registerables: [],
   // hierarchicalScale.ts (statically imported via plugins.ts -> index.ts
   // as of the local port) needs a real, extendable CategoryScale to
@@ -18,7 +18,18 @@ vi.mock('chart.js', () => ({
   CategoryScale: class CategoryScale {
     static defaults = {};
   },
-  defaults: { color: '#666' },
+  // annotationPlugin.ts (statically imported via plugins.ts -> index.ts
+  // as of the local port) needs a real, extendable Element for its own
+  // seven real element classes to subclass, a constructable Animations
+  // for its own real update-animation resolution, and DoughnutController
+  // for doughnutLabelAnnotation.ts's own real instanceof check — again,
+  // none of which this barrel-contract test's own assertions actually
+  // exercise, so minimal stubs are enough to let the module graph load
+  // without error.
+  Element: class Element {},
+  Animations: class Animations {},
+  DoughnutController: class DoughnutController {},
+  defaults: { color: '#666', describe: vi.fn() },
   registry: { addPlugins: vi.fn() },
 }));
 

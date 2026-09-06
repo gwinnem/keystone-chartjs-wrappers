@@ -1074,37 +1074,70 @@ match that.
     3/4); the core-level `deferredPlugin.ts`/`withDeferred` already
     cover them.
 
-23. **Not yet started.** `chartjs-plugin-annotation` — at your explicit
-    request, scoped for a local port the same way `zoom`/`gradient`/
-    `hierarchical`/`image-label`/`autocolors`/`deferred` were. Real
-    scope analysis, the real six-annotation-type architecture (line,
-    box, ellipse, point, label, polygon, plus a `doughnutLabel` special
-    case), the identical `destroy`-vs-`afterDestroy` hook-name bug
+23. **[Resolved].** `chartjs-plugin-annotation` — at your explicit
+    request, ported directly into `packages/core/src/plugins/annotation/`
+    (17 real files: a top-level orchestrator, `annotationPlugin.ts`,
+    mirroring the original's own real `index.js`, plus 9 shared
+    foundational modules — `geometry.ts`, `drawing.ts`, `callout.ts`,
+    `labelGeometry.ts`, `boxProperties.ts`, `scaleRange.ts`,
+    `interaction.ts`, `events.ts`, `hooks.ts` — and 7 real Chart.js
+    `Element`-subclass files under `elements/`) — it is not, and is no
+    longer, a real npm dependency of this project. By far the largest,
+    most architecturally distinct port in this project: seven real
+    annotation types (`box`, `doughnutLabel`, `ellipse`, `label`,
+    `line`, `point`, `polygon`), each registered as a genuine Chart.js
+    *element* via a second, nested `Chart.register(annotationTypes)`
+    call inside the orchestrator's own `afterRegister()` hook; real
+    scale auto-range-adjustment (`adjustScaleRange`, hooked into
+    `afterDataLimits`); hit-testing routed entirely through Chart.js's
+    own `beforeEvent` hook and a real, dedicated interaction-mode
+    resolver. The identical `destroy`-vs-`afterDestroy` hook-name bug
     already found in `gradientPlugin.ts`'s/`deferredPlugin.ts`'s own
-    ports (confirmed present here too), and a full step-by-step plan
-    were written up in `docs/ANNOTATION_PLUGIN_PORT_PLAN.md` before
-    implementation started — confirmed, via the real installed dist
-    size (91 KB) and the real, multi-file `src/` structure on GitHub,
-    to be a bigger undertaking than any port done so far, `zoom`
-    included. Two real open decisions flagged in that plan, not yet
-    made: whether to port all six types plus `doughnutLabel` in one
-    pass or a smaller first slice (line/box first), and whether to
-    model `AnnotationPluginOptions` precisely now or keep it loose.
+    ports was confirmed present here too, and fixed the same way,
+    alongside switching the original's own plain `Map` per-chart
+    bookkeeping to a `WeakMap`. Both real open decisions the original
+    port plan flagged were resolved in favor of the fuller option: all
+    seven types plus `doughnutLabel` were ported in one pass (not a
+    smaller line/box-only first slice), and `AnnotationPluginOptions`
+    stayed loose (not modeled as a precise discriminated union) —
+    matching the same "full plugin-specific typing is Phase 5 scope"
+    pattern every other still-loosely-typed plugin option in this
+    project already uses. 921 unit tests across the full core package
+    after this port (up from 852 before it), with every one of the 17
+    newly-ported files clearing this project's own 90%-per-file floor
+    on every metric, landing at 99.6%/95.28%/99.28%/99.6%
+    (statements/branches/functions/lines) in aggregate across the
+    module. Confirmed live in a real browser after the port (the
+    existing docs-site example, previously source-only pending the
+    dynamic-import hydration gap this port removes entirely, now
+    renders live) and via the existing Playwright e2e test
+    (`annotation-plugin.spec.ts`), written before the port and passing
+    unchanged after it. See `docs/CHARTJS_ANALYSIS.md` §4's own
+    "Annotations — later locally ported, not a dependency" section for
+    the full verification.
 
-24. **Not yet started.** `chartjs-plugin-datalabels` — at your explicit
-    request, scoped for a local port the same way `annotation` (item
-    #23) was. Real scope analysis (at least 4 real files: `plugin.js`,
-    `label.js`, `positioners.js`, `utils.js`, plus an unconfirmed
-    layout/collision-lookup module), the real `enter`/`leave`/`click`
-    interaction system, the real per-element-type positioning math
-    (arc/bar/point), and a full step-by-step plan were written up in
-    `docs/DATALABELS_PLUGIN_PORT_PLAN.md` before implementation started
-    — confirmed, via the real installed dist size (32 KB), to sit
-    between `hierarchical`/`gradient`-sized work and `annotation`-sized
-    work. Not yet confirmed whether the same `destroy`-vs-`afterDestroy`
-    hook-name bug already found twice (`gradient`, `deferred`) is
-    present here too — flagged as the first thing to check once the
-    real source is read in full.
+24. **[Resolved].** `chartjs-plugin-datalabels` — at your explicit
+    request, ported directly into `packages/core/src/plugins/dataLabels/`
+    (six real files — `utils.ts`, `positioners.ts`, `drawing.ts`,
+    `label.ts`, `layout.ts`, `dataLabelsPlugin.ts` — mirroring the
+    original's own real module split) — it is not, and is no longer, a
+    real npm dependency of this project. Real, non-trivial features
+    found only by reading the source: real overlap auto-hiding via a
+    Separating Axis Theorem hit-test, real click/enter/leave listeners,
+    real active-element (hover) integration, and multi-label-per-point
+    support (`options.labels`). A real, deliberate structural
+    improvement over the original's own design: the original's own
+    `chart.$datalabels`/`element.$datalabels` monkey-patched bookkeeping
+    replaced with module-level `WeakMap`s, matching the identical
+    improvement `deferredPlugin.ts`'s own port already made. No real
+    bug found during dissection, unlike `gradient`/`deferred` — the
+    original's own real hook names are all genuine, valid Chart.js v4
+    lifecycle hooks. 95.81% statements/lines, 85.97% branches, 100%
+    functions across the six real files, confirmed live in a real
+    browser after the port and via the existing Playwright e2e test
+    (`data-labels-plugin.spec.ts`). See `docs/CHARTJS_ANALYSIS.md` §4's
+    own "Data labels — later locally ported, not a dependency" section
+    for the full verification.
 
 ### Deferred until Vue is genuinely complete (per your stated priority)
 
@@ -1144,8 +1177,10 @@ match that.
     `utils.ts`, `positioners.ts`, `drawing.ts`, `label.ts`, `layout.ts`,
     `dataLabelsPlugin.ts` — mirroring the original's own real module
     split), for the identical "depends on nothing but `chart.js`" reason
-    — `annotation` remains the only real npm dependency left in the
-    project. See `docs/CHARTJS_ANALYSIS.md` §4's own "Data labels—later
+    — both are now local ports, at your explicit request, so this
+    project's core package carries zero real npm dependencies of its
+    own beyond `chart.js` (see item #23 above for the full annotation
+    port verification). See `docs/CHARTJS_ANALYSIS.md` §4's own "Data labels—later
     locally ported, not a dependency" section for the full port
     verification: real overlap auto-hiding (Separating Axis Theorem
     hit-testing), real click/enter/leave listeners, real active-element

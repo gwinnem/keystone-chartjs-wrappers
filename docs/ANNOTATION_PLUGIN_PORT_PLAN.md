@@ -1,5 +1,21 @@
 # Annotation Plugin Local-Port Plan
 
+**Status: Complete.** The port described below was carried out in full
+— all seven annotation types (`box`/`doughnutLabel`/`ellipse`/`label`/
+`line`/`point`/`polygon`), in one pass rather than a smaller first slice (open decision #1 below resolved in favor of the
+fuller option), with `AnnotationPluginOptions` kept loose (open decision
+#2 resolved in favor of staying loose, matching every other
+still-loosely-typed plugin option in this project). See
+`docs/CHARTJS_ANALYSIS.md` §4's own "Annotations — later locally ported,
+not a dependency" section for the full, final verification (test
+counts, coverage, the real `destroy`-vs-`afterDestroy` bug found and
+fixed, live-in-browser confirmation) and `docs/IMPLEMENTATION_PLAN.md`'s
+own "Current status & open issues" item #23 for the summary. The plan
+below is kept as-written, unedited, as the real scoping record from
+before implementation started — not updated to describe the final
+result, the same way `docs/ZOOM_PLUGIN_PORT_PLAN.md` stays as its own
+original planning snapshot too.
+
 Companion to `CHARTJS_ANALYSIS.md` §4 and `docs/ZOOM_PLUGIN_PORT_PLAN.md`
 (the port whose real scope this one exceeds, and whose own plan
 structure this one follows). **Not yet started** — written to capture

@@ -24,13 +24,14 @@ description: What keystone-chartjs-vue implements today, and what's planned.
 All implemented features above are backed by real, confirmed test tiers,
 not just written and assumed correct:
 
-- Unit (core) + component (this package) tests: core is at 98.25%
-  statements/lines, 92.86% branches, 99.69% functions overall — every
+- Unit (core) + component (this package) tests: core is at 99.11%
+  statements/lines, 94.52% branches, 99.63% functions overall — every
   file clears the project's own 90% per-file floor on every metric,
-  with `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`,
-  and the newer `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts`
-  files each sitting in the 78–99% branch range rather than a clean
-  100%. This package's own component tests are a clean 100%.
+  with a small number of individually-documented survivors (a handful
+  of defensive guards confirmed structurally unreachable given each
+  file's own real call graph — the same class of accepted gap already
+  documented for `controller.ts`). This package's own component tests
+  are a clean 100%.
 - End-to-end (real browser, real Chart.js, Chromium/Firefox/WebKit): 84/84
   passing — all 15 chart kinds, all 10 plugins, and resize behavior pass
   across all 3 browsers. No known limitations remain.

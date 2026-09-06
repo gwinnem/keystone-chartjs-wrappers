@@ -23,20 +23,20 @@ changes (tooling, shared config, docs site).
   `ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`,
   `ImageLabelPluginOptions`, `AutocolorsPluginOptions`, `DeferredPluginOptions`,
   `TrendlineConfig` re-exported for consumer use.
-- Eight of the ten official plugins are local ports, not real npm
-  dependencies (`zoom`, `gradient`, `hierarchical`, `imageLabel`,
-  `autocolors`, `deferred`, `trendline`, `dataLabels`), each dissected
-  directly from the real, installed package's own source (fixing a
-  handful of real bugs found along the way — see each plugin's own
-  file header for the full rationale). `annotation` remains the only
-  real npm dependency.
-- 605 unit tests. 98.25% statements/lines, 92.86% branches, 99.69%
+- Nine of the ten official plugins are local ports, not real npm
+  dependencies (`zoom`, `annotation`, `gradient`, `hierarchical`,
+  `imageLabel`, `autocolors`, `deferred`, `trendline`, `dataLabels`),
+  each dissected directly from the real, installed package's own source
+  (fixing a handful of real bugs found along the way — see each
+  plugin's own file header for the full rationale). `timestack` remains
+  the only real npm dependency.
+- 921 unit tests. 99.11% statements/lines, 94.52% branches, 99.63%
   functions overall — every individual file clears the project's own
   90% per-file floor on every metric, with a handful (`zoomPlugin.ts`,
-  `hierarchicalScale.ts`, `deferredPlugin.ts`, and the new
-  `trendline/*.ts`/`dataLabels/*.ts` files) settling in the 78–99%
-  branch range rather than a clean 100%, each with its own documented,
-  accepted survivors.
+  `hierarchicalScale.ts`, `deferredPlugin.ts`, `autocolorsPlugin.ts`,
+  and the `trendline/*.ts`/`dataLabels/*.ts`/`plugins/annotation/**`
+  files) settling in the 90–99% branch range rather than a clean 100%,
+  each with its own documented, accepted survivors.
 
 ### keystone-chartjs-vue
 
@@ -66,11 +66,10 @@ changes (tooling, shared config, docs site).
   chart events, colors plugin, zoom plugin, annotation plugin, data
   labels plugin, gradient plugin, timestack scale, hierarchical scale,
   image label plugin, autocolors plugin, deferred plugin, and trendline
-  plugin — zoom/gradient/hierarchical/imageLabel/autocolors/deferred/
-  trendline/dataLabels live and interactive; annotation source-only
-  pending a docs-site build-pipeline gap around dynamic imports of its
-  still-real npm dependency; timestack similarly source-only for its
-  own real `luxon` dependency).
+  plugin — zoom/annotation/gradient/hierarchical/imageLabel/autocolors/
+  deferred/trendline/dataLabels live and interactive; timestack
+  source-only for its own real `luxon` dependency, a docs-site
+  build-pipeline gap around dynamic imports of real npm dependencies).
 - Concept guide pages: data structures, options resolution, axes & scales,
   mixed charts, colors/fonts/padding, performance, accessibility.
 

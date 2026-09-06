@@ -57,11 +57,31 @@
   src/plugins/trendline/` (six real files, mirroring the original
   package's own real module split), at your explicit request,
   specifically so this package depends on nothing but `chart.js` itself
-  — `annotation` remains the only real npm dependency left. Several
+  — with `annotation` also later ported (see below), this package's
+  own real npm dependency list is just `chart.js`. Several
   real, undocumented features found only by reading the real source
   (`fillColor`, `dataset.order`, `dataset.
   alwaysShowTrendline`, automatic ARIA-label generation, real legend
   integration) were carried over faithfully.
+- `withAnnotation` — originally a plain registration helper for the
+  real npm dependency `chartjs-plugin-annotation` (as noted above). At
+  your explicit request, later ported directly into `packages/core/src/
+  plugins/annotation/` (17 real files — a top-level orchestrator plus
+  9 shared foundational modules and 7 real Chart.js `Element`-subclass
+  files under `elements/`) — it is not, and is no longer, a real npm
+  dependency of this project. By far the largest, most architecturally
+  distinct port in this project: seven real annotation types, each
+  registered as a genuine Chart.js *element* via a second, nested
+  `Chart.register(annotationTypes)` call inside this plugin's own
+  `afterRegister()` hook; real scale auto-range-adjustment
+  (`adjustScaleRange`, hooked into `afterDataLimits`); hit-testing that
+  routes entirely through Chart.js's own `beforeEvent` hook and a real,
+  dedicated interaction-mode resolver. A real bug found and fixed
+  during the port, the identical class already found in
+  `withGradient`'s/`withDeferred`'s own ports: the original's own
+  `destroy` teardown hook isn't a real Chart.js `Plugin` hook at all —
+  renamed to `afterDestroy`, alongside switching the original's own
+  plain `Map` per-chart bookkeeping to a `WeakMap`.
 - `withDataLabels` — registers a local port of `chartjs-plugin-
   datalabels` once, via a direct, synchronous
   `Chart.register(dataLabelsPlugin)` call (matching `withAutocolors`'s/
@@ -89,11 +109,12 @@
   `ChartJs`, `ZoomPluginOptions`, `AnnotationPluginOptions`,
   `DataLabelsPluginOptions`, `ImageLabelPluginOptions`,
   `AutocolorsPluginOptions`, `DeferredPluginOptions`, `TrendlineConfig`.
-- 605 unit tests. 98.25% statements/lines, 92.86% branches, 99.69%
+- 921 unit tests. 99.11% statements/lines, 94.52% branches, 99.63%
   functions overall — every file clears the project's own 90% per-file
   floor on every metric; `zoomPlugin.ts`, `hierarchicalScale.ts`,
-  `deferredPlugin.ts`, and the new `plugins/trendline/*.ts`/
-  `plugins/dataLabels/*.ts` files each sit in the 78–99% branch range
+  `deferredPlugin.ts`, `autocolorsPlugin.ts`, and the
+  `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts`/
+  `plugins/annotation/**` files each sit in the 90–99% branch range
   rather than a clean 100%, with their own documented, accepted
   survivors.
 

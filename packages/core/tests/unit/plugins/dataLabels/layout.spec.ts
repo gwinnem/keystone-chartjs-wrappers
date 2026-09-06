@@ -123,6 +123,18 @@ describe('layout.prepare / layout.update', () => {
     const visibleCount = [label1, label2].filter((l) => l.layoutState?.visible).length;
     expect(visibleCount).toBe(1);
   });
+
+  it('auto-hides the real display:"auto" label, not the always-visible one, when they overlap', () => {
+    const alwaysVisible = new Label({ ...dataLabelsDefaults }, makeCtx() as never, makeElement(0, 0), 0);
+    alwaysVisible.update(makeChartContext(0));
+    const autoLabel = new Label({ ...dataLabelsDefaults, display: 'auto' }, makeCtx() as never, makeElement(0, 0), 1);
+    autoLabel.update(makeChartContext(1));
+
+    layout.prepare([[alwaysVisible, autoLabel]]);
+
+    expect(alwaysVisible.layoutState?.visible).toBe(true);
+    expect(autoLabel.layoutState?.visible).toBe(false);
+  });
 });
 
 describe('layout.lookup', () => {

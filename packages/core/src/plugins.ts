@@ -1,4 +1,5 @@
 import { Chart, type ChartConfiguration } from 'chart.js';
+import { annotationPlugin } from './plugins/annotation/annotationPlugin.js';
 import { autocolorPlugin } from './plugins/autocolors/autocolorsPlugin.js';
 import { dataLabelsPlugin } from './plugins/dataLabels/dataLabelsPlugin.js';
 import { deferredPlugin } from './plugins/deferred/deferredPlugin.js';
@@ -65,38 +66,46 @@ export async function withZoom(options: Options, zoomOptions: ZoomPluginOptions 
 }
 
 /**
- * Registers `chartjs-plugin-annotation` (once) and returns `options` with
- * the given annotation config merged into `options.plugins.annotation`
- * (the plugin's own real option path — see docs/CHARTJS_ANALYSIS.md §4),
- * without touching any other existing `plugins.*` entries.
+ * Registers a local port of `chartjs-plugin-annotation` (once), via
+ * this project's own {@link annotationPlugin} — see
+ * `plugins/annotation/annotationPlugin.ts`'s own header comment for
+ * the full port rationale (seven real Chart.js `Element` subclasses —
+ * box/doughnutLabel/ellipse/label/line/point/polygon — each registered
+ * via `Chart.register(annotationTypes)` in the plugin's own
+ * `afterRegister()` hook, plus a real, deliberate structural
+ * improvement replacing the original's own chart-keyed `Map` with a
+ * `WeakMap`). `Chart.register(...)` is called directly and
+ * synchronously (no dynamic `import()` at all, unlike this function's
+ * own prior, still-a-dependency version) — kept `async` regardless,
+ * purely so `useChartController.ts`'s own `await withAnnotation(opts,
+ * ...)` call site needed no changes.
+ *
+ * Same registration/config-merging shape as `withDataLabels`: a real,
+ * synchronous `Chart.register(...)` call (matching
+ * `withAutocolors`'s/`withDeferred`'s own mechanism) AND real
+ * plugin-level config merged into `options.plugins.annotation`.
  */
 export async function withAnnotation(options: Options, annotationOptions: AnnotationPluginOptions): Promise<Options> {
   if (!annotationRegistered) {
-    // Stryker disable next-line StringLiteral: see withZoom's own comment
-    // above for the full reasoning — same issue, same fix.
-    const mod = await import(/* @vite-ignore */ 'chartjs-plugin-annotation');
-    Chart.register(mod.default ?? mod);
+    Chart.register(annotationPlugin);
     annotationRegistered = true;
   }
   return {
     ...options,
     plugins: {
       ...options.plugins,
-      // Cast, not a structural match: AnnotationPluginOptions is
-      // deliberately loose (see its own doc comment in types.ts) — the
-      // real chartjs-plugin-annotation package's own type augmentation
-      // to Chart.js's ChartConfiguration expects a much more specific
-      // shape (a discriminated union per annotation type), which full
-      // Phase 5 plugin-option typing is meant to model properly. This
-      // assertion is safe at runtime: Chart.js itself does no
-      // compile-time shape checking, only reads whatever object is
-      // actually passed. Confirmed as a real, pre-existing gap (not
-      // introduced by anything else) via a real `tsc --noEmit` run —
-      // this had apparently never actually been run for this package
-      // before, since Phase 1's own closing checks covered test:unit/
-      // test:coverage/test:mutation but never a dedicated typecheck.
-      annotation: annotationOptions as NonNullable<Options['plugins']>['annotation'],
-    },
+      // Cast needed: Chart.js's own `PluginOptionsByType` no longer
+      // knows `annotation` is a valid key at all now that the real
+      // package's own type augmentation isn't present anywhere in this
+      // project's module graph (it was only ever picked up because
+      // `chartjs-plugin-annotation` was a real dependency — now that
+      // it's a local port instead, that global augmentation is gone).
+      // Safe at runtime: Chart.js itself does no compile-time shape
+      // checking, only reads whatever object is actually passed —
+      // `annotationPlugin.ts`'s own `beforeUpdate` reads this key
+      // directly.
+      annotation: annotationOptions,
+    } as Options['plugins'],
   };
 }
 

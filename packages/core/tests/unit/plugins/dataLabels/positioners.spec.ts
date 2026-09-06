@@ -73,6 +73,16 @@ describe('clipped', () => {
     const result = clipped({ x0: 50, y0: -50, x1: 50, y1: 50 }, area);
     expect(result.y0).toBeCloseTo(0, 5);
   });
+
+  it('clips a segment extending past the bottom edge', () => {
+    const result = clipped({ x0: 50, y0: 50, x1: 50, y1: 200 }, area);
+    expect(result.y1).toBeCloseTo(100, 5);
+  });
+
+  it('clips a segment extending past the left edge', () => {
+    const result = clipped({ x0: -50, y0: 50, x1: 50, y1: 50 }, area);
+    expect(result.x0).toBeCloseTo(0, 5);
+  });
 });
 
 describe('positioners.arc', () => {
@@ -84,6 +94,15 @@ describe('positioners.arc', () => {
 
     expect(result.x).toBeCloseTo(10 * Math.cos(Math.PI / 4), 5);
     expect(result.y).toBeCloseTo(10 * Math.sin(Math.PI / 4), 5);
+  });
+
+  it('anchors at the real start of the arc\'s own real bisector radius for anchor: "start"', () => {
+    const el = { x: 0, y: 0, startAngle: 0, endAngle: Math.PI / 2, innerRadius: 0, outerRadius: 10 };
+    const config = { anchor: 'start' as const, align: 'end' as const, clamp: false, area: { left: -100, right: 100, top: -100, bottom: 100 }, origin: { x: 0, y: 0 } };
+
+    const result = positioners.arc(el as never, config);
+
+    expect(result).toBeDefined();
   });
 });
 

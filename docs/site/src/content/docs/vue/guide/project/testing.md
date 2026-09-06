@@ -38,13 +38,14 @@ tiers.
 
 All four tiers are real and confirmed, not placeholder scaffolding:
 
-- **Unit** (core): 605 tests. **98.25% statements/lines, 92.86%
-  branches, 99.69% functions overall** — most files (`controller.ts`,
+- **Unit** (core): 921 tests. **99.11% statements/lines, 94.52%
+  branches, 99.63% functions overall** — most files (`controller.ts`,
   `index.ts`, `plugins.ts`, `registry.ts`, `test-utils.ts`,
-  `imageLabelPlugin.ts`) are a clean 100% across the board;
-  `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`,
-  `autocolorsPlugin.ts`, and the newer `plugins/trendline/*.ts`/
-  `plugins/dataLabels/*.ts` files each sit in the 78–99% branch range,
+  `imageLabelPlugin.ts`, most of `plugins/annotation/**`) are a clean
+  100% across the board; `zoomPlugin.ts`, `hierarchicalScale.ts`,
+  `deferredPlugin.ts`, `autocolorsPlugin.ts`, and the
+  `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts`/
+  `plugins/annotation/**` files each sit in the 90–99% branch range,
   their own documented, accepted gaps. Every file individually clears
   the project's own 90% floor on every metric — the remaining gaps are
   narrow, defensive edge cases (a handful of jsdom-style unreachable

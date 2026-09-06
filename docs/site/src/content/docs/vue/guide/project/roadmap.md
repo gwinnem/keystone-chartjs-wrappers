@@ -19,13 +19,12 @@ it applies to this package specifically.
 - **Phase 1 — Core engine** (`keystone-chartjs-core`) — chart lifecycle
   (construct, diffed update, destroy), lazy chart-kind registration, the
   ten official-plugin helpers, resize handling, the theme
-  re-application hook, and inline-plugin support. 605 unit tests. 98.25%
-  statements/lines, 92.86% branches, 99.69% functions overall — every
+  re-application hook, and inline-plugin support. 921 unit tests. 99.11%
+  statements/lines, 94.52% branches, 99.63% functions overall — every
   file clears the project's own 90% per-file floor on every metric,
-  with `zoomPlugin.ts`, `hierarchicalScale.ts`, `deferredPlugin.ts`, and
-  the `plugins/trendline/*.ts`/`plugins/dataLabels/*.ts` files each
-  sitting in the 78–99% branch range rather than a clean 100%, each
-  with its own documented, accepted survivors.
+  each with a small number of individually-documented survivors (a
+  handful of defensive guards confirmed structurally unreachable given
+  each file's own real call graph).
 - **Phase 2 — This package** — the real `<Chart>` component: all 15 chart
   kinds, all 10 official plugins as opt-in props, reactive updates
   (diffed on top-level `type` and the `plugins` array's own reference,
@@ -52,6 +51,19 @@ it applies to this package specifically.
   official opt-in props, via a `plugins` prop. Unlike `data`/`options`,
   a changed `plugins` reference forces a destroy-and-reconstruct, since
   Chart.js only reads this field at construction time. See
+  [API → Plugins](/vue/api/plugins) for the full guide.
+- **Annotation plugin** — originally a real npm dependency
+  (`chartjs-plugin-annotation`), later ported directly into
+  `keystone-chartjs-core` (no longer a real npm dependency, at your
+  explicit request), via a required-config-object `annotation` prop (no
+  plain-boolean form, since `annotations` has no sensible empty
+  default). By far the largest, most architecturally distinct port in
+  this project: seven real annotation types, each its own genuine
+  Chart.js `Element` subclass, plus real scale auto-range-adjustment
+  and a real, dedicated interaction-mode resolver for click/hover
+  hit-testing. Confirmed via the existing e2e test
+  (`packages/vue/tests/e2e/annotation-plugin.spec.ts`), written before
+  the port and passing unchanged after it. See
   [API → Plugins](/vue/api/plugins) for the full guide.
 - **Gradient plugin** — `chartjs-plugin-gradient`, via a boolean-only
   `gradient` prop — its real config lives on each dataset rather than
@@ -142,12 +154,12 @@ it applies to this package specifically.
   per extension kind and per plugin, across all three frameworks.
 - **Phase 6 — Documentation site** — this site. React/Angular sections
   aren't published yet; live interactive examples exist for the 8
-  built-ins plus mixed charts, multiple axes, and 8 of the 10 official
-  plugins (`zoom`, `gradient`, `hierarchical`, `imageLabel`,
-  `autocolors`, `deferred`, `trendline`, `dataLabels`), with
-  `annotation`/`timestack` shown as real source code only, not yet
+  built-ins plus mixed charts, multiple axes, and 9 of the 10 official
+  plugins (`zoom`, `annotation`, `gradient`, `hierarchical`,
+  `imageLabel`, `autocolors`, `deferred`, `trendline`, `dataLabels`),
+  with `timestack` shown as real source code only, not yet
   live-embedded (a docs-site-specific build-pipeline gap around dynamic
-  imports of their own real npm dependencies, not the same issue as the
+  imports of its own real npm dependency, not the same issue as the
   e2e one above); SEO/meta parity (OG/Twitter tags, JSON-LD) is still
   open.
 - **Phase 7 — Release** — semantic-release isn't set up yet.

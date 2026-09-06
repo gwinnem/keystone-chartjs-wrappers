@@ -1,0 +1,38 @@
+warning: in the working copy of 'pnpm-lock.yaml', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/pnpm-lock.yaml b/pnpm-lock.yaml[m
+[1mindex 088c92b..8ac9df0 100644[m
+[1m--- a/pnpm-lock.yaml[m
+[1m+++ b/pnpm-lock.yaml[m
+[36m@@ -147,9 +147,6 @@[m [mimporters:[m
+       chartjs-plugin-datalabels:[m
+         specifier: ^2.2.0[m
+         version: 2.2.0(chart.js@4.5.1)[m
+[31m-      chartjs-plugin-hierarchical:[m
+[31m-        specifier: ^4.4.5[m
+[31m-        version: 4.4.5(chart.js@4.5.1)[m
+       chartjs-scale-timestack:[m
+         specifier: ^1.0.1[m
+         version: 1.0.1(chart.js@4.5.1)[m
+[36m@@ -3722,11 +3719,6 @@[m [mpackages:[m
+     peerDependencies:[m
+       chart.js: '>=3.0.0'[m
+ [m
+[31m-  chartjs-plugin-hierarchical@4.4.5:[m
+[31m-    resolution: {integrity: sha512-QCRRBEl6kZucP39oA5NRrFcn3lzOU006jN2KmjLkovaPeBpgw8e+152qjFqluZoHXq1shE9ouFcykuFKnQQwDA==}[m
+[31m-    peerDependencies:[m
+[31m-      chart.js: ^4.1.0[m
+[31m-[m
+   chartjs-scale-timestack@1.0.1:[m
+     resolution: {integrity: sha512-Nzi3BVNqoboo8534ecFIY1XojfdbQ9xfjdFsNxcGbYeAVrRthzmxlixelVtfAPqUExINH1LA1L3tfBYCeobp3w==}[m
+     peerDependencies:[m
+[36m@@ -11158,10 +11150,6 @@[m [msnapshots:[m
+     dependencies:[m
+       chart.js: 4.5.1[m
+ [m
+[31m-  chartjs-plugin-hierarchical@4.4.5(chart.js@4.5.1):[m
+[31m-    dependencies:[m
+[31m-      chart.js: 4.5.1[m
+[31m-[m
+   chartjs-scale-timestack@1.0.1(chart.js@4.5.1):[m
+     dependencies:[m
+       chart.js: 4.5.1[m

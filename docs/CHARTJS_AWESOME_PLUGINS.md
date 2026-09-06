@@ -9,14 +9,15 @@ worth adding as an 11th+ official opt-in prop, alongside the 10 this
 project now ships (zoom, annotation, dataLabels, gradient, timestack,
 hierarchical, image-label, autocolors, deferred, trendline — all ten
 already appear in this same "awesome" list, confirming they were
-reasonable picks; each of the last seven started as one of the rows
+reasonable picks; each of the last eight started as one of the rows
 below and was promoted to implemented — see their own notes under
-Styling/Features/Interactions. `zoom`, `gradient`, `hierarchical`,
-`image-label`, `autocolors`, `deferred`, and `trendline` are all
-ported directly into this project's own source rather than kept as a
-real dependency — see `CHARTJS_ANALYSIS.md` §4's own "Zoom/pan"/"Added
-after v1 kickoff: Gradient"/"...Hierarchical"/"...Image label"/
-"...Autocolors"/"...Deferred"/"...Trendline" sections.
+Styling/Features/Interactions. `zoom`, `annotation`, `gradient`,
+`hierarchical`, `image-label`, `autocolors`, `deferred`, and `trendline`
+are all ported directly into this project's own source rather than
+kept as a real dependency — see `CHARTJS_ANALYSIS.md` §4's own
+"Zoom/pan"/"Annotations"/"Added after v1 kickoff: Gradient"/
+"...Hierarchical"/"...Image label"/"...Autocolors"/"...Deferred"/
+"...Trendline" sections.
 
 Confidence: this list states what the "awesome" list itself claims
 (name, repo, one-line description, v4-support badge) — none of these
@@ -90,7 +91,16 @@ candidate — removed from the table above (this section's own table is
 now empty).
 
 (`annotation` also appears in this list's own "Features" category —
-already this project's own official plugin, not a new candidate.
+already this project's own official plugin, originally a real npm
+dependency and **since also been ported directly into `packages/core/
+src/plugins/annotation/`, at your explicit request** — it is not, and
+is no longer, a real npm dependency of this project. By far the
+largest, most architecturally distinct port in this project: seven
+real annotation types, each its own genuine Chart.js `Element`
+subclass. See `CHARTJS_ANALYSIS.md` §4's own "Annotations" section for
+the full verification, and `docs/site/src/content/docs/vue/examples/
+annotation-plugin.mdx` for the docs-site example — confirmed live in a
+real browser, not source-only.
 `datalabels` was in the same category and has since also been ported
 directly into `packages/core/src/plugins/dataLabels/`, at your explicit
 request — see `CHARTJS_ANALYSIS.md` §4's own "Data labels" section for
@@ -110,9 +120,9 @@ above.
 implemented**, at your explicit request — but not as a dependency:
 its real, published source (v1.0.10, MIT) was dissected and ported
 directly into `packages/core/src/plugins/imageLabel/imageLabelPlugin.ts`, fixing two real
-bugs found in the original along the way. One of eight of this
+bugs found in the original along the way. One of nine of this
 project's own 10 official plugins/scales (alongside `gradient`, `zoom`,
-`hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders live on the
+`annotation`, `hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders live on the
 docs site rather than source-only, since local code has no dynamic
 import for the known docs-site hydration gap to apply to. See
 `CHARTJS_ANALYSIS.md` §4's own "Added after v1 kickoff: Image label"
@@ -144,8 +154,8 @@ dependency of this project. The package ships real, readable source
 largely unchanged — including fixing a real bug (a `destroy` teardown
 hook name Chart.js's own real `Plugin` interface doesn't recognize;
 renamed to `afterDestroy`), the identical class of bug already found in
-`gradient`'s own port. One of eight of this project's own 10 official
-plugins/scales (alongside `gradient`, `zoom`, `hierarchical`, `image-
+`gradient`'s own port. One of nine of this project's own 10 official
+plugins/scales (alongside `gradient`, `zoom`, `annotation`, `hierarchical`, `image-
 label`, `autocolors`, `trendline`, and `dataLabels`) that renders live on the docs site rather
 than source-only. See `CHARTJS_ANALYSIS.md` §4's own "Added after v1
 kickoff: Deferred" section for the full verification, and

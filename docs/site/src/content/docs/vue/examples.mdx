@@ -63,8 +63,8 @@ see the [Official plugins overview](/vue/examples/official-plugins/) for
 what that means versus custom/inline plugins.
 
 - **[Colors plugin](/vue/examples/colors-plugin/)** — Chart.js's own built-in `Colors` plugin, registered and enabled by default. Live and interactive — no extension package involved.
-- **[Zoom plugin](/vue/examples/zoom-plugin/)** — a local port of `chartjs-plugin-zoom` with a real wheel/pinch/pan config. Live and interactive — being local code, not a dynamic import, it never hit the docs-site hydration gap the still-dependency-based plugins below do.
-- **[Annotation plugin](/vue/examples/annotation-plugin/)** — `chartjs-plugin-annotation`, drawing lines, boxes, points, labels, polygons, and ellipses on the chart area. Real source shown; not yet live-embedded on this docs site (see that page's own note).
+- **[Zoom plugin](/vue/examples/zoom-plugin/)** — a local port of `chartjs-plugin-zoom` with a real wheel/pinch/pan config. Live and interactive — being local code, not a dynamic import, it never hit the docs-site hydration gap the one remaining still-dependency-based plugin below (`timestack`) does.
+- **[Annotation plugin](/vue/examples/annotation-plugin/)** — a local port of `chartjs-plugin-annotation`, drawing lines, boxes, points, labels, polygons, and ellipses on the chart area. Live and interactive, for the same reason as zoom above.
 - **[Data labels plugin](/vue/examples/data-labels-plugin/)** — a local port of `chartjs-plugin-datalabels`, rendering a label directly on each data element. Live and interactive, for the same reason as zoom above.
 - **[Gradient plugin](/vue/examples/gradient-plugin/)** — a local port of `chartjs-plugin-gradient` with a real per-dataset gradient config. Live and interactive, for the same reason as zoom above.
 - **[Timestack scale](/vue/examples/timestack-scale/)** — `chartjs-scale-timestack`, an alternative time axis formatting time in two stacked, human-friendly rows. Real source shown; not yet live-embedded on this docs site (see that page's own note) — its own real `luxon` dependency can't be resolved the same way local code can.

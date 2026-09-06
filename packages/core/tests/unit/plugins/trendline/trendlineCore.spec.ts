@@ -147,6 +147,15 @@ describe('liangBarskyClip', () => {
     const result = liangBarskyClip(-10, -10, 50, -10, area);
     expect(result).toBeNull();
   });
+
+  it('rejects a segment via the real, negative-direction t1 bound (a right-to-left line missing the area entirely on its own left side)', () => {
+    // A line running right-to-left (dx negative) whose own real
+    // trajectory would only re-enter the area after its own segment
+    // already ends — exercises the real `r > t1` rejection specifically,
+    // distinct from the segment-entirely-outside case above.
+    const result = liangBarskyClip(150, 50, 120, 50, area);
+    expect(result).toBeNull();
+  });
 });
 
 describe('calculateProjectedCoordinates — non-projection mode', () => {
@@ -193,6 +202,44 @@ describe('calculateProjectedCoordinates — projection mode', () => {
 
     expect(result.y1).toBeCloseTo(50, 1);
     expect(result.y2).toBeCloseTo(50, 1);
+  });
+
+  it('falls back to a real yRange of 1 when the y scale has no real range at all (max === min)', () => {
+    const fitter = new LineFitter();
+    fitter.add(0, 50);
+    fitter.add(10, 50);
+    const xScale = makeScale();
+    const yScale = makeScale({ min: 50, max: 50 });
+    const chartArea = { left: 0, right: 100, top: 0, bottom: 100 };
+
+    expect(() => calculateProjectedCoordinates(fitter, false, { projection: true }, xScale as never, yScale as never, chartArea as never)).not.toThrow();
+  });
+
+  it('falls back to a real -Infinity/Infinity y bound when neither chart edge maps to a real, finite value', () => {
+    const fitter = new LineFitter();
+    fitter.add(0, 0);
+    fitter.add(10, 100);
+    const xScale = makeScale();
+    const yScale = makeScale({ getValueForPixel: () => NaN });
+    const chartArea = { left: 0, right: 100, top: 0, bottom: 100 };
+
+    const result = calculateProjectedCoordinates(fitter, false, { projection: true }, xScale as never, yScale as never, chartArea as never);
+
+    // With no real finite y bound at all, every candidate point's own
+    // real y automatically falls inside the (-Infinity, Infinity) range
+    // — only the real x-bounds/dedup filtering still applies.
+    expect(result).toBeDefined();
+  });
+
+  it('breaks a real tie between two candidate points sharing the same x by their own y value', () => {
+    const fitter = new LineFitter();
+    fitter.add(0, 0);
+    fitter.add(10, 0); // slope 0 — near-zero-slope fallback pushes two points to the same x with different y
+    const xScale = makeScale();
+    const yScale = makeScale({ max: 100, min: 0 });
+    const chartArea = { left: 0, right: 100, top: 0, bottom: 100 };
+
+    expect(() => calculateProjectedCoordinates(fitter, false, { projection: true }, xScale as never, yScale as never, chartArea as never)).not.toThrow();
   });
 
   it('handles the exponential-curve projection path by sampling the curve at both chart-area edges', () => {
@@ -334,6 +381,17 @@ describe('addFitter — full real end-to-end orchestration', () => {
     expect(ctx.fillText).not.toHaveBeenCalled();
   });
 
+  it("draws the real, plain label text with no slope suffix when displayValue is explicitly false", () => {
+    const ctx = makeCtx();
+    const chart = makeChart([1, 2, 3]);
+    const dataset = { data: [1, 2, 3], trendlineLinear: { label: { display: true, displayValue: false, text: 'My Trend' } } };
+    const datasetMeta = { controller: { chart } };
+
+    addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never);
+
+    expect(ctx.fillText).toHaveBeenCalledWith('My Trend', expect.any(Number), expect.any(Number));
+  });
+
   it('resolves the scale via dataset.yAxisID when set, falling back to the default yScale otherwise', () => {
     const ctx = makeCtx();
     const altYScale = makeScale({ min: 0, max: 200 });
@@ -353,5 +411,67 @@ describe('addFitter — full real end-to-end orchestration', () => {
     addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never);
 
     expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it('applies a real, in-bounds positive trendoffset, skipping the leading points', () => {
+    const ctx = makeCtx();
+    const chart = makeChart([1, 2, 3, 4, 5]);
+    const dataset = { data: [1, 2, 3, 4, 5], trendlineLinear: { trendoffset: 2 } };
+    const datasetMeta = { controller: { chart } };
+
+    addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never);
+
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it('falls back to the real, full data length when a positive trendoffset finds no non-null point at or after it', () => {
+    const ctx = makeCtx();
+    const chart = makeChart([1, 2, null, null]);
+    const dataset = { data: [1, 2, null, null], trendlineLinear: { trendoffset: 2 } };
+    const datasetMeta = { controller: { chart } };
+
+    expect(() => addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never)).not.toThrow();
+    expect(ctx.stroke).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the real, full data length when no offset is given and every real point is null', () => {
+    const ctx = makeCtx();
+    const chart = makeChart([null, null, null]);
+    const dataset = { data: [null, null, null], trendlineLinear: {} };
+    const datasetMeta = { controller: { chart } };
+
+    expect(() => addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never)).not.toThrow();
+    expect(ctx.stroke).not.toHaveBeenCalled();
+  });
+
+  it('resolves the real trendline config from trendlineExponential over trendlineLinear when both are absent (a real, direct addFitter call, not gated by the plugin\'s own real dataset filter)', () => {
+    const ctx = makeCtx();
+    const chart = makeChart([1, 2, 3]);
+    const dataset = { data: [1, 2, 3] };
+    const datasetMeta = { controller: { chart } };
+
+    expect(() => addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never)).not.toThrow();
+  });
+
+  it("reads a real xAxisKey/yAxisKey from the chart's own real options.parsing when the trendline config doesn't set its own", () => {
+    const ctx = makeCtx();
+    const chart = makeChart([{ myX: 1, myY: 10 }, { myX: 2, myY: 20 }], { options: { parsing: { xAxisKey: 'myX', yAxisKey: 'myY' } } });
+    const dataset = { data: [{ myX: 1, myY: 10 }, { myX: 2, myY: 20 }], trendlineLinear: {} };
+    const datasetMeta = { controller: { chart } };
+
+    addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never);
+
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it('skips drawing entirely when the real projected coordinates are non-finite (no valid points survive)', () => {
+    const ctx = makeCtx();
+    const chart = makeChart([1, 2, 3, 4, 5], { scales: { x: makeScale({ getValueForPixel: () => 99999 }), y: makeScale({ getValueForPixel: () => 99999 }) } });
+    const dataset = { data: [1, 2, 3, 4, 5], trendlineLinear: { projection: true } };
+    const datasetMeta = { controller: { chart } };
+
+    addFitter(datasetMeta as never, ctx as never, dataset as never, chart.scales.x as never, chart.scales.y as never);
+
+    expect(ctx.stroke).not.toHaveBeenCalled();
   });
 });

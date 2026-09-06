@@ -11,7 +11,7 @@ description: What keystone-chartjs-vue exports beyond the <Chart> component itse
 | `ChartUpdatePayload` | re-exported from `keystone-chartjs-core` — covers the `plugins` field's own type too | Implemented |
 | `CHART_TYPE_REGISTRY` | re-exported from `keystone-chartjs-core` | Implemented |
 | `ChartJs`, `ChartConfiguration` | re-exported from `keystone-chartjs-core` (Chart.js's own types) | Implemented |
-| Plugin option types (`ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`) | re-exported from `keystone-chartjs-core` | Implemented |
+| Plugin option types (`ZoomPluginOptions`, `AnnotationPluginOptions`, `DataLabelsPluginOptions`, `AutocolorsPluginOptions`, `DeferredPluginOptions`, `ImageLabelPluginOptions`) | re-exported from `keystone-chartjs-core` | Implemented |
 
 See:
 - [Chart kinds](/vue/api/chart-kinds) — the full list of `type` values this

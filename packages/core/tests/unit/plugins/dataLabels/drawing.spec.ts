@@ -111,6 +111,24 @@ describe('drawFrame', () => {
     drawFrame(ctx as never, { x: 0, y: 0, w: 10, h: 10 }, { backgroundColor: 'red', borderColor: null, borderWidth: 0, borderRadius: 4 } as never);
     expect(ctx.arc).toHaveBeenCalled();
   });
+
+  it('draws a real, flat (zero-height) rounded rect as a single wide arc pair', () => {
+    const ctx = makeCtx();
+    drawFrame(ctx as never, { x: 0, y: 0, w: 10, h: 0 }, { backgroundColor: 'red', borderColor: null, borderWidth: 0, borderRadius: 4 } as never);
+    expect(ctx.arc).toHaveBeenCalled();
+  });
+
+  it('draws a real, narrow (zero-width) rounded rect as a single tall arc pair', () => {
+    const ctx = makeCtx();
+    drawFrame(ctx as never, { x: 0, y: 0, w: 0, h: 10 }, { backgroundColor: 'red', borderColor: null, borderWidth: 0, borderRadius: 4 } as never);
+    expect(ctx.arc).toHaveBeenCalled();
+  });
+
+  it('draws a real, fully degenerate (zero-size) rounded rect as a single circle', () => {
+    const ctx = makeCtx();
+    drawFrame(ctx as never, { x: 0, y: 0, w: 0, h: 0 }, { backgroundColor: 'red', borderColor: null, borderWidth: 0, borderRadius: 4 } as never);
+    expect(ctx.arc).toHaveBeenCalled();
+  });
 });
 
 describe('drawText', () => {

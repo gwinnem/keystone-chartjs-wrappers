@@ -71,7 +71,7 @@ risk, though all three are presently active.
 | Plugin | Package | Confirmed version | Purpose |
 |---|---|---|---|
 | Zoom/pan | `chartjs-plugin-zoom` (later locally ported, not a dependency — see below) | `2.2.0` | Mouse-wheel/pinch zoom, drag pan. |
-| Annotations | `chartjs-plugin-annotation` | `^3.1.0` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area; works with line/bar/scatter/bubble charts. |
+| Annotations | `chartjs-plugin-annotation` (later locally ported, not a dependency — see below) | `^3.1.0` | Lines, boxes, points, labels, polygons, ellipses drawn on the chart area; works with line/bar/scatter/bubble charts. |
 | Data labels | `chartjs-plugin-datalabels` (later locally ported, not a dependency — see below) | `^2.2.0` | Renders a label directly on each data element. |
 
 These are chart-instance plugins (registered via `Chart.register()`, configured
@@ -163,6 +163,119 @@ has no `setPointerCapture` on `Element.prototype` at all, so the "real
 capture happens" branch of that optional-chained call can only ever be
 exercised in a real browser.
 
+### Annotations — later locally ported, not a dependency
+
+`chartjs-plugin-annotation` was part of the original v1 scope decision
+above, and stayed a real npm dependency for most of this project's own
+history, alongside `zoom`/`datalabels` — see `docs/ANNOTATION_PLUGIN_PORT_PLAN.md`
+for the full scope analysis written before the port started (by far the
+largest, most architecturally distinct plugin in this project: seven
+real annotation *types*, each its own genuine Chart.js `Element`
+subclass, not merely a plugin object drawing shapes on top of the chart).
+
+**Later ported directly into `packages/core/src/plugins/annotation/`
+(17 real files — a top-level orchestrator, `annotationPlugin.ts`,
+mirroring the original's own real `index.js`, plus 9 shared
+foundational modules — `geometry.ts`, `drawing.ts`, `callout.ts`,
+`labelGeometry.ts`, `boxProperties.ts`, `scaleRange.ts`, `interaction.ts`,
+`events.ts`, `hooks.ts` — and 7 real element-class files under
+`elements/` — `boxAnnotation.ts`, `ellipseAnnotation.ts`,
+`pointAnnotation.ts`, `polygonAnnotation.ts`, `labelAnnotation.ts`,
+`doughnutLabelAnnotation.ts`, `lineAnnotation.ts`), at your explicit
+request, the same way every other locally-ported plugin in this project
+was** — it is not, and is no longer, a real npm dependency of this
+project. Real source dissected directly from the installed package's
+own real, unminified ESM build (`dist/chartjs-plugin-annotation.esm.js`
+— the published package ships no real `src/` of its own, only
+`dist/*`/`types/*`, but the ESM build is genuinely unminified and
+complete, making a precise, line-by-line dissection possible the same
+way the installed `dist` output already was for `gradient`/
+`autocolors`/`dataLabels`).
+
+**By far the largest and most architecturally distinct port in this
+project, confirmed directly from the real dissected source, not
+assumed from the README**: (1) each of the seven annotation types
+(`box`, `doughnutLabel`, `ellipse`, `label`, `line`, `point`, `polygon`)
+registers as a genuine Chart.js *element* (`Chart.register(annotationTypes)`
+inside this port's own `afterRegister()` hook) — the same real
+mechanism Chart.js's own built-in elements (`ArcElement`, `BarElement`,
+…) use; (2) option resolution goes through a faithfully-reimplemented
+version of Chart.js's own internal scriptable-option-resolution
+machinery (`resolveObj`/`resolveAnnotationOptions`, per-type
+`defaults`/`defaultRoutes`, a real `_fallback`/`_scriptable` descriptor
+chain), not a simple "spread the given config" merge the way every
+other locally-ported plugin in this project has needed; (3) annotations
+automatically extend a scale's own min/max to fit values that would
+otherwise fall outside it (`adjustScaleRange`, hooked into
+`afterDataLimits`) — a real, distinct interaction with Chart.js's own
+layout pass no other port in this project has needed; (4) hit-testing
+(click/hover) routes entirely through Chart.js's own `beforeEvent` hook
+and a real, dedicated interaction-mode resolver (`nearest`/`point`/
+`x`/`y`, honoring `options.interaction.intersect`), not raw DOM events
+the way `zoom`'s own port needed.
+
+**A real, deliberate structural improvement over the original's own
+design, not a behavior change, the identical class already found in
+`gradientPlugin.ts`'s/`deferredPlugin.ts`'s own ports**: the original
+names its own teardown hook `destroy`, but Chart.js's real `Plugin`
+interface has no such hook at all — confirmed directly against
+`chart.js`'s own installed type declarations. The real hook for chart
+teardown is `afterDestroy`; a hook name Chart.js's own plugin system
+doesn't recognize is simply never invoked, so the original's own
+`destroy` handler — whose only job is deleting this plugin's own
+per-chart state entry — likely never actually ran in real Chart.js,
+silently leaking one entry per destroyed chart for as long as the
+plugin's own module stayed loaded. Renamed to `afterDestroy` in this
+port, the correct real hook name. The original also keys its own
+per-chart bookkeeping in a plain `Map` (not even a `WeakMap`), relying
+entirely on that same broken `destroy` hook to `.delete()` the entry —
+this port uses a `WeakMap` instead, so a chart that somehow never
+reaches its teardown hook doesn't leak its own state entry forever.
+
+**Genuinely distinct registration shape from every other plugin ported
+so far**: registers directly via a real, synchronous
+`Chart.register(annotationPlugin)` call for the orchestrator itself
+(matching `withAutocolors`'s/`withDeferred`'s own mechanism), which in
+turn registers all seven real element classes via its own
+`afterRegister()` hook — a second, nested real `Chart.register(...)`
+call no other port in this project needs, since no other port supplies
+its own real Chart.js *elements*. Has real plugin-level config of its
+own to merge into `options.plugins.annotation` (matching
+`withDataLabels`'s own config-merging shape) — `annotation` remains a
+config-object-required opt-in, the same as before the port.
+
+**Confirmed live in a real browser after the port**: the same real
+line/box/label annotations the docs-site example already demonstrated
+against the *dependency* version, now rendering from local, static
+code — one of `keystone-chartjs-core`'s ten plugin/scale examples that
+renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to. Also confirmed working end-to-end via the existing
+Playwright e2e test (`annotation-plugin.spec.ts`), written before the
+port and passing unchanged after it.
+
+**By far the largest test suite of any port in this project**: a new,
+dedicated test file per real source module (10 foundational files' own
+`.spec.ts` counterparts, 7 element-class `.spec.ts` files under
+`elements/`, plus `annotationPlugin.spec.ts` for the orchestrator
+itself) — covering every real element's own hit-testing geometry
+(circular/elliptical/polygonal/point-in-range tests, including
+rotation-aware variants), the real quadratic-Bezier curved-line
+geometry and its own label-along-a-line positioning, the real
+centered-doughnut-hole label (including its own real, non-degenerate
+background-arc angle computation), the full real plugin lifecycle
+(`beforeInit`/`beforeUpdate`/`afterDataLimits`/`afterUpdate`/every real
+draw hook/`beforeEvent`/`afterDestroy`), and the real scriptable-option
+resolution machinery's own array-valued (per-line) font/color support —
+confirmed via a real `test:coverage` run, not assumed: every one of
+the 17 ported files clears this project's own 90%-per-file floor on
+every metric (statements/branches/functions/lines), landing at 99.6%/
+95.28%/99.28%/99.6% in aggregate across the module — within the same
+range every other local port in this project has settled at (gradient
+99.05% branch, zoom/autocolors ~98%, hierarchical/deferred ~91%,
+trendline/dataLabels ~86-90%).
+
 ### Data labels — later locally ported, not a dependency
 
 `chartjs-plugin-datalabels` was part of the original v1 scope decision
@@ -229,19 +342,19 @@ confirmed directly against `chart.js`'s own installed type declarations.
 synchronously via `Chart.register(dataLabelsPlugin)` (matching
 `withAutocolors`'s/`withDeferred`'s own mechanism) AND merges real
 plugin-level config of its own into `options.plugins.datalabels`
-(matching `withAnnotation`'s own config-merging shape) — `annotation`
-remains the only plugin in this project still needing a real dynamic
-`import()` to register.
+(matching `withAnnotation`'s own config-merging shape) — both `annotation`
+and `dataLabels` are now locally ported, leaving no plugin in this
+project still needing a real dynamic `import()` to register.
 
 **Confirmed live in a real browser after the port**: a bar chart with a
-real label rendered directly above each bar — one of eight of this
-project's plugins/scales (alongside `zoom`, `gradient`, `hierarchical`,
-`imageLabel`, `autocolors`, `deferred`, and `trendline`) that renders
-live on the docs site rather than source-only, for the identical
-reason: local, static code has no dynamic `import()` for the docs-site
-hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
-Also confirmed working end-to-end via the existing Playwright e2e test
-(`data-labels-plugin.spec.ts`), written before the port and passing
+real label rendered directly above each bar — one of nine of this
+project's plugins/scales (alongside `zoom`, `annotation`, `gradient`,
+`hierarchical`, `imageLabel`, `autocolors`, `deferred`, and `trendline`)
+that renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to. Also confirmed working end-to-end via the existing Playwright e2e
+test (`data-labels-plugin.spec.ts`), written before the port and passing
 unchanged after it.
 
 **Comprehensive unit test coverage**: a new, dedicated test file per
@@ -311,12 +424,13 @@ call at all — supplied per-chart-instance via Chart.js's own real inline
 
 **Confirmed live in a real browser after the port**: a real bar chart
 with a genuine red→yellow→green vertical gradient per bar, correctly
-varying by each bar's own height — one of eight of this project's
-plugins/scales (alongside `imageLabel`, `zoom`, `hierarchical`,
-`autocolors`, `deferred`, `trendline`, and `dataLabels`) that renders
-live on the docs site rather than source-only, for the identical
-reason: local, static code has no dynamic `import()` for the docs-site
-hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to apply to.
+varying by each bar's own height — one of nine of this project's
+plugins/scales (alongside `imageLabel`, `zoom`, `annotation`,
+`hierarchical`, `autocolors`, `deferred`, `trendline`, and `dataLabels`)
+that renders live on the docs site rather than source-only, for the
+identical reason: local, static code has no dynamic `import()` for the
+docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
+apply to.
 
 ### Added after v1 kickoff: Timestack
 
@@ -430,13 +544,13 @@ structure (`{ label, children }` / `{ value, children }`), not the flat
 arrays every other kind or plugin in this project accepts.
 
 **Confirmed live in a real browser after the port**, including the real
-click-to-expand/collapse/zoom-in/zoom-out interaction — one of eight of
-this project's plugins/scales (alongside `zoom`, `gradient`,
-`imageLabel`, `autocolors`, `deferred`, `trendline`, and `dataLabels`)
-that renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to.
+click-to-expand/collapse/zoom-in/zoom-out interaction — one of nine of
+this project's plugins/scales (alongside `zoom`, `annotation`,
+`gradient`, `imageLabel`, `autocolors`, `deferred`, `trendline`, and
+`dataLabels`) that renders live on the docs site rather than
+source-only, for the identical reason: local, static code has no
+dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: grew to 87 dedicated tests across
 several rounds (55 from the initial port, then a coverage-hardening
@@ -488,10 +602,10 @@ to resolve when the importing file is served from outside the docs
 site's own project root. Because this plugin is local, static code with
 no `import()` at all—exactly like the 8 built-in chart types—there is
 nothing for that gap to apply to. Confirmed live in a real browser, not
-assumed: this, `gradient`, `zoom`, `hierarchical`, `autocolors`,
-`deferred`, `trendline`, and `dataLabels` are eight of the ten
-plugin/scale examples on the docs site that render live rather than
-source-only.
+assumed: this, `annotation`, `gradient`, `zoom`, `hierarchical`,
+`autocolors`, `deferred`, `trendline`, and `dataLabels` are nine of the
+ten plugin/scale examples on the docs site that render live rather
+than source-only.
 
 **Genuinely distinct registration shape, same as `withGradient`’s and
 `withZoom`’s own local ports — different from `withTimestack`/
@@ -564,19 +678,18 @@ synchronous `Chart.register(...)` call (matching `withHierarchical`'s
 own mechanism) AND (b) has real plugin-level config of its own to merge
 into `options.plugins.autocolors` (matching `withAnnotation`/
 `withDataLabels`'s own config-merging shape) — `withHierarchical` has
-no config to merge (a scale, not a plugin with options), and
-`withAnnotation` is still a real npm dependency needing an async
-dynamic import to register.
+no config to merge (a scale, not a plugin with options); `withAnnotation`
+is also now locally ported, registering the same real, synchronous way.
 
 **Confirmed live in a real browser after the port**: three datasets on
 a line chart, each automatically assigned a distinct, generated color
 with no `backgroundColor`/`borderColor` set on any of them — one of
-eight of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `deferred`, `trendline`, and `dataLabels`)
-that renders live on the docs site rather than source-only, for the
-identical reason: local, static code has no dynamic `import()` for the
-docs-site hydration gap (item #4 in `docs/IMPLEMENTATION_PLAN.md`) to
-apply to.
+nine of this project's plugins/scales (alongside `zoom`, `annotation`,
+`gradient`, `hierarchical`, `imageLabel`, `deferred`, `trendline`, and
+`dataLabels`) that renders live on the docs site rather than
+source-only, for the identical reason: local, static code has no
+dynamic `import()` for the docs-site hydration gap (item #4 in
+`docs/IMPLEMENTATION_PLAN.md`) to apply to.
 
 **Comprehensive unit test coverage**: a new, dedicated
 `tests/unit/autocolorsPlugin.spec.ts` (13 tests) covering `'dataset'`/
@@ -664,8 +777,8 @@ its own to merge into `options.plugins.deferred` (matching
 test starting the canvas below the fold (via a tall spacer element),
 confirming it scrolls into view and renders real, non-blank pixels
 once a real `scroll` event and the configured delay elapse — one of
-eight of this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `autocolors`, `trendline`, and
+nine of this project's plugins/scales (alongside `zoom`, `annotation`,
+`gradient`, `hierarchical`, `imageLabel`, `autocolors`, `trendline`, and
 `dataLabels`) that renders live on the docs site rather than
 source-only, for the identical reason: local, static code has no
 dynamic `import()` for the docs-site hydration gap (item #4 in
@@ -710,8 +823,8 @@ dependency), or `deferred` (a real, confirmed hook-name bug) — there
 was no concrete bug or unmaintained-dependency reason for this one at
 all. **Ported anyway, at your explicit request, specifically so
 `keystone-chartjs-core` depends on nothing but `chart.js` itself** —
-`annotation` remains the only real npm dependency left in this
-project.
+with `annotation` also later ported (see above), this project's core
+package carries zero real npm dependencies of its own beyond `chart.js`.
 
 **Later ported directly into `packages/core/src/plugins/trendline/`
 (six real files — `fitters.ts`, `drawing.ts`, `label.ts`,
@@ -776,9 +889,9 @@ boolean-only.
 
 **Confirmed live in a real browser after the port**: a line chart with
 a genuine upward trend in its data, a real `trendlineLinear` config
-fitting a visibly distinct dotted red line against it — one of eight of
-this project's plugins/scales (alongside `zoom`, `gradient`,
-`hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
+fitting a visibly distinct dotted red line against it — one of nine of
+this project's plugins/scales (alongside `zoom`, `annotation`,
+`gradient`, `hierarchical`, `imageLabel`, `autocolors`, `deferred`, and
 `dataLabels`) that renders live on the docs site rather than
 source-only, for the identical reason: local, static code has no
 dynamic `import()` for the docs-site hydration gap (item #4 in

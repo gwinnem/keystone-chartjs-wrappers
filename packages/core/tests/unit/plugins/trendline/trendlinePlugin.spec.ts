@@ -118,6 +118,18 @@ describe('trendlinePlugin.afterDatasetsDraw', () => {
     expect((chart.ctx as ReturnType<typeof makeCtx>).createLinearGradient).toHaveBeenCalledTimes(2);
   });
 
+  it('sorts a real ordered dataset before a zero-order one regardless of their own original array position', () => {
+    // The reverse array order from the test above — exercises the real
+    // comparator's own other branch (`orderB === 0 && orderA !== 0`).
+    const chart = makeChart([
+      { label: 'order-2', data: [1, 2, 3], order: 2, trendlineLinear: { colorMin: 'blue', colorMax: 'blue' } },
+      { label: 'zero-order', data: [1, 2, 3], trendlineLinear: { colorMin: 'red', colorMax: 'red' } },
+    ]);
+
+    expect(() => trendlinePlugin.afterDatasetsDraw!(chart as never, {} as never, {})).not.toThrow();
+    expect((chart.ctx as ReturnType<typeof makeCtx>).createLinearGradient).toHaveBeenCalledTimes(2);
+  });
+
   it('resets the canvas line dash to solid after every dataset has been drawn', () => {
     const chart = makeChart([{ data: [1, 2, 3], trendlineLinear: { lineStyle: 'dotted' } }]);
     trendlinePlugin.afterDatasetsDraw!(chart as never, {} as never, {});
@@ -188,5 +200,33 @@ describe('trendlinePlugin.beforeInit — real legend integration', () => {
     trendlinePlugin.beforeInit!(chart as never, {} as never, {});
 
     expect((chart.legend as { options: { labels: { generateLabels: unknown } } }).options.labels.generateLabels).toBe(originalGenerateLabels);
+  });
+
+  it("falls back to the real dataset's own label/borderColor when the legend sub-config omits text/strokeStyle", () => {
+    const originalGenerateLabels = vi.fn(() => []);
+    const chart = makeChart(
+      [{ label: 'Revenue', data: [1, 2, 3], borderColor: 'green', trendlineLinear: { legend: { display: true } } }],
+      { legend: { options: { labels: { generateLabels: originalGenerateLabels } } } },
+    );
+
+    trendlinePlugin.beforeInit!(chart as never, {} as never, {});
+    const patchedGenerateLabels = (chart.legend as { options: { labels: { generateLabels: (c: unknown) => Record<string, unknown>[] } } }).options.labels.generateLabels;
+    const labels = patchedGenerateLabels(chart);
+
+    expect(labels[0]).toMatchObject({ text: 'Revenue', strokeStyle: 'green' });
+  });
+
+  it("falls back to the real legend sub-config's own color/width when strokeStyle/lineWidth are absent", () => {
+    const originalGenerateLabels = vi.fn(() => []);
+    const chart = makeChart(
+      [{ label: 'Revenue', data: [1, 2, 3], trendlineLinear: { legend: { color: 'purple', width: 3 } } }],
+      { legend: { options: { labels: { generateLabels: originalGenerateLabels } } } },
+    );
+
+    trendlinePlugin.beforeInit!(chart as never, {} as never, {});
+    const patchedGenerateLabels = (chart.legend as { options: { labels: { generateLabels: (c: unknown) => Record<string, unknown>[] } } }).options.labels.generateLabels;
+    const labels = patchedGenerateLabels(chart);
+
+    expect(labels[0]).toMatchObject({ strokeStyle: 'purple', lineWidth: 3 });
   });
 });

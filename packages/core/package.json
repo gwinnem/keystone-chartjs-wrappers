@@ -73,7 +73,6 @@
     "chartjs-chart-matrix": "^3.0.5",
     "chartjs-chart-sankey": "^0.15.0",
     "chartjs-chart-treemap": "^4.2.0",
-    "chartjs-plugin-annotation": "^3.1.0",
     "chartjs-scale-timestack": "^1.0.1",
     "luxon": "^3.7.2"
   },

@@ -1,32 +1,29 @@
 ---
 title: Annotation plugin
-description: chartjs-plugin-annotation, supplied via the annotation prop, drawing lines, boxes, points, labels, polygons, and ellipses on the chart area.
+description: A local port of chartjs-plugin-annotation, supplied via the annotation prop, drawing lines, boxes, points, labels, polygons, and ellipses on the chart area.
 ---
+import AnnotationPlugin from '../../../../components/examples/annotation-plugin.vue';
 import AnnotationPluginSource from '../../../../components/examples/annotation-plugin.vue?raw';
 import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
 
-The `annotation` prop wires in the real `chartjs-plugin-annotation`
-package, dynamically imported and registered the first time any
-`<Chart annotation="...">` mounts — one of the two remaining
-still-dependency-based plugins in this library (alongside
-`dataLabels`), unlike `zoom`/`gradient`/`hierarchical`/`imageLabel`,
-which are all local ports.
+The `annotation` prop wires in a local port of `chartjs-plugin-annotation`
+(real source dissected directly from the installed package's own real,
+unminified ESM build, not just its README) — by far the largest, most
+architecturally distinct port in this project: seven real annotation
+types (`box`, `doughnutLabel`, `ellipse`, `label`, `line`, `point`,
+`polygon`), each its own genuine Chart.js `Element` subclass, registered
+via `Chart.register(annotationPlugin)`, which in turn registers all
+seven element classes via its own `afterRegister()` hook.
 
-:::caution[Not yet live-embedded on this docs site]
-This example isn't hydrated on this page yet — this docs site resolves
-`keystone-chartjs-core` from this monorepo's own workspace source, not a
-published package, and the dynamic import that lazily registers
-still-dependency-based plugins like `annotation` doesn't currently
-resolve correctly across that boundary in Vite's dev server. The code
-below is real and correct — confirmed working end-to-end in this
-package's own Playwright e2e suite
-(`packages/vue/tests/e2e/annotation-plugin.spec.ts`) — this is a
-docs-site build-pipeline gap, not a bug in `keystone-chartjs-vue`
-itself. Expected to resolve once this package is built/published for
-real (Phase 7).
-:::
+Being local code rather than a dynamic import also means this example
+is genuinely live on this docs site, like `zoom`/`gradient`/
+`hierarchical`/`imageLabel`/`autocolors`/`deferred`/`trendline`/
+`dataLabels` — unlike `timestack`, the one remaining real npm
+dependency in this project, which still renders source-only here.
 
-<ExampleTryIt code={AnnotationPluginSource} filename="annotation-plugin.vue" live={false} />
+<ExampleTryIt code={AnnotationPluginSource} filename="annotation-plugin.vue" live={true}>
+  <AnnotationPlugin client:visible />
+</ExampleTryIt>
 
 :::tip[No plain-boolean form, unlike zoom/dataLabels]
 `annotation` has no boolean opt-in form — `AnnotationPluginOptions.annotations`
@@ -34,4 +31,21 @@ is required, since there's no sensible empty default (the same reasoning
 as `imageLabel`'s own `imagesList`). Its real config merges into
 `options.plugins.annotation.annotations`. See
 [Plugins](/vue/api/plugins/) for the full prop reference.
+:::
+
+:::note[Real, distinct capabilities found only by reading the source]
+- **Real scale auto-range-adjustment** — an annotation value outside a
+  scale's own current min/max automatically extends that scale to fit
+  it (`adjustScaleRange`), unlike every other plugin in this project.
+- **Real interaction-mode hit-testing** — click/hover routes entirely
+  through Chart.js's own `beforeEvent` hook and a real, dedicated
+  interaction-mode resolver (`options.interaction`: `nearest`/`point`/
+  `x`/`y`), not raw DOM events.
+- **A real bug found and fixed during the port** — the original names
+  its teardown hook `destroy`, which Chart.js's real `Plugin` interface
+  doesn't recognize at all; renamed to `afterDestroy`, the correct real
+  hook name, alongside switching the original's own plain `Map`
+  per-chart bookkeeping to a `WeakMap`.
+
+See [Plugins](/vue/api/plugins/) for the full prop reference.
 :::

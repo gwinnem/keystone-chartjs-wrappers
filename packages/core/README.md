@@ -32,12 +32,19 @@ Framework-agnostic Chart.js engine shared by `keystone-chartjs-vue`,
   backing package for any of the 7 ecosystem extension kinds, once, on first
   use. Built-ins are registered eagerly at module load via
   `Chart.register(...registerables)`.
-- `withZoom`, `withAnnotation`, `withDataLabels` — register the respective
-  official plugin once and merge its config into `options.plugins.*`.
+- `withZoom`, `withAnnotation`, `withDataLabels`, `withGradient`,
+  `withTimestack`, `withHierarchical`, `withImageLabel`,
+  `withAutocolors`, `withDeferred`, `withTrendline` — register the
+  respective official plugin/scale once and, where the plugin has
+  config of its own, merge it into `options.plugins.*`. Nine of the ten
+  are local ports (dissected directly from each real package's own
+  installed source); only `withTimestack` still performs a real dynamic
+  `import()` of a third-party package.
 - Exported types: `ChartKind`, `ChartConfigData`, `ChartConfigDataset`,
   `ChartUpdatePayload`, `ChartControllerHandle`, `ChartConfiguration`,
   `ChartJs`, `ZoomPluginOptions`, `AnnotationPluginOptions`,
-  `DataLabelsPluginOptions`.
+  `DataLabelsPluginOptions`, `AutocolorsPluginOptions`,
+  `DeferredPluginOptions`, `ImageLabelPluginOptions`.
 
 ## License
 

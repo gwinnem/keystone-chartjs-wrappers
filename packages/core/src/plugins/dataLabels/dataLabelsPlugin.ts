@@ -243,6 +243,14 @@ function handleMoveEvents(chart: Chart, event: ChartEvent): void {
   if (event.type === 'mousemove') {
     label = layout.lookup(state.labels, event as unknown as { x: number; y: number });
   } else if (event.type !== 'mouseout') {
+    // Structurally unreachable via this plugin's own real call graph:
+    // beforeEvent()'s own switch only ever routes 'mousemove'/'mouseout'
+    // into handleMoveEvents() at all — every other event type is
+    // dispatched to handleClickEvents() or ignored entirely before ever
+    // reaching this function. A defensive guard carried over from the
+    // original, not exercised by any real call path, the same class of
+    // accepted survivor as controller.ts's/hierarchicalScale.ts's own
+    // already-documented ones.
     return;
   }
 

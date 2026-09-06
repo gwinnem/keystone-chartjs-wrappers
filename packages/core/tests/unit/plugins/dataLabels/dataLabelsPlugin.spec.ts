@@ -146,6 +146,13 @@ describe('dataLabelsPlugin.afterDatasetsDraw', () => {
     expect(chart.ctx.fillText).not.toHaveBeenCalled();
   });
 
+  it('draws a real label for a dataset with the boolean shorthand dataset.datalabels: true', () => {
+    const chart = makeChart([{ data: [1], datalabels: true }], [[makeElement(10, 10)]]);
+    runUpdate(chart);
+
+    expect(chart.ctx.fillText).toHaveBeenCalled();
+  });
+
   it('draws real, independently-configured labels for each entry in options.labels', () => {
     const chart = makeChart([{ data: [1] }], [[makeElement(10, 10)]]);
     runUpdate(chart, { labels: { value: { formatter: () => 'V' }, unit: { formatter: () => 'U' } } });

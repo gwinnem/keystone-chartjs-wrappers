@@ -13,14 +13,28 @@ vi.mock('chart.js', () => ({
   CategoryScale: class CategoryScale {
     static defaults = {};
   },
-  defaults: { color: '#666' },
+  // annotationPlugin.ts (statically imported via plugins.ts as of the
+  // local port) needs a real, extendable Element for its own seven real
+  // element classes to subclass, a constructable Animations for its own
+  // real update-animation resolution, and DoughnutController for
+  // doughnutLabelAnnotation.ts's own real instanceof check — again,
+  // minimal stubs are enough here, since this file's own withAnnotation
+  // tests only assert Chart.register was called with the real,
+  // imported annotationPlugin object itself.
+  Element: class Element {},
+  Animations: class Animations {},
+  DoughnutController: class DoughnutController {},
+  defaults: { color: '#666', describe: vi.fn() },
   registry: { addPlugins: vi.fn() },
 }));
 // No mock for chartjs-plugin-zoom — it's no longer a dependency at all.
 // Its logic was ported directly into zoomPlugin.ts (a plain, local,
 // static plugin object with no dynamic import), so withZoom needs no
 // module mock the way it used to.
-vi.mock('chartjs-plugin-annotation', () => ({ default: { id: 'annotation' } }));
+// No mock for chartjs-plugin-annotation — it's no longer a dependency
+// at all. Its logic was ported directly into plugins/annotation/
+// annotationPlugin.ts (a real, local plugin object, statically
+// imported), so withAnnotation needs no module mock the way it used to.
 // No mock for chartjs-plugin-datalabels — it's no longer a dependency
 // at all. Its logic was ported directly into plugins/dataLabels/
 // dataLabelsPlugin.ts (a real, local plugin object, statically
@@ -125,11 +139,22 @@ describe('withAnnotation', () => {
     });
   });
 
+  it('registers via a direct Chart.register(annotationPlugin) call, the real local plugin object, not a dynamically-imported module', async () => {
+    // As of the local port, annotationPlugin is imported directly from
+    // plugins/annotation/annotationPlugin.ts — the same real object
+    // reference is what gets passed to Chart.register, no dynamic
+    // import or mod.default ?? mod fallback involved at all anymore
+    // (matching withDataLabels's/withAutocolors's own identical
+    // registration mechanism).
+    await withAnnotation({}, { annotations: {} });
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'annotation' }));
+  });
+
   it('registers the plugin exactly once no matter how many times it is called', async () => {
     await withAnnotation({}, { annotations: {} });
     await withAnnotation({}, { annotations: {} });
     expect(registerMock).toHaveBeenCalledTimes(1);
-    expect(registerMock).toHaveBeenCalledWith({ id: 'annotation' });
   });
 });
 
@@ -350,39 +375,6 @@ describe('withHierarchical', () => {
     await withHierarchical({});
     await withHierarchical({});
     expect(registerMock).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('mod.default ?? mod fallback (a plugin package with no default export)', () => {
-  // Every real plugin package here does have a default export (confirmed
-  // via CHARTJS_ANALYSIS.md §4's own research) — this branch is defensive
-  // code for a package that doesn't, which still needs its own coverage.
-  // Each test uses vi.resetModules() + vi.doMock() (same technique as
-  // registry.spec.ts's own negative-path test) to simulate that, and
-  // re-imports 'chart.js' fresh alongside the plugin module: resetModules
-  // invalidates the whole module registry, so the outer-scope
-  // `registerMock` captured at the top of this file would not see calls
-  // made through a freshly re-evaluated 'chart.js' mock instance.
-  //
-  // `default: undefined` is explicit, not omitted — confirmed via a real
-  // run: Vitest's own mock wrapper throws its own "No 'default' export is
-  // defined on the mock" error the instant that key is accessed at all
-  // if it's genuinely absent from the factory's returned object, which
-  // would mask the fallback behavior these tests exist to exercise (the
-  // exact same class of issue registry.spec.ts's own negative-path test
-  // hit earlier). An explicit `undefined` value satisfies Vitest's
-  // completeness check while still being falsy, so plugins.ts's own
-  // `?? mod` fallback is what actually runs.
-
-  it('withAnnotation registers the module namespace itself when there is no default export', async () => {
-    vi.resetModules();
-    vi.doMock('chartjs-plugin-annotation', () => ({ default: undefined, id: 'annotation-named-only' }));
-    const freshChart = await import('chart.js');
-    const freshPlugins = await import('../../src/plugins.js');
-
-    await freshPlugins.withAnnotation({}, { annotations: {} });
-
-    expect(freshChart.Chart.register).toHaveBeenCalledWith({ default: undefined, id: 'annotation-named-only' });
   });
 });
 
