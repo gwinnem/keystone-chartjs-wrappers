@@ -1,0 +1,34 @@
+---
+title: Area chart
+description: Not a separate Chart.js kind — a line (or radar) dataset with fill set, filling the area between the line and the chart's own baseline.
+---
+import AreaChart from '../../../../components/examples/area-chart.vue';
+import AreaChartSource from '../../../../components/examples/area-chart.vue?raw';
+import ExampleTryIt from '../../../../components/harness/ExampleTryIt.astro';
+
+Chart.js has no dedicated `area` chart type at all — an area chart is a
+real `line` (or `radar`) dataset with `fill` set, filling the region
+between the line and the chart's own baseline (the x-axis, by default).
+`type="line"` on `<Chart>` already covers this; nothing extra needs
+registering.
+
+<ExampleTryIt code={AreaChartSource} filename="area-chart.vue">
+  <AreaChart client:visible />
+</ExampleTryIt>
+
+:::tip[`fill` accepts more than just `true`]
+`fill: true` is shorthand for `fill: 'origin'` (filling down to the
+chart's own baseline). Other real values worth knowing:
+- **`fill: 'start'` / `fill: 'end'`** — fills toward the chart area's
+  own top/bottom edge instead of the baseline.
+- **`fill: '-1'` / `fill: '+1'`** — fills toward the *previous*/*next*
+  dataset in the array, stacking one area on top of another rather
+  than both toward the baseline (the shape most people mean by
+  "stacked area chart").
+- **`fill: 0`** (or any dataset index) — fills toward that specific
+  dataset by index, regardless of array order.
+
+See Chart.js's own [Area Chart guide](https://www.chartjs.org/docs/latest/charts/area.html)
+for the full `fill` reference, including per-segment coloring via
+`options.plugins.filler`.
+:::

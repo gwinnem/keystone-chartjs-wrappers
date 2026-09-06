@@ -192,6 +192,7 @@ export default defineConfig({
                   label: 'Composition',
                   collapsed: true,
                   items: [
+                    { label: 'Area chart', slug: 'vue/examples/area-chart' },
                     { label: 'Mixed chart', slug: 'vue/examples/mixed-chart' },
                     { label: 'Multiple axes', slug: 'vue/examples/multi-axis' },
                   ],

@@ -38,18 +38,13 @@ page's own note for why).
 - **[Sankey chart](/vue/examples/sankey/)** — `chartjs-chart-sankey`, `{from, to, flow}` per link.
 - **[Treemap chart](/vue/examples/treemap-chart/)** — `chartjs-chart-treemap`, a flat `number[]` for the simplest case.
 
-## Mixed charts
+## Composition
 
-Every built-in kind is registered eagerly, so this example is live and
-interactive too — no extension package involved.
+Every example here uses only built-in kinds/scale types, so all three
+are live and interactive too — no extension package involved.
 
+- **[Area chart](/vue/examples/area-chart/)** — not a separate Chart.js kind at all; a `line` dataset with `fill: true`, filling the area between the line and the chart's own baseline.
 - **[Mixed chart](/vue/examples/mixed-chart/)** — a bar chart with one dataset overridden to `type: 'line'`, drawn overlaid on the same axes.
-
-## Axes
-
-Every example here uses only built-in scale types, so it's live and
-interactive too.
-
 - **[Multiple axes](/vue/examples/multi-axis/)** — two datasets with different units, each mapped to its own `y` scale via `yAxisID`.
 
 ## Interaction
