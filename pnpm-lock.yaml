@@ -141,15 +141,6 @@ importers:
       chartjs-chart-treemap:
         specifier: ^4.2.0
         version: 4.2.0(chart.js@4.5.1)
-      chartjs-plugin-annotation:
-        specifier: ^3.1.0
-        version: 3.1.0(chart.js@4.5.1)
-      chartjs-plugin-datalabels:
-        specifier: ^2.2.0
-        version: 2.2.0(chart.js@4.5.1)
-      chartjs-plugin-trendline:
-        specifier: ^3.2.12
-        version: 3.2.12
       chartjs-scale-timestack:
         specifier: ^1.0.1
         version: 1.0.1(chart.js@4.5.1)
@@ -3711,19 +3702,6 @@ packages:
     resolution: {integrity: sha512-2ghdKHbknLYEzqD2fRTbACOzEhuH/f7zI5t6dbQ3cAOS+ric4mLjll6Sxsaugy/HFU0KUftJEszYOvtay3wFSQ==}
     peerDependencies:
       chart.js: '>=3.0.0'
-
-  chartjs-plugin-annotation@3.1.0:
-    resolution: {integrity: sha512-EkAed6/ycXD/7n0ShrlT1T2Hm3acnbFhgkIEJLa0X+M6S16x0zwj1Fv4suv/2bwayCT3jGPdAtI9uLcAMToaQQ==}
-    peerDependencies:
-      chart.js: '>=4.0.0'
-
-  chartjs-plugin-datalabels@2.2.0:
-    resolution: {integrity: sha512-14ZU30lH7n89oq+A4bWaJPnAG8a7ZTk7dKf48YAzMvJjQtjrgg5Dpk9f+LbjCF6bpx3RAGTeL13IXpKQYyRvlw==}
-    peerDependencies:
-      chart.js: '>=3.0.0'
-
-  chartjs-plugin-trendline@3.2.12:
-    resolution: {integrity: sha512-1NuYIw5AFTV6dZoqAF3lCZfa72BPp+XyIa1/RKl6cfR2N9vpO0DbH9bByBj5makUZdf+bjBvz9Vn8d9OyX0VCg==}
 
   chartjs-scale-timestack@1.0.1:
     resolution: {integrity: sha512-Nzi3BVNqoboo8534ecFIY1XojfdbQ9xfjdFsNxcGbYeAVrRthzmxlixelVtfAPqUExINH1LA1L3tfBYCeobp3w==}
@@ -11147,16 +11125,6 @@ snapshots:
   chartjs-chart-treemap@4.2.0(chart.js@4.5.1):
     dependencies:
       chart.js: 4.5.1
-
-  chartjs-plugin-annotation@3.1.0(chart.js@4.5.1):
-    dependencies:
-      chart.js: 4.5.1
-
-  chartjs-plugin-datalabels@2.2.0(chart.js@4.5.1):
-    dependencies:
-      chart.js: 4.5.1
-
-  chartjs-plugin-trendline@3.2.12: {}
 
   chartjs-scale-timestack@1.0.1(chart.js@4.5.1):
     dependencies:
