@@ -163,6 +163,30 @@ describe('dataLabelsPlugin.afterDatasetsDraw', () => {
 });
 
 describe('dataLabelsPlugin.beforeEvent / afterEvent — click and hover', () => {
+  it('does nothing on a click event when only enter/leave listeners are registered (no click handler)', () => {
+    const onEnter = vi.fn();
+    const onLeave = vi.fn();
+    const chart = makeChart([{ data: [1] }], [[makeElement(10, 10)]]);
+    runUpdate(chart, { listeners: { enter: onEnter, leave: onLeave } });
+
+    expect(() =>
+      dataLabelsPlugin.beforeEvent!(chart as never, { event: { type: 'click', x: 10, y: 10 }, replay: false, cancelable: true, inChartArea: true } as never, {}),
+    ).not.toThrow();
+    expect(onEnter).not.toHaveBeenCalled();
+    expect(onLeave).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on a mousemove event when only a click listener is registered (no enter/leave handlers)', () => {
+    const onClick = vi.fn();
+    const chart = makeChart([{ data: [1] }], [[makeElement(10, 10)]]);
+    runUpdate(chart, { listeners: { click: onClick } });
+
+    expect(() =>
+      dataLabelsPlugin.beforeEvent!(chart as never, { event: { type: 'mousemove', x: 10, y: 10 }, replay: false, cancelable: true, inChartArea: true } as never, {}),
+    ).not.toThrow();
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   it('does nothing at all when nothing on the chart has any real listener', () => {
     const chart = makeChart([{ data: [1] }], [[makeElement(10, 10)]]);
     runUpdate(chart);
