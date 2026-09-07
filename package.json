@@ -2,7 +2,6 @@
   "name": "keystone-chartjs-wrappers",
   "version": "1.0.0",
   "homepage": "https://kcw.winnem.tech",
-  "private": true,
   "description": "Idiomatic Chart.js wrapper components for Vue, React, and Angular, sharing a framework-agnostic core.",
   "keywords": [
     "chartjs",
