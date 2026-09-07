@@ -2,6 +2,7 @@ node_modules
 dist
 coverage
 reports/mutation
+.stryker-tmp
 .turbo
 .astro
 playwright-report
