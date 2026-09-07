@@ -56,13 +56,3 @@ controllers in its bundle. See
 [the Chart.js coverage analysis](https://github.com/gwinnem/keystone-chartjs-wrappers/blob/main/docs/CHARTJS_ANALYSIS.md)
 for the full source-by-source breakdown of every kind and which package backs
 it.
-
-## Status
-
-This package's core feature set is implemented and tested — see
-[Features](/vue/features) for the full, current status table (99.11%
-core statement/line coverage, 94.52% branches, 99.63% functions, real
-browser end-to-end tests across Chromium/Firefox/WebKit — 84/84
-passing). Development continues on React/Angular parity and one
-remaining tracked gap for this package (Vue-native lifecycle events) —
-see the [Roadmap](/vue/guide/project/roadmap) for what's open.
