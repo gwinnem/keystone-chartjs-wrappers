@@ -30,7 +30,7 @@ popular ecosystem extension kinds, with zero manual registration required.
 
 | Package | Description | npm |
 |---|---|---|
-| [`keystone-chartjs-vue`](packages/vue) | Vue 3 component | *(pre-release)* |
+| [`keystone-chartjs-vue`](packages/vue) | Vue 3 component | *v.1.0.0* |
 | [`keystone-chartjs-react`](packages/react) | React component | *(pre-release)* |
 | [`keystone-chartjs-angular`](packages/angular) | Angular component | *(pre-release)* |
 
